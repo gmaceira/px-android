@@ -49,7 +49,6 @@ import com.mercadopago.android.px.internal.features.card.CardSecurityCodeTextWat
 import com.mercadopago.android.px.internal.features.card.CardholderNameTextWatcher;
 import com.mercadopago.android.px.internal.features.guessing_card.card_association_result.CardAssociationResultErrorActivity;
 import com.mercadopago.android.px.internal.features.guessing_card.card_association_result.CardAssociationResultSuccessActivity;
-import com.mercadopago.android.px.internal.features.providers.GuessingCardProviderImpl;
 import com.mercadopago.android.px.internal.features.uicontrollers.card.CardRepresentationModes;
 import com.mercadopago.android.px.internal.features.uicontrollers.card.CardView;
 import com.mercadopago.android.px.internal.features.uicontrollers.card.IdentificationCardView;
@@ -78,7 +77,7 @@ import java.util.List;
 
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_SILENT_ERROR;
 
-public class GuessingCardActivity extends PXActivity implements GuessingCardActivityView,
+public class GuessingCardActivity extends PXActivity<GuessingCardPresenter> implements GuessingCardActivityView,
     CardExpiryDateEditTextCallback, View.OnTouchListener, View.OnClickListener {
 
     public static final int REVIEW_PAYMENT_METHODS_REQUEST_CODE = 21;
@@ -98,7 +97,6 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     public static final String NORMAL_STATE = "textview_normal";
     protected static final String EXTRA_ISSUERS = "issuers";
 
-    protected GuessingCardPresenter mPresenter;
     protected MPEditText mCardNumberEditText;
     protected CardView mCardView;
     protected LinearLayout mButtonContainer;
@@ -200,8 +198,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     @Override
     protected void onDestroy() {
         mActivityActive = false;
-        mPresenter.detachView();
-        mPresenter.detachResourceProvider();
+        presenter.detachView();
         super.onDestroy();
     }
 
@@ -226,17 +223,17 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
         if (includesPayment) {
             final PaymentRecovery paymentRecovery =
                 JsonUtil.getInstance().fromJson(intent.getStringExtra("paymentRecovery"), PaymentRecovery.class);
-            mPresenter =
+            presenter =
                 GuessingCardPresenter.buildGuessingCardPaymentPresenter(Session.getSession(this), paymentRecovery);
         } else {
             final String accessToken = intent.getStringExtra(PARAM_ACCESS_TOKEN);
-            mPresenter = GuessingCardPresenter
-                .buildGuessingCardStoragePresenter(CardAssociationSession.getCardAssociationSession(this), accessToken);
+            presenter = GuessingCardPresenter
+                .buildGuessingCardStoragePresenter(Session.getSession(this),
+                    CardAssociationSession.getCardAssociationSession(this), accessToken);
         }
 
-        mPresenter.attachResourcesProvider(new GuessingCardProviderImpl(this));
-        mPresenter.attachView(this);
-        mPresenter.initialize();
+        presenter.attachView(this);
+        presenter.initialize();
     }
 
     @Override
@@ -251,13 +248,13 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     @Override
     public void onSaveInstanceState(final Bundle outState) {
         super.onSaveInstanceState(outState);
-        mPresenter.onSaveInstanceState(outState, mCardSideState, mLowResActive);
+        presenter.onSaveInstanceState(outState, mCardSideState, mLowResActive);
     }
 
     @Override
     protected void onRestoreInstanceState(final Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        mPresenter.onRestoreInstanceState(savedInstanceState);
+        presenter.onRestoreInstanceState(savedInstanceState);
         validatePaymentConfiguration();
     }
 
@@ -309,6 +306,18 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
         } else {
             ErrorUtil.startErrorActivity(this, error);
         }
+    }
+
+    @Override
+    public void showMissingIdentificationTypesError(final boolean recoverable, final String requestOrigin) {
+        showError(new MercadoPagoError(getString(R.string.px_error_message_missing_identification_types), recoverable),
+            requestOrigin);
+    }
+
+    @Override
+    public void showSettingNotFoundForBinError(final boolean recoverable, final String requestOrigin) {
+        showError(new MercadoPagoError(getString(R.string.px_error_message_missing_setting_for_bin), recoverable),
+            requestOrigin);
     }
 
     public void showApiException(final ApiException apiException, final String requestOrigin) {
@@ -474,7 +483,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     @Override
     public void initializeTitle() {
         if (mLowResActive) {
-            final String paymentTypeId = mPresenter.getPaymentTypeId();
+            final String paymentTypeId = presenter.getPaymentTypeId();
             String paymentTypeText = getString(R.string.px_form_card_title);
             if (paymentTypeId != null) {
                 if (paymentTypeId.equals(PaymentTypes.CREDIT_CARD)) {
@@ -524,12 +533,12 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
             new PaymentMethodSelectionCallback() {
                 @Override
                 public void onPaymentMethodListSet(final List<PaymentMethod> paymentMethodList, final String bin) {
-                    mPresenter.resolvePaymentMethodListSet(paymentMethodList, bin);
+                    presenter.resolvePaymentMethodListSet(paymentMethodList, bin);
                 }
 
                 @Override
                 public void onPaymentMethodCleared() {
-                    mPresenter.resolvePaymentMethodCleared();
+                    presenter.resolvePaymentMethodCleared();
                 }
             },
             new CardNumberEditTextCallback() {
@@ -540,26 +549,26 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
 
                 @Override
                 public void saveCardNumber(final CharSequence string) {
-                    mPresenter.saveCardNumber(string.toString());
+                    presenter.saveCardNumber(string.toString());
                     if (cardViewsActive()) {
                         mCardView.drawEditingCardNumber(string.toString());
                     }
-                    mPresenter.setCurrentNumberLength(string.length());
+                    presenter.setCurrentNumberLength(string.length());
                 }
 
                 @Override
                 public void appendSpace(final CharSequence currentNumber) {
-                    if (MPCardMaskUtil.needsMask(currentNumber, mPresenter.getCardNumberLength())) {
+                    if (MPCardMaskUtil.needsMask(currentNumber, presenter.getCardNumberLength())) {
                         mCardNumberEditText.append(" ");
                     }
                 }
 
                 @Override
                 public void deleteChar(final CharSequence s) {
-                    if (MPCardMaskUtil.needsMask(s, mPresenter.getCardNumberLength())) {
+                    if (MPCardMaskUtil.needsMask(s, presenter.getCardNumberLength())) {
                         mCardNumberEditText.getText().delete(s.length() - 1, s.length());
                     }
-                    mPresenter.setCurrentNumberLength(s.length());
+                    presenter.setCurrentNumberLength(s.length());
                 }
 
                 @Override
@@ -605,9 +614,9 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     public void setPaymentMethod(final PaymentMethod paymentMethod) {
         if (cardViewsActive()) {
             mCardView.setPaymentMethod(paymentMethod);
-            mCardView.setCardNumberLength(mPresenter.getCardNumberLength());
-            mCardView.setSecurityCodeLength(mPresenter.getSecurityCodeLength());
-            mCardView.setSecurityCodeLocation(mPresenter.getSecurityCodeLocation());
+            mCardView.setCardNumberLength(presenter.getCardNumberLength());
+            mCardView.setSecurityCodeLength(presenter.getSecurityCodeLength());
+            mCardView.setSecurityCodeLocation(presenter.getSecurityCodeLocation());
             mCardView.updateCardNumberMask(getCardNumberTextTrimmed());
             mCardView.transitionPaymentMethodSet();
         }
@@ -690,7 +699,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
 
                 @Override
                 public void saveCardholderName(final CharSequence string) {
-                    mPresenter.saveCardholderName(string.toString());
+                    presenter.saveCardholderName(string.toString());
                     if (cardViewsActive()) {
                         mCardView.drawEditingCardHolderName(string.toString());
                     }
@@ -728,7 +737,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
 
     @Override
     public void saveExpiryMonth(final CharSequence string) {
-        mPresenter.saveExpiryMonth(string.toString());
+        presenter.saveExpiryMonth(string.toString());
         if (cardViewsActive()) {
             mCardView.drawEditingExpiryMonth(string.toString());
         }
@@ -736,7 +745,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
 
     @Override
     public void saveExpiryYear(final CharSequence string) {
-        mPresenter.saveExpiryYear(string.toString());
+        presenter.saveExpiryYear(string.toString());
         if (cardViewsActive()) {
             mCardView.drawEditingExpiryYear(string.toString());
         }
@@ -781,9 +790,9 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
 
                 @Override
                 public void saveSecurityCode(final CharSequence string) {
-                    mPresenter.saveSecurityCode(string.toString());
+                    presenter.saveSecurityCode(string.toString());
                     if (cardViewsActive()) {
-                        mCardView.setSecurityCodeLocation(mPresenter.getSecurityCodeLocation());
+                        mCardView.setSecurityCodeLocation(presenter.getSecurityCodeLocation());
                         mCardView.drawEditingSecurityCode(string.toString());
                     }
                 }
@@ -805,7 +814,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
         mIdentificationTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(final AdapterView<?> adapterView, final View view, final int i, final long l) {
-                mPresenter.saveIdentificationType((IdentificationType) mIdentificationTypeSpinner.getSelectedItem());
+                presenter.saveIdentificationType((IdentificationType) mIdentificationTypeSpinner.getSelectedItem());
             }
 
             @Override
@@ -835,10 +844,10 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
 
                 @Override
                 public void saveIdentificationNumber(final CharSequence string) {
-                    mPresenter.saveIdentificationNumber(string.toString());
-                    if (mPresenter.getIdentificationNumberMaxLength() == string.length()) {
-                        mPresenter.saveIdentificationNumber(string.toString());
-                        mPresenter.validateIdentificationNumber();
+                    presenter.saveIdentificationNumber(string.toString());
+                    if (presenter.getIdentificationNumberMaxLength() == string.length()) {
+                        presenter.saveIdentificationNumber(string.toString());
+                        presenter.validateIdentificationNumber();
                     }
                     if (cardViewsActive()) {
                         mIdentificationCardView.setIdentificationNumber(string.toString());
@@ -862,14 +871,14 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
 
     @Override
     public void setIdentificationNumberRestrictions(final String type) {
-        setInputMaxLength(mIdentificationNumberEditText, mPresenter.getIdentificationNumberMaxLength());
+        setInputMaxLength(mIdentificationNumberEditText, presenter.getIdentificationNumberMaxLength());
         if ("number".equals(type)) {
             mIdentificationNumberEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
         } else {
             mIdentificationNumberEditText.setInputType(InputType.TYPE_CLASS_TEXT);
         }
         if (!mIdentificationNumberEditText.getText().toString().isEmpty()) {
-            mPresenter.validateIdentificationNumber();
+            presenter.validateIdentificationNumber();
         }
     }
 
@@ -958,59 +967,59 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     }
 
     private void requestCardNumberFocus() {
-        mPresenter.trackCardNumber();
+        presenter.trackCardNumber();
         disableBackInputButton();
         mCurrentEditingEditText = CARD_NUMBER_INPUT;
         openKeyboard(mCardNumberEditText);
         if (cardViewsActive()) {
-            mCardView.drawEditingCardNumber(mPresenter.getCardNumber());
+            mCardView.drawEditingCardNumber(presenter.getCardNumber());
         } else {
             initializeTitle();
         }
     }
 
     private void requestCardHolderNameFocus() {
-        if (!mPresenter.validateCardNumber()) {
+        if (!presenter.validateCardNumber()) {
             return;
         }
-        mPresenter.trackCardHolderName();
+        presenter.trackCardHolderName();
         enableBackInputButton();
         mCurrentEditingEditText = CARDHOLDER_NAME_INPUT;
         openKeyboard(mCardHolderNameEditText);
         if (cardViewsActive()) {
-            mCardView.drawEditingCardHolderName(mPresenter.getCardholderName());
+            mCardView.drawEditingCardHolderName(presenter.getCardholderName());
         }
     }
 
     private void requestExpiryDateFocus() {
-        if (!mPresenter.validateCardName()) {
+        if (!presenter.validateCardName()) {
             return;
         }
-        mPresenter.trackCardExpiryDate();
+        presenter.trackCardExpiryDate();
         enableBackInputButton();
         mCurrentEditingEditText = CARD_EXPIRYDATE_INPUT;
         openKeyboard(mCardExpiryDateEditText);
         checkFlipCardToFront();
         if (cardViewsActive()) {
-            mCardView.drawEditingExpiryMonth(mPresenter.getExpiryMonth());
-            mCardView.drawEditingExpiryYear(mPresenter.getExpiryYear());
+            mCardView.drawEditingExpiryMonth(presenter.getExpiryMonth());
+            mCardView.drawEditingExpiryYear(presenter.getExpiryYear());
         } else {
             initializeTitle();
         }
     }
 
     private void requestSecurityCodeFocus() {
-        if (!mPresenter.validateExpiryDate()) {
+        if (!presenter.validateExpiryDate()) {
             return;
         }
         if (mCurrentEditingEditText.equals(CARD_EXPIRYDATE_INPUT) ||
             mCurrentEditingEditText.equals(CARD_IDENTIFICATION_INPUT) ||
             mCurrentEditingEditText.equals(CARD_SECURITYCODE_INPUT)) {
-            mPresenter.trackCardSecurityCode();
+            presenter.trackCardSecurityCode();
             enableBackInputButton();
             mCurrentEditingEditText = CARD_SECURITYCODE_INPUT;
             openKeyboard(mSecurityCodeEditText);
-            if (mPresenter.getSecurityCodeLocation().equals(CardView.CARD_SIDE_BACK)) {
+            if (presenter.getSecurityCodeLocation().equals(CardView.CARD_SIDE_BACK)) {
                 checkFlipCardToBack();
             } else {
                 checkFlipCardToFront();
@@ -1020,11 +1029,11 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     }
 
     private void requestIdentificationFocus() {
-        if (mPresenter.isSecurityCodeRequired() ? !mPresenter.validateSecurityCode()
-            : !mPresenter.validateExpiryDate()) {
+        if (presenter.isSecurityCodeRequired() ? !presenter.validateSecurityCode()
+            : !presenter.validateExpiryDate()) {
             return;
         }
-        mPresenter.trackCardIdentification();
+        presenter.trackCardIdentification();
         enableBackInputButton();
         mCurrentEditingEditText = CARD_IDENTIFICATION_INPUT;
         openKeyboard(mIdentificationNumberEditText);
@@ -1074,6 +1083,26 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
         final String errorText = ExceptionHandler.getErrorMessage(this, exception);
         mErrorTextView.setText(errorText);
         setErrorState(ERROR_STATE);
+    }
+
+    @Override
+    public void setInvalidIdentificationNumberErrorView() {
+        setErrorView(getString(R.string.px_invalid_identification_number));
+    }
+
+    @Override
+    public void setInvalidEmptyNameErrorView() {
+        setErrorView(getString(R.string.px_invalid_empty_name));
+    }
+
+    @Override
+    public void setInvalidExpiryDateErrorView() {
+        setErrorView(getString(R.string.px_invalid_expiry_date));
+    }
+
+    @Override
+    public void setInvalidFieldErrorView() {
+        setErrorView(getString(R.string.px_invalid_field));
     }
 
     @Override
@@ -1187,42 +1216,42 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     private void validateCurrentEditText() {
         switch (mCurrentEditingEditText) {
         case CARD_NUMBER_INPUT:
-            if (mPresenter.validateCardNumber()) {
+            if (presenter.validateCardNumber()) {
                 mCardNumberInput.setVisibility(View.GONE);
                 requestCardHolderNameFocus();
             }
             break;
         case CARDHOLDER_NAME_INPUT:
-            if (mPresenter.validateCardName()) {
+            if (presenter.validateCardName()) {
                 mCardholderNameInput.setVisibility(View.GONE);
                 requestExpiryDateFocus();
             }
             break;
         case CARD_EXPIRYDATE_INPUT:
-            if (mPresenter.validateExpiryDate()) {
+            if (presenter.validateExpiryDate()) {
                 mCardExpiryDateInput.setVisibility(View.GONE);
-                if (mPresenter.isSecurityCodeRequired()) {
+                if (presenter.isSecurityCodeRequired()) {
                     requestSecurityCodeFocus();
-                } else if (mPresenter.isIdentificationNumberRequired()) {
+                } else if (presenter.isIdentificationNumberRequired()) {
                     requestIdentificationFocus();
                 } else {
-                    mPresenter.checkFinishWithCardToken();
+                    presenter.checkFinishWithCardToken();
                 }
             }
             break;
         case CARD_SECURITYCODE_INPUT:
-            if (mPresenter.validateSecurityCode()) {
+            if (presenter.validateSecurityCode()) {
                 mCardSecurityCodeInput.setVisibility(View.GONE);
-                if (mPresenter.isIdentificationNumberRequired()) {
+                if (presenter.isIdentificationNumberRequired()) {
                     requestIdentificationFocus();
                 } else {
-                    mPresenter.checkFinishWithCardToken();
+                    presenter.checkFinishWithCardToken();
                 }
             }
             break;
         case CARD_IDENTIFICATION_INPUT:
-            if (mPresenter.validateIdentificationNumber()) {
-                mPresenter.checkFinishWithCardToken();
+            if (presenter.validateIdentificationNumber()) {
+                presenter.checkFinishWithCardToken();
             }
             break;
         default:
@@ -1233,26 +1262,26 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     private void checkIsEmptyOrValid() {
         switch (mCurrentEditingEditText) {
         case CARDHOLDER_NAME_INPUT:
-            if (mPresenter.checkIsEmptyOrValidCardholderName()) {
+            if (presenter.checkIsEmptyOrValidCardholderName()) {
                 mCardNumberInput.setVisibility(View.VISIBLE);
                 requestCardNumberFocus();
             }
             break;
         case CARD_EXPIRYDATE_INPUT:
-            if (mPresenter.checkIsEmptyOrValidExpiryDate()) {
+            if (presenter.checkIsEmptyOrValidExpiryDate()) {
                 mCardholderNameInput.setVisibility(View.VISIBLE);
                 requestCardHolderNameFocus();
             }
             break;
         case CARD_SECURITYCODE_INPUT:
-            if (mPresenter.checkIsEmptyOrValidSecurityCode()) {
+            if (presenter.checkIsEmptyOrValidSecurityCode()) {
                 mCardExpiryDateInput.setVisibility(View.VISIBLE);
                 requestExpiryDateFocus();
             }
             break;
         case CARD_IDENTIFICATION_INPUT:
-            if (mPresenter.checkIsEmptyOrValidIdentificationNumber()) {
-                if (mPresenter.isSecurityCodeRequired()) {
+            if (presenter.checkIsEmptyOrValidIdentificationNumber()) {
+                if (presenter.isSecurityCodeRequired()) {
                     mCardSecurityCodeInput.setVisibility(View.VISIBLE);
                     requestSecurityCodeFocus();
                 } else {
@@ -1266,7 +1295,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     }
 
     private void checkTransitionCardToId() {
-        if (!mPresenter.isIdentificationNumberRequired()) {
+        if (!presenter.isIdentificationNumberRequired()) {
             return;
         }
         if (showingFront() || showingBack()) {
@@ -1309,17 +1338,17 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     private void flipCardToBack() {
         mCardSideState = CardView.CARD_SIDE_BACK;
         if (cardViewsActive()) {
-            mCardView.flipCardToBack(mPresenter.getPaymentMethod(), mPresenter.getSecurityCodeLength(),
-                getWindow(), mCardBackground, mPresenter.getSecurityCode());
+            mCardView.flipCardToBack(presenter.getPaymentMethod(), presenter.getSecurityCodeLength(),
+                getWindow(), mCardBackground, presenter.getSecurityCode());
         }
     }
 
     private void flipCardToFrontFromBack() {
         mCardSideState = CardView.CARD_SIDE_FRONT;
         if (cardViewsActive()) {
-            mCardView.flipCardToFrontFromBack(getWindow(), mCardBackground, mPresenter.getCardNumber(),
-                mPresenter.getCardholderName(), mPresenter.getExpiryMonth(), mPresenter.getExpiryYear(),
-                mPresenter.getSecurityCodeFront());
+            mCardView.flipCardToFrontFromBack(getWindow(), mCardBackground, presenter.getCardNumber(),
+                presenter.getCardholderName(), presenter.getExpiryMonth(), presenter.getExpiryYear(),
+                presenter.getSecurityCodeFront());
         }
     }
 
@@ -1360,7 +1389,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
     public void showFinishCardFlow() {
         ViewUtils.hideKeyboard(this);
         showProgress();
-        mPresenter.createToken();
+        presenter.createToken();
     }
 
     @Override
@@ -1373,7 +1402,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
                 if (!TextUtils.isEmpty(paymentTypeJson)) {
                     final PaymentType paymentType =
                         JsonUtil.getInstance().fromJson(paymentTypeJson, PaymentType.class);
-                    mPresenter.setSelectedPaymentType(paymentType);
+                    presenter.setSelectedPaymentType(paymentType);
                     showFinishCardFlow();
                 }
             } else if (resultCode == RESULT_CANCELED) {
@@ -1383,7 +1412,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
             clearReviewPaymentMethodsMode();
         } else if (requestCode == ErrorUtil.ERROR_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                mPresenter.recoverFromFailure();
+                presenter.recoverFromFailure();
             } else {
                 setResult(resultCode, data);
                 finish();
@@ -1395,7 +1424,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
                 final Long issuerId = data.getExtras().getLong("issuerId");
                 ViewUtils.hideKeyboard(this);
                 showProgress();
-                mPresenter.onIssuerSelected(issuerId);
+                presenter.onIssuerSelected(issuerId);
             }
         }
     }
@@ -1455,6 +1484,7 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
         overridePendingTransition(R.anim.px_slide_right_to_left_in, R.anim.px_slide_right_to_left_out);
     }
 
+    //TODO ya voy a tener en el presenter seteado quien es el viewTracker.. el onback con el path correcto sale solo
     @Override
     public void onBackPressed() {
         checkFlipCardToFront();
@@ -1522,14 +1552,14 @@ public class GuessingCardActivity extends PXActivity implements GuessingCardActi
         if (id == R.id.mpsdkBankDealsText) {
             new Constants.Activities.BankDealsActivityBuilder()
                 .setActivity(mActivity)
-                .setBankDeals(mPresenter.getBankDealsList())
+                .setBankDeals(presenter.getBankDealsList())
                 .startActivity();
         } else if (id == R.id.mpsdkNextButton) {
             validateCurrentEditText();
         } else if (id == R.id.mpsdkBackButton && !mCurrentEditingEditText.equals(CARD_NUMBER_INPUT)) {
             checkIsEmptyOrValid();
         } else if (id == R.id.mpsdkRedErrorContainer) {
-            final List<PaymentMethod> supportedPaymentMethods = mPresenter.getAllSupportedPaymentMethods();
+            final List<PaymentMethod> supportedPaymentMethods = presenter.getAllSupportedPaymentMethods();
             if (supportedPaymentMethods != null && !supportedPaymentMethods.isEmpty()) {
                 startReviewPaymentMethodsActivity(supportedPaymentMethods);
             }

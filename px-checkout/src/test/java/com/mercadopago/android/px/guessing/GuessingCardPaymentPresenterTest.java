@@ -6,7 +6,6 @@ import com.mercadopago.android.px.internal.callbacks.TaggedCallback;
 import com.mercadopago.android.px.internal.controllers.PaymentMethodGuessingController;
 import com.mercadopago.android.px.internal.features.guessing_card.GuessingCardActivityView;
 import com.mercadopago.android.px.internal.features.guessing_card.GuessingCardPaymentPresenter;
-import com.mercadopago.android.px.internal.features.providers.GuessingCardProvider;
 import com.mercadopago.android.px.internal.features.uicontrollers.card.CardView;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.IssuersRepository;
@@ -94,7 +93,8 @@ public class GuessingCardPaymentPresenterTest {
         when(advancedConfiguration.isBankDealsEnabled()).thenReturn(true);
         presenter =
             new GuessingCardPaymentPresenter(userSelectionRepository, paymentSettingRepository,
-                groupsRepository, issuersRepository, advancedConfiguration,
+                groupsRepository, issuersRepository, cardTokenRepository, bankDealsRepository,
+                identificationTypesRepository, advancedConfiguration,
                 new PaymentRecovery(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CALL_FOR_AUTHORIZE)
             );
         presenter.attachView(mockedView);
@@ -671,7 +671,8 @@ public class GuessingCardPaymentPresenterTest {
             .thenReturn(Collections.singletonList(paymentMethodList.get(0)));
 
         presenter = new GuessingCardPaymentPresenter(userSelectionRepository, paymentSettingRepository,
-            groupsRepository, issuersRepository, advancedConfiguration,
+            groupsRepository, issuersRepository, cardTokenRepository, bankDealsRepository,
+            identificationTypesRepository, advancedConfiguration,
             new PaymentRecovery(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CALL_FOR_AUTHORIZE));
 
         presenter.attachView(mockedView);

@@ -6,12 +6,11 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import com.google.gson.reflect.TypeToken;
-import com.mercadopago.android.px.internal.base.MvpPresenter;
+import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.callbacks.FailureRecovery;
 import com.mercadopago.android.px.internal.controllers.PaymentMethodGuessingController;
 import com.mercadopago.android.px.internal.di.CardAssociationSession;
 import com.mercadopago.android.px.internal.di.Session;
-import com.mercadopago.android.px.internal.features.providers.GuessingCardProvider;
 import com.mercadopago.android.px.internal.features.uicontrollers.card.CardView;
 import com.mercadopago.android.px.internal.features.uicontrollers.card.FrontCardView;
 import com.mercadopago.android.px.internal.util.ApiUtil;
@@ -48,7 +47,7 @@ import java.util.List;
 
 import static com.mercadopago.android.px.model.Card.CARD_DEFAULT_SECURITY_CODE_LENGTH;
 
-public abstract class GuessingCardPresenter extends MvpPresenter<GuessingCardActivityView, GuessingCardProvider> {
+public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardActivityView> {
 
     protected static final String CARD_SIDE_STATE_BUNDLE = "cardSideState";
     protected static final String PAYMENT_METHOD_BUNDLE = "paymentMethod";
@@ -110,14 +109,20 @@ public abstract class GuessingCardPresenter extends MvpPresenter<GuessingCardAct
         return new GuessingCardPaymentPresenter(
             session.getConfigurationModule().getUserSelectionRepository(),
             session.getConfigurationModule().getPaymentSettings(), session.getGroupsRepository(),
-            session.getIssuersRepository(), session.getConfigurationModule().getPaymentSettings().getAdvancedConfiguration(),
+            session.getIssuersRepository(),
+            session.getCardTokenRepository(), session.getBankDealsRepository(),
+            session.getIdentificationRepository(),
+            session.getConfigurationModule().getPaymentSettings().getAdvancedConfiguration(),
             paymentRecovery);
     }
 
-    public static GuessingCardPresenter buildGuessingCardStoragePresenter(final CardAssociationSession session,
+    public static GuessingCardPresenter buildGuessingCardStoragePresenter(final Session session,
+        final CardAssociationSession cardAssociationSession,
         final String accessToken) {
-        return new GuessingCardStoragePresenter(accessToken, session.getCardPaymentMethodRepository(),
-            session.getCardAssociationService(), session.getMercadoPagoESC(), session.getGatewayService());
+        return new GuessingCardStoragePresenter(accessToken, cardAssociationSession.getCardPaymentMethodRepository(),
+            session.getIdentificationRepository(), cardAssociationSession.getCardAssociationService(),
+            cardAssociationSession.getMercadoPagoESC(),
+            cardAssociationSession.getGatewayService());
     }
 
     /* default */ void trackCardNumber() {
@@ -294,7 +299,7 @@ public abstract class GuessingCardPresenter extends MvpPresenter<GuessingCardAct
                     getPaymentMethod().getId()), FrictionEventTracker.Style.CUSTOM_COMPONENT,
                 getPaymentMethod()).track();
 
-            getView().setErrorView(getResourcesProvider().getInvalidIdentificationNumberErrorMessage());
+            getView().setInvalidIdentificationNumberErrorView();
             getView().setErrorIdentificationNumber();
         }
         return validated;
@@ -331,7 +336,7 @@ public abstract class GuessingCardPresenter extends MvpPresenter<GuessingCardAct
                     getPaymentMethod().getId()), FrictionEventTracker.Style.CUSTOM_COMPONENT,
                 getPaymentMethod()).track();
 
-            getView().setErrorView(getResourcesProvider().getInvalidEmptyNameErrorMessage());
+            getView().setInvalidEmptyNameErrorView();
             getView().setErrorCardholderName();
             return false;
         }
@@ -354,7 +359,7 @@ public abstract class GuessingCardPresenter extends MvpPresenter<GuessingCardAct
                     FrictionEventTracker.Style.CUSTOM_COMPONENT,
                     getPaymentMethod())
                 .track();
-            getView().setErrorView(getResourcesProvider().getInvalidExpiryDateErrorMessage());
+            getView().setInvalidExpiryDateErrorView();
             getView().setErrorExpiryDate();
             return false;
         }
@@ -448,7 +453,7 @@ public abstract class GuessingCardPresenter extends MvpPresenter<GuessingCardAct
 
     protected void showIdentificationNumberError() {
         getView().hideProgress();
-        getView().setErrorView(getResourcesProvider().getInvalidFieldErrorMessage());
+        getView().setInvalidFieldErrorView();
         getView().setErrorIdentificationNumber();
     }
 
@@ -487,9 +492,7 @@ public abstract class GuessingCardPresenter extends MvpPresenter<GuessingCardAct
 
     protected void resolveIdentificationTypes(final List<IdentificationType> identificationTypes) {
         if (identificationTypes.isEmpty()) {
-            getView().showError(
-                new MercadoPagoError(getResourcesProvider().getMissingIdentificationTypesErrorMessage(), false),
-                ApiUtil.RequestOrigin.GET_IDENTIFICATION_TYPES);
+            getView().showMissingIdentificationTypesError(false, ApiUtil.RequestOrigin.GET_IDENTIFICATION_TYPES);
         } else {
             identificationType = identificationTypes.get(0);
             getView().initializeIdentificationTypes(identificationTypes);
@@ -506,10 +509,7 @@ public abstract class GuessingCardPresenter extends MvpPresenter<GuessingCardAct
             final Setting setting =
                 Setting.getSettingByPaymentMethodAndBin(paymentMethod, bin);
             if (setting == null) {
-                getView()
-                    .showError(
-                        new MercadoPagoError(getResourcesProvider().getSettingNotFoundForBinErrorMessage(), false),
-                        "");
+                getView().showSettingNotFoundForBinError(false, TextUtil.EMPTY);
             } else {
                 final int cardNumberLength = getCardNumberLength();
                 int spaces = FrontCardView.CARD_DEFAULT_AMOUNT_SPACES;
