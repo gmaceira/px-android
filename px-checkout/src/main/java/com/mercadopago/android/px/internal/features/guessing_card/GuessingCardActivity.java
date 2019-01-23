@@ -1484,11 +1484,11 @@ public class GuessingCardActivity extends PXActivity<GuessingCardPresenter> impl
         overridePendingTransition(R.anim.px_slide_right_to_left_in, R.anim.px_slide_right_to_left_out);
     }
 
-    //TODO ya voy a tener en el presenter seteado quien es el viewTracker.. el onback con el path correcto sale solo
     @Override
     public void onBackPressed() {
         checkFlipCardToFront();
         setResult(RESULT_CANCELED);
+        presenter.trackAbort();
         finish();
     }
 
@@ -1557,6 +1557,7 @@ public class GuessingCardActivity extends PXActivity<GuessingCardPresenter> impl
         } else if (id == R.id.mpsdkNextButton) {
             validateCurrentEditText();
         } else if (id == R.id.mpsdkBackButton && !mCurrentEditingEditText.equals(CARD_NUMBER_INPUT)) {
+            presenter.trackBack();
             checkIsEmptyOrValid();
         } else if (id == R.id.mpsdkRedErrorContainer) {
             final List<PaymentMethod> supportedPaymentMethods = presenter.getAllSupportedPaymentMethods();

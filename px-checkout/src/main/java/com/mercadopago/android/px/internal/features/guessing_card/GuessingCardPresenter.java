@@ -126,30 +126,39 @@ public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardAc
     }
 
     /* default */ void trackCardNumber() {
-        new CardNumberViewTracker().track();
+        final CardNumberViewTracker cardNumberViewTracker = new CardNumberViewTracker();
+        setCurrentViewTracker(cardNumberViewTracker);
     }
 
     /* default */ void trackCardIdentification() {
         if (TextUtil.isNotEmpty(getPaymentTypeId()) && getPaymentMethod() != null) {
-            new IdentificationViewTracker(getPaymentTypeId(), getPaymentMethod().getId()).track();
+            final IdentificationViewTracker identificationViewTracker =
+                new IdentificationViewTracker(getPaymentTypeId(), getPaymentMethod().getId());
+            setCurrentViewTracker(identificationViewTracker);
         }
     }
 
     /* default */ void trackCardHolderName() {
         if (TextUtil.isNotEmpty(getPaymentTypeId()) && getPaymentMethod() != null) {
-            new CardHolderNameViewTracker(getPaymentTypeId(), getPaymentMethod().getId()).track();
+            final CardHolderNameViewTracker cardHolderNameViewTracker =
+                new CardHolderNameViewTracker(getPaymentTypeId(), getPaymentMethod().getId());
+            setCurrentViewTracker(cardHolderNameViewTracker);
         }
     }
 
     /* default */ void trackCardExpiryDate() {
         if (TextUtil.isNotEmpty(getPaymentTypeId()) && getPaymentMethod() != null) {
-            new ExpirationDateViewTracker(getPaymentTypeId(), getPaymentMethod().getId()).track();
+            final ExpirationDateViewTracker expirationDateViewTracker =
+                new ExpirationDateViewTracker(getPaymentTypeId(), getPaymentMethod().getId());
+            setCurrentViewTracker(expirationDateViewTracker);
         }
     }
 
     /* default */ void trackCardSecurityCode() {
         if (TextUtil.isNotEmpty(getPaymentTypeId()) && getPaymentMethod() != null) {
-            new CvvGuessingViewTracker(getPaymentTypeId(), getPaymentMethod().getId()).track();
+            final CvvGuessingViewTracker cvvGuessingViewTracker =
+                new CvvGuessingViewTracker(getPaymentTypeId(), getPaymentMethod().getId());
+            setCurrentViewTracker(cvvGuessingViewTracker);
         }
     }
 
@@ -836,5 +845,13 @@ public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardAc
                 onPaymentMethodSet(pm);
             }
         }
+    }
+
+    public void trackAbort() {
+        tracker.trackAbort();
+    }
+
+    public void trackBack() {
+        tracker.trackBack();
     }
 }
