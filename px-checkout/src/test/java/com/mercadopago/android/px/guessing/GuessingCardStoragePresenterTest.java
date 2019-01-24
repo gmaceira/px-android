@@ -70,6 +70,7 @@ public class GuessingCardStoragePresenterTest {
     @Before
     public void setUp() {
         presenter = getPresenter();
+        whenGetIdentificationTypesAsync();
     }
 
     @NonNull
@@ -147,8 +148,6 @@ public class GuessingCardStoragePresenterTest {
         final Issuer dummyIssuer = new Issuer(1L, "Dummy Issuer");
         mockIssuers(Collections.singletonList(dummyIssuer), selected.get(0).getId());
 
-        whenGetIdentificationTypesAsync();
-
         presenter.resolvePaymentMethodListSet(selected, Cards.MOCKED_BIN_VISA);
 
         verify(view).resolvePaymentMethodSet(selected.get(0));
@@ -164,13 +163,6 @@ public class GuessingCardStoragePresenterTest {
         verify(view).clearCardNumberInputLength();
         verify(view).clearSecurityCodeEditText();
         verify(view).checkClearCardView();
-    }
-
-    private void whenGetIdentificationTypesAsync() {
-        final List<IdentificationType> identificationTypes = IdentificationTypes.getIdentificationTypes();
-
-        when(identificationRepository.getIdentificationTypesAsync(anyString())).thenReturn(new StubSuccessMpCall<>
-            (identificationTypes));
     }
 
     @Test
@@ -296,8 +288,6 @@ public class GuessingCardStoragePresenterTest {
         final Issuer dummyIssuer = new Issuer(1L, "Dummy Issuer");
         mockIssuers(Collections.singletonList(dummyIssuer), mockedGuessedPaymentMethods.get(0).getId());
 
-        whenGetIdentificationTypesAsync();
-
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         verify(cardAssociationService)
@@ -315,8 +305,6 @@ public class GuessingCardStoragePresenterTest {
 
         final Issuer dummyIssuer = new Issuer(1L, "Dummy Issuer");
         mockIssuers(Collections.singletonList(dummyIssuer), paymentMethod.getId());
-
-        whenGetIdentificationTypesAsync();
 
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
@@ -347,8 +335,6 @@ public class GuessingCardStoragePresenterTest {
 
         final Issuer dummyIssuer = new Issuer(1L, "Dummy Issuer");
         mockIssuers(Collections.singletonList(dummyIssuer), paymentMethod.getId());
-
-        whenGetIdentificationTypesAsync();
 
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
@@ -383,8 +369,6 @@ public class GuessingCardStoragePresenterTest {
         final Issuer dummyIssuer = new Issuer(1L, "Dummy Issuer");
         mockIssuers(Collections.singletonList(dummyIssuer), mockedGuessedPaymentMethods.get(0).getId());
 
-        whenGetIdentificationTypesAsync();
-
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         final Token token = new Token();
@@ -412,8 +396,6 @@ public class GuessingCardStoragePresenterTest {
 
         final Issuer dummyIssuer = new Issuer(1L, "Dummy Issuer");
         mockIssuers(Collections.singletonList(dummyIssuer), mockedGuessedPaymentMethods.get(0).getId());
-
-        whenGetIdentificationTypesAsync();
 
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
@@ -451,8 +433,6 @@ public class GuessingCardStoragePresenterTest {
         final Issuer dummyIssuer = new Issuer(1L, "Dummy Issuer");
         mockIssuers(Collections.singletonList(dummyIssuer), mockedGuessedPaymentMethods.get(0).getId());
 
-        whenGetIdentificationTypesAsync();
-
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         final Token token = new Token();
@@ -489,8 +469,6 @@ public class GuessingCardStoragePresenterTest {
         final List<Issuer> issuers = Arrays.asList(dummyIssuer1, dummyIssuer2);
         mockIssuers(issuers, mockedGuessedPaymentMethods.get(0).getId());
 
-        whenGetIdentificationTypesAsync();
-
         final Token token = new Token();
         token.setId(DUMMY_TOKEN_ID);
 
@@ -517,5 +495,12 @@ public class GuessingCardStoragePresenterTest {
         when(cardAssociationService
             .getCardIssuers(eq(DUMMY_ACCESS_TOKEN), eq(paymentMethodId), anyString()))
             .thenReturn(new StubSuccessMpCall<>(issuers));
+    }
+
+    private void whenGetIdentificationTypesAsync() {
+        final List<IdentificationType> identificationTypes = IdentificationTypes.getIdentificationTypes();
+
+        when(identificationRepository.getIdentificationTypesAsync(anyString())).thenReturn(new StubSuccessMpCall<>
+            (identificationTypes));
     }
 }
