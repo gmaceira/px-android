@@ -191,7 +191,6 @@ public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardAc
         showPaymentTypes = true;
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     public boolean shouldAskPaymentType(@NonNull final List<PaymentMethod> paymentMethodList) {
         final String paymentType = paymentMethodList.get(0).getPaymentTypeId();
         for (final PaymentMethod currentPaymentMethod : paymentMethodList) {

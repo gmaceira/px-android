@@ -22,7 +22,6 @@ import com.mercadopago.android.px.mocks.PaymentMethods;
 import com.mercadopago.android.px.mocks.Tokens;
 import com.mercadopago.android.px.model.BankDeal;
 import com.mercadopago.android.px.model.Card;
-import com.mercadopago.android.px.model.CardInfo;
 import com.mercadopago.android.px.model.Cardholder;
 import com.mercadopago.android.px.model.Identification;
 import com.mercadopago.android.px.model.IdentificationType;
@@ -31,12 +30,10 @@ import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentMethod;
 import com.mercadopago.android.px.model.PaymentMethodSearch;
 import com.mercadopago.android.px.model.PaymentRecovery;
-import com.mercadopago.android.px.model.PaymentType;
 import com.mercadopago.android.px.model.PaymentTypes;
 import com.mercadopago.android.px.model.Site;
 import com.mercadopago.android.px.model.Token;
 import com.mercadopago.android.px.model.exceptions.ApiException;
-import com.mercadopago.android.px.model.exceptions.CardTokenException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.preferences.PaymentPreference;
@@ -57,7 +54,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -67,8 +66,6 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class GuessingCardPaymentPresenterTest {
 
-    //fixme volar stubView
-    private final MockedView stubView = new MockedView();
     private GuessingCardPaymentPresenter presenter;
 
     @Mock private UserSelectionRepository userSelectionRepository;
@@ -85,6 +82,7 @@ public class GuessingCardPaymentPresenterTest {
     @Mock private PaymentMethodSearch paymentMethodSearch;
     @Mock private AdvancedConfiguration advancedConfiguration;
     @Mock private Site site;
+    @Mock private List<IdentificationType> identificationTypes;
 
     @Mock private GuessingCardActivityView view;
 
@@ -99,8 +97,7 @@ public class GuessingCardPaymentPresenterTest {
         when(paymentMethodSearch.getPaymentMethods()).thenReturn(pm);
         when(advancedConfiguration.isBankDealsEnabled()).thenReturn(true);
         whenGetBankDealsAsync();
-        whenGetIdentificationTypesAsync();
-        whenGetIdentificationTypesAsyncWithoutAccessToken();
+        identificationTypes = whenGetIdentificationTypesAsyncWithoutAccessToken();
         presenter = getPresenter();
     }
 
@@ -123,13 +120,25 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifPublicKeySetThenCheckValidStart() {
+    public void whenPublicKeySetThenCheckValidStart() {
         presenter.initialize();
         verify(view).onValidStart();
     }
 
     @Test
-    public void ifPaymentRecoverySetThenSaveCardholderNameAndIdentification() {
+    public void whenIdentificationTypesNotGetThenShowError() {
+        final ApiException apiException = mock(ApiException.class);
+
+        when(identificationRepository.getIdentificationTypes())
+            .thenReturn(new StubFailMpCall<List<IdentificationType>>(apiException));
+
+        presenter.getIdentificationTypesAsync();
+
+        verify(view).showError(any(MercadoPagoError.class), anyString());
+    }
+
+    @Test
+    public void whenPaymentRecoverySetThenSaveCardholderNameAndIdentification() {
 
         final Cardholder cardHolder = mock(Cardholder.class);
         final Token token = mock(Token.class);
@@ -139,7 +148,7 @@ public class GuessingCardPaymentPresenterTest {
 
         presenter
             .setPaymentRecovery(new PaymentRecovery(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CALL_FOR_AUTHORIZE));
-        presenter.attachView(view);
+
         presenter.initialize();
 
         verify(view).setCardholderName(cardHolder.getName());
@@ -147,23 +156,21 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifPaymentMethodListSetWithOnePaymentMethodThenSelectIt() {
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
-
+    public void whenPaymentMethodListSetWithOnePaymentMethodThenSelectIt() {
         presenter.initialize();
 
         final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
         mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
+        final PaymentMethod paymentMethod = mockedGuessedPaymentMethods.get(0);
 
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
-        assertTrue(stubView.paymentMethodSet);
+        verify(view).setPaymentMethod(paymentMethod);
+        verify(view).resolvePaymentMethodSet(paymentMethod);
     }
 
     @Test
-    public void ifPaymentMethodListSetIsEmptyThenShowError() {
+    public void whenPaymentMethodListSetIsEmptyThenShowError() {
 
         presenter.initialize();
 
@@ -171,25 +178,27 @@ public class GuessingCardPaymentPresenterTest {
 
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
-        assertFalse(stubView.paymentMethodSet);
-        assertTrue(stubView.invalidPaymentMethod);
-        assertTrue(stubView.multipleErrorViewShown);
+        verify(view).setCardNumberInputMaxLength(anyInt());
+        verify(view).setInvalidCardMultipleErrorView();
     }
 
     @Test
-    public void ifPaymentMethodListSetWithTwoOptionsThenAskForPaymentType() {
-
-        presenter.initialize();
-
+    public void whenPaymentMethodListSetWithTwoOptionsAndCheckFinishWithCardTokenThenAskForPaymentType() {
         final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
         mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
         mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnDebit());
+        when(paymentPreference.getSupportedPaymentMethods(paymentMethodSearch.getPaymentMethods()))
+            .thenReturn(mockedGuessedPaymentMethods);
+
+        presenter.initialize();
+
+        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, anyString());
 
         assertTrue(presenter.shouldAskPaymentType(mockedGuessedPaymentMethods));
     }
 
     @Test
-    public void ifPaymentMethodListSetWithTwoOptionsThenChooseFirstOne() {
+    public void whenPaymentMethodListSetWithTwoOptionsThenChooseFirstOne() {
 
         presenter.initialize();
 
@@ -202,13 +211,12 @@ public class GuessingCardPaymentPresenterTest {
 
         when(userSelectionRepository.getPaymentMethod()).thenReturn(paymentMethodOnVisa);
 
-        assertTrue(stubView.paymentMethodSet);
         assertNotNull(presenter.getPaymentMethod());
         assertEquals(presenter.getPaymentMethod().getId(), mockedGuessedPaymentMethods.get(0).getId());
     }
 
     @Test
-    public void ifPaymentMethodSetAndDeletedThenClearConfiguration() {
+    public void whenPaymentMethodSetAndDeletedThenClearConfiguration() {
 
         presenter.initialize();
 
@@ -216,8 +224,6 @@ public class GuessingCardPaymentPresenterTest {
         mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
 
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
-
-        assertTrue(stubView.paymentMethodSet);
 
         presenter.setPaymentMethod(null);
 
@@ -228,41 +234,42 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifPaymentMethodSetAndDeletedThenClearViews() {
+    public void whenPaymentMethodSetAndDeletedThenClearViews() {
+        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
+        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
+        final PaymentMethod paymentMethod = mockedGuessedPaymentMethods.get(0);
 
         presenter.initialize();
 
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
-
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
-        assertTrue(stubView.paymentMethodSet);
+
+        verify(view).setPaymentMethod(paymentMethod);
+        verify(view).resolvePaymentMethodSet(paymentMethod);
 
         presenter.resolvePaymentMethodCleared();
 
-        assertFalse(stubView.errorState);
-        assertTrue(stubView.cardNumberLengthDefault);
-        assertTrue(stubView.securityCodeInputErased);
-        assertTrue(stubView.clearCardView);
+        verify(view).clearErrorView();
+        verify(view).hideRedErrorContainerView(true);
+        verify(view).restoreBlackInfoContainerView();
+        verify(view).clearCardNumberInputLength();
+        verify(view).clearSecurityCodeEditText();
+        verify(view).checkClearCardView();
     }
 
     @Test
-    public void ifPaymentMethodSetHasIdentificationTypeRequiredThenShowIdentificationView() {
-
-        presenter.initialize();
-
+    public void whenPaymentMethodSetHasIdentificationTypeRequiredThenShowIdentificationView() {
         final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
         mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
 
+        presenter.initialize();
+
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
-        assertTrue(stubView.paymentMethodSet);
-        assertTrue(presenter.isIdentificationNumberRequired());
-        assertTrue(stubView.identificationTypesInitialized);
+        verify(view).initializeIdentificationTypes(identificationTypes);
     }
 
     @Test
-    public void ifPaymentMethodSetDoNotHaveIdentificationTypeRequiredThenHideIdentificationView() {
+    public void whenPaymentMethodSetDoNotHaveIdentificationTypeRequiredThenHideIdentificationView() {
 
         presenter.initialize();
 
@@ -271,30 +278,43 @@ public class GuessingCardPaymentPresenterTest {
 
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_CORDIAL);
 
-        assertTrue(stubView.paymentMethodSet);
-        assertFalse(presenter.isIdentificationNumberRequired());
-        assertFalse(stubView.identificationTypesInitialized);
-        assertTrue(stubView.hideIdentificationInput);
+        verify(view).hideIdentificationInput();
     }
 
     @Test
-    public void initializeGuessingFormWithPaymentMethodListFromCardVault() {
+    public void whenInitializePresenterThenStartGuessingForm() {
         presenter.initialize();
 
-        assertTrue(stubView.showInputContainer);
-        assertTrue(stubView.initializeGuessingForm);
-        assertTrue(stubView.initializeGuessingListeners);
+        verify(view).initializeTitle();
+        verify(view).setCardNumberListeners(any(PaymentMethodGuessingController.class));
+        verify(view).setCardholderNameListeners();
+        verify(view).setExpiryDateListeners();
+        verify(view).setSecurityCodeListeners();
+        verify(view).setIdentificationTypeListeners();
+        verify(view).setIdentificationNumberListeners();
+        verify(view).setNextButtonListeners();
+        verify(view).setBackButtonListeners();
+        verify(view).setErrorContainerListener();
+        verify(view).setContainerAnimationListeners();
     }
 
     @Test
-    public void ifBankDealsNotEnabledThenHideBankDeals() {
+    public void whenBankDealsNotEnabledThenHideBankDeals() {
         when(advancedConfiguration.isBankDealsEnabled()).thenReturn(false);
         presenter.initialize();
         verify(view).hideBankDeals();
     }
 
     @Test
-    public void ifGetPaymentMethodFailsThenHideProgress() {
+    public void whenBankDealsAreEmptyThenHideBankDeals() {
+        final List<BankDeal> bankDeals = new ArrayList<>();
+        when(bankDealsRepository.getBankDealsAsync()).thenReturn(new StubSuccessMpCall<>(bankDeals));
+        presenter.initialize();
+        verify(view).hideBankDeals();
+    }
+
+    @Test
+    public void whenGetPaymentMethodFailsThenHideProgress() {
         final ApiException apiException = mock(ApiException.class);
         when(groupsRepository.getGroups()).thenReturn(new StubFailMpCall<PaymentMethodSearch>(apiException));
 
@@ -305,7 +325,7 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifPaymentTypeSetAndTwoPaymentMethodsThenChooseByPaymentType() {
+    public void whenPaymentTypeSetAndTwoPaymentMethodsThenChooseByPaymentType() {
 
         final List<PaymentMethod> paymentMethodList = PaymentMethods.getPaymentMethodListMLM();
         when(userSelectionRepository.getPaymentType()).thenReturn(PaymentTypes.DEBIT_CARD);
@@ -328,21 +348,19 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifSecurityCodeSettingsAreWrongThenHideSecurityCodeView() {
-        presenter.attachView(stubView);
-
-        presenter.initialize();
-
+    public void whenSecurityCodeSettingsAreWrongThenHideSecurityCodeView() {
         final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
         mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodWithWrongSecurityCodeSettings());
         when(userSelectionRepository.getPaymentMethod()).thenReturn(null);
+
+        presenter.initialize();
         presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
-        assertTrue(stubView.paymentMethodSet);
-        assertTrue(stubView.hideSecurityCodeInput);
+
+        verify(view).hideSecurityCodeInput();
     }
 
     @Test
-    public void ifPaymentMethodSettingsAreEmptyThenShowErrorMessage() {
+    public void whenPaymentMethodSettingsAreEmptyThenShowErrorMessage() {
         presenter.initialize();
 
         final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
@@ -355,66 +373,32 @@ public class GuessingCardPaymentPresenterTest {
         verify(view).showSettingNotFoundForBinError(anyBoolean(), anyString());
     }
 
-    //FIXME
     @Test
-    public void ifGetIdentificationTypesFailsThenShowErrorMessage() {
-
-        final ApiException apiException = mock(ApiException.class);
-        when(identificationRepository.getIdentificationTypes())
-            .thenReturn(new StubFailMpCall<List<IdentificationType>>(apiException));
-
-        presenter.initialize();
-
-        //verify(view).showError(mock(MercadoPagoError.class), anyString());
-    }
-
-    @Test
-    public void ifGetIdentificationTypesIsEmptyThenShowErrorMessage() {
-
+    public void whenGetIdentificationTypesIsEmptyThenShowErrorMessage() {
         final List<IdentificationType> identificationTypes = new ArrayList<>();
-        //provider.setIdentificationTypesResponse(identificationTypes);
+        when(identificationRepository.getIdentificationTypes())
+            .thenReturn(new StubSuccessMpCall<>(identificationTypes));
 
         when(userSelectionRepository.getPaymentMethod()).thenReturn(null);
 
         final List<PaymentMethod> paymentMethodList = PaymentMethods.getPaymentMethodListMLA();
 
-        presenter.attachView(stubView);
-        //presenter.attachResourcesProvider(provider);
         presenter.initialize();
         presenter.resolvePaymentMethodListSet(paymentMethodList, Cards.MOCKED_BIN_VISA);
-
-        //assertEquals(MockedProvider.MISSING_IDENTIFICATION_TYPES, stubView.errorShown.getMessage());
+        verify(view).showMissingIdentificationTypesError(anyBoolean(), anyString());
     }
 
     @Test
-    public void ifBankDealsNotEmptyThenShowThem() {
-
-        final List<IdentificationType> identificationTypes = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypes);
-
-        final List<BankDeal> bankDeals = BankDeals.getBankDealsListMLA();
-        //provider.setBankDealsResponse(bankDeals);
-
-        presenter.attachView(stubView);
-
+    public void whenBankDealsNotEmptyThenShowThem() {
         presenter.initialize();
-
-        final List<PaymentMethod> pm = PaymentMethods.getPaymentMethodListMLA();
-        presenter.resolvePaymentMethodListSet(pm, Cards.MOCKED_BIN_VISA);
-
-        assertTrue(stubView.bankDealsShown);
+        verify(view).showBankDeals();
     }
 
     @Test
-    public void ifCardNumberSetThenValidateItAndSaveItInCardToken() {
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
+    public void whenCardNumberSetThenValidateItAndSaveItInCardToken() {
 
         final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
         when(userSelectionRepository.getPaymentMethod()).thenReturn(mockedPaymentMethod);
-
-        presenter.attachView(stubView);
 
         presenter.initialize();
 
@@ -430,14 +414,9 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifCardholderNameSetThenValidateItAndSaveItInCardToken() {
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
+    public void whenCardholderNameSetThenValidateItAndSaveItInCardToken() {
 
         final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
-
-        presenter.attachView(stubView);
 
         presenter.initialize();
 
@@ -452,14 +431,9 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifCardExpiryDateSetThenValidateItAndSaveItInCardToken() {
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
+    public void whenCardExpiryDateSetThenValidateItAndSaveItInCardToken() {
 
         final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
-
-        presenter.attachView(stubView);
 
         presenter.initialize();
 
@@ -478,16 +452,11 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifCardSecurityCodeSetThenValidateItAndSaveItInCardToken() {
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
+    public void whenCardSecurityCodeSetThenValidateItAndSaveItInCardToken() {
 
         final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
 
         when(userSelectionRepository.getPaymentMethod()).thenReturn(mockedPaymentMethod);
-
-        presenter.attachView(stubView);
 
         presenter.initialize();
 
@@ -507,17 +476,12 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifIdentificationNumberSetThenValidateItAndSaveItInCardToken() {
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
+    public void whenIdentificationNumberSetThenValidateItAndSaveItInCardToken() {
 
         final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
 
         final Identification identification = new Identification();
         presenter.setIdentification(identification);
-
-        presenter.attachView(stubView);
 
         presenter.initialize();
 
@@ -538,23 +502,15 @@ public class GuessingCardPaymentPresenterTest {
     }
 
     @Test
-    public void ifCardDataSetAndValidThenCreateToken() {
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
-
-        final List<Issuer> issuerList = Issuers.getIssuersListMLA();
-        //provider.setIssuersResponse(issuerList);
+    public void whenCardDataSetAndValidThenCreateToken() {
 
         final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
 
         final Token mockedToken = Tokens.getToken();
-        //provider.setTokenResponse(mockedToken);
 
         final Identification identification = new Identification();
         presenter.setIdentification(identification);
 
-        presenter.attachView(stubView);
         when(userSelectionRepository.getPaymentMethod()).thenReturn(mockedPaymentMethod);
 
         presenter.initialize();
@@ -583,47 +539,14 @@ public class GuessingCardPaymentPresenterTest {
         assertEquals(presenter.getToken(), mockedToken);
     }
 
-    //TODO check this test, should not happen and does nothing.
-
     @Test
-    public void ifPaymentMethodExclusionSetAndUserSelectsItThenShowErrorMessage() {
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
-
-        presenter.initialize();
-
-        //The user enters a master bin
-        final PaymentMethodGuessingController controller = presenter.getGuessingController();
-        final List<PaymentMethod> guessedPaymentMethods = controller.guessPaymentMethodsByBin(Cards.MOCKED_BIN_MASTER);
-
-        presenter.resolvePaymentMethodListSet(guessedPaymentMethods, Cards.MOCKED_BIN_MASTER);
-
-        //We show a red container showing the multiple available payment methods
-        assertFalse(stubView.paymentMethodSet);
-        assertTrue(stubView.invalidPaymentMethod);
-        assertTrue(stubView.multipleErrorViewShown);
-
-        //The users deletes the bin master
-        presenter.setPaymentMethod(null);
-        presenter.resolvePaymentMethodCleared();
-
-        //The red container disappears
-        assertFalse(stubView.multipleErrorViewShown);
-        assertFalse(stubView.invalidPaymentMethod);
-    }
-
-    @Test
-    public void ifPaymentMethodExclusionSetAndUserSelectsItWithOnlyOnePMAvailableThenShowInfoMessage() {
+    public void whenPaymentMethodExclusionSetAndUserSelectsItWithOnlyOnePMAvailableThenShowInfoMessage() {
 
         //We only have visa and master
         final List<PaymentMethod> paymentMethodList = PaymentMethods.getPaymentMethodListWithTwoOptions();
         final PaymentMethodSearch paymentMethodSearch = mock(PaymentMethodSearch.class);
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
         when(paymentMethodSearch.getPaymentMethods()).thenReturn(paymentMethodList);
-
-        final List<IdentificationType> identificationTypesList = IdentificationTypes.getIdentificationTypes();
-        //provider.setIdentificationTypesResponse(identificationTypesList);
 
         //We exclude master
         final Collection<String> excludedPaymentMethodIds = new ArrayList<>();
@@ -634,35 +557,20 @@ public class GuessingCardPaymentPresenterTest {
         when(paymentPreference.getSupportedPaymentMethods(paymentMethodSearch.getPaymentMethods()))
             .thenReturn(Collections.singletonList(paymentMethodList.get(0)));
 
-        presenter = new GuessingCardPaymentPresenter(userSelectionRepository, paymentSettingRepository,
-            groupsRepository, issuersRepository, cardTokenRepository, bankDealsRepository,
-            identificationRepository, advancedConfiguration,
-            new PaymentRecovery(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CALL_FOR_AUTHORIZE));
-
-        presenter.attachView(stubView);
-
         presenter.initialize();
-
-        //Black info container shows the only available payment method
-        assertTrue(stubView.onlyOnePMErrorViewShown);
-
-        assertEquals("visa", stubView.supportedPaymentMethodId);
 
         final PaymentMethodGuessingController controller = presenter.getGuessingController();
         final List<PaymentMethod> guessedPaymentMethods = controller.guessPaymentMethodsByBin(Cards.MOCKED_BIN_MASTER);
         presenter.resolvePaymentMethodListSet(guessedPaymentMethods, Cards.MOCKED_BIN_MASTER);
 
         //When the user enters a master bin the container turns red
-        assertFalse(stubView.paymentMethodSet);
-        assertTrue(stubView.infoContainerTurnedRed);
-        assertTrue(stubView.invalidPaymentMethod);
+        verify(view).setInvalidCardOnePaymentMethodErrorView();
 
         presenter.setPaymentMethod(null);
         presenter.resolvePaymentMethodCleared();
 
         //When the user deletes the input the container turns black again
-        assertFalse(stubView.infoContainerTurnedRed);
-        assertTrue(stubView.onlyOnePMErrorViewShown);
+        verify(view).restoreBlackInfoContainerView();
     }
 
     @Test
@@ -708,378 +616,6 @@ public class GuessingCardPaymentPresenterTest {
         assertFalse(presenter.shouldAskPaymentType(paymentMethodList));
     }
 
-    @SuppressWarnings("WeakerAccess")
-    private static class MockedView implements GuessingCardActivityView {
-
-        protected boolean validStart;
-        protected boolean paymentMethodSet;
-        protected boolean invalidPaymentMethod;
-        protected boolean multipleErrorViewShown;
-        protected String savedCardholderName;
-        protected String savedIdentificationNumber;
-        protected boolean errorState;
-        protected boolean cardNumberLengthDefault;
-        protected boolean securityCodeInputErased;
-        protected boolean clearCardView;
-        protected boolean identificationTypesInitialized;
-        protected boolean hideIdentificationInput;
-        protected boolean showInputContainer;
-        protected boolean initializeGuessingForm;
-        protected boolean initializeGuessingListeners;
-        protected MercadoPagoError errorShown;
-        protected boolean hideBankDeals;
-        protected boolean hideSecurityCodeInput;
-        protected boolean bankDealsShown;
-        protected boolean onlyOnePMErrorViewShown;
-        protected boolean infoContainerTurnedRed;
-        protected String supportedPaymentMethodId;
-        protected CardTokenException cardTokenError;
-        protected boolean formDataErrorState;
-
-        @Override
-        public void setPaymentMethod(final PaymentMethod paymentMethod) {
-            //Empty body
-        }
-
-        @Override
-        public void askForIssuer(final CardInfo cardInfo, final List<Issuer> issuers,
-            final PaymentMethod paymentMethod) {
-            //Empty body
-        }
-
-        @Override
-        public void recoverCardViews(final boolean lowResActive, final String cardNumber, final String cardHolderName,
-            final String expiryMonth, final String expiryYear, final String identificationNumber,
-            final IdentificationType identificationType) {
-            // Empty body
-        }
-
-        @Override
-        public void clearSecurityCodeEditText() {
-            securityCodeInputErased = true;
-        }
-
-        @Override
-        public void askForPaymentType(final List<PaymentMethod> paymentMethods, final List<PaymentType> paymentTypes,
-            final CardInfo cardInfo) {
-            // Empty body
-        }
-
-        @Override
-        public void restoreBlackInfoContainerView() {
-            onlyOnePMErrorViewShown = true;
-            infoContainerTurnedRed = false;
-        }
-
-        @Override
-        public void hideRedErrorContainerView(final boolean withAnimation) {
-            multipleErrorViewShown = false;
-            invalidPaymentMethod = false;
-        }
-
-        @Override
-        public void resolvePaymentMethodSet(final PaymentMethod paymentMethod) {
-            paymentMethodSet = true;
-        }
-
-        @Override
-        public void clearErrorIdentificationNumber() {
-            // Empty method
-        }
-
-        @Override
-        public void setSoftInputMode() {
-            // Empty method
-        }
-
-        @Override
-        public void finishCardFlow(@NonNull final List<Issuer> issuers) {
-            // Empty method
-        }
-
-        @Override
-        public void finishCardFlow() {
-            // Empty method
-        }
-
-        @Override
-        public void setErrorContainerListener() {
-            // Empty method
-        }
-
-        @Override
-        public void showMissingIdentificationTypesError(final boolean recoverable, final String requestOrigin) {
-
-        }
-
-        @Override
-        public void showSettingNotFoundForBinError(final boolean recoverable, final String requestOrigin) {
-
-        }
-
-        @Override
-        public void setInvalidCardOnePaymentMethodErrorView() {
-            invalidPaymentMethod = true;
-            onlyOnePMErrorViewShown = true;
-            infoContainerTurnedRed = true;
-        }
-
-        @Override
-        public void setInvalidIdentificationNumberErrorView() {
-
-        }
-
-        @Override
-        public void setInvalidEmptyNameErrorView() {
-
-        }
-
-        @Override
-        public void setInvalidExpiryDateErrorView() {
-
-        }
-
-        @Override
-        public void setInvalidFieldErrorView() {
-
-        }
-
-        @Override
-        public void setInvalidCardMultipleErrorView() {
-            invalidPaymentMethod = true;
-            multipleErrorViewShown = true;
-        }
-
-        @Override
-        public void hideProgress() {
-            // Empty method
-        }
-
-        @Override
-        public void finishCardStorageFlowWithSuccess() {
-            // Empty body
-        }
-
-        @Override
-        public void finishCardStorageFlowWithError(final String accessToken) {
-            // Empty body
-        }
-
-        @Override
-        public void showProgress() {
-            // Empty body
-        }
-
-        @Override
-        public void showApiExceptionError(final ApiException exception, final String requestOrigin) {
-            // Empty body
-        }
-
-        @Override
-        public void setupPresenter() {
-            // Empty body
-        }
-
-        @Override
-        public void onValidStart() {
-            validStart = true;
-            showInputContainer = true;
-        }
-
-        @Override
-        public void hideExclusionWithOneElementInfoView() {
-            // Empty body
-        }
-
-        @Override
-        public void showError(final MercadoPagoError error, final String requestOrigin) {
-            errorShown = error;
-        }
-
-        @Override
-        public void setContainerAnimationListeners() {
-            // Empty body
-        }
-
-        @Override
-        public void setExclusionWithOneElementInfoView(final PaymentMethod supportedPaymentMethod,
-            final boolean withAnimation) {
-            onlyOnePMErrorViewShown = true;
-            supportedPaymentMethodId = supportedPaymentMethod.getId();
-        }
-
-        @Override
-        public void clearCardNumberInputLength() {
-            cardNumberLengthDefault = true;
-        }
-
-        @Override
-        public void clearErrorView() {
-            errorState = false;
-        }
-
-        @Override
-        public void checkClearCardView() {
-            clearCardView = true;
-        }
-
-        @Override
-        public void setBackButtonListeners() {
-            initializeGuessingListeners = true;
-        }
-
-        @Override
-        public void setCardNumberListeners(final PaymentMethodGuessingController controller) {
-            initializeGuessingListeners = true;
-        }
-
-        @Override
-        public void setErrorSecurityCode() {
-            // Empty body
-        }
-
-        @Override
-        public void setErrorCardNumber() {
-            // Empty body
-        }
-
-        @Override
-        public void setErrorView(final CardTokenException exception) {
-            formDataErrorState = true;
-            cardTokenError = exception;
-        }
-
-        @Override
-        public void setErrorView(final String mErrorState) {
-            formDataErrorState = true;
-        }
-
-        @Override
-        public void setSecurityCodeListeners() {
-            initializeGuessingListeners = true;
-        }
-
-        @Override
-        public void setIdentificationTypeListeners() {
-            initializeGuessingListeners = true;
-        }
-
-        @Override
-        public void setNextButtonListeners() {
-            initializeGuessingListeners = true;
-        }
-
-        @Override
-        public void setIdentificationNumberListeners() {
-            initializeGuessingListeners = true;
-        }
-
-        @Override
-        public void setSecurityCodeInputMaxLength(final int length) {
-            // Empty body
-        }
-
-        @Override
-        public void setSecurityCodeViewLocation(final String location) {
-            // Empty body
-        }
-
-        @Override
-        public void setIdentificationNumberRestrictions(final String type) {
-            // Empty body
-        }
-
-        @Override
-        public void setCardholderNameListeners() {
-            initializeGuessingListeners = true;
-        }
-
-        @Override
-        public void setExpiryDateListeners() {
-            initializeGuessingListeners = true;
-        }
-
-        @Override
-        public void setCardholderName(final String cardholderName) {
-            savedCardholderName = cardholderName;
-        }
-
-        @Override
-        public void setCardNumberInputMaxLength(final int length) {
-            // Empty body
-        }
-
-        @Override
-        public void setErrorCardholderName() {
-            // Empty body
-        }
-
-        @Override
-        public void setErrorExpiryDate() {
-            // Empty body
-        }
-
-        @Override
-        public void setErrorIdentificationNumber() {
-            // Empty body
-        }
-
-        @Override
-        public void setIdentificationNumber(final String identificationNumber) {
-            savedIdentificationNumber = identificationNumber;
-        }
-
-        @Override
-        public void showIdentificationInput() {
-            // Empty method
-        }
-
-        @Override
-        public void showInputContainer() {
-            showInputContainer = true;
-        }
-
-        @Override
-        public void showBankDeals() {
-            bankDealsShown = true;
-        }
-
-        @Override
-        public void hideBankDeals() {
-            hideBankDeals = true;
-        }
-
-        @Override
-        public void hideIdentificationInput() {
-            hideIdentificationInput = true;
-        }
-
-        @Override
-        public void hideSecurityCodeInput() {
-            hideSecurityCodeInput = true;
-        }
-
-        @Override
-        public void initializeIdentificationTypes(final List<IdentificationType> identificationTypes) {
-            identificationTypesInitialized = true;
-        }
-
-        @Override
-        public void initializeTitle() {
-            initializeGuessingForm = true;
-        }
-
-        @Override
-        public void showFinishCardFlow() {
-            // Empty body
-        }
-
-        @Override
-        public void eraseDefaultSpace() {
-            // Empty body
-        }
-    }
-
     // --------- Helper methods ----------- //
 
     private void whenGetBankDealsAsync() {
@@ -1087,17 +623,11 @@ public class GuessingCardPaymentPresenterTest {
         when(bankDealsRepository.getBankDealsAsync()).thenReturn(new StubSuccessMpCall<>(bankDeals));
     }
 
-    private void whenGetIdentificationTypesAsync() {
-        final List<IdentificationType> identificationTypes = IdentificationTypes.getIdentificationTypes();
-
-        when(identificationRepository.getIdentificationTypesAsync(anyString())).thenReturn(new StubSuccessMpCall<>
-            (identificationTypes));
-    }
-
-    private void whenGetIdentificationTypesAsyncWithoutAccessToken() {
+    private List<IdentificationType> whenGetIdentificationTypesAsyncWithoutAccessToken() {
         final List<IdentificationType> identificationTypes = IdentificationTypes.getIdentificationTypes();
 
         when(identificationRepository.getIdentificationTypes()).thenReturn(new StubSuccessMpCall<>
             (identificationTypes));
+        return identificationTypes;
     }
 }
