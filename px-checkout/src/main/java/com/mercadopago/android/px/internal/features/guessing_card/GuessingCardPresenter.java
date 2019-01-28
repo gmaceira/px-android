@@ -3,7 +3,6 @@ package com.mercadopago.android.px.internal.features.guessing_card;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import com.google.gson.reflect.TypeToken;
 import com.mercadopago.android.px.internal.base.BasePresenter;
@@ -47,7 +46,8 @@ import java.util.List;
 
 import static com.mercadopago.android.px.model.Card.CARD_DEFAULT_SECURITY_CODE_LENGTH;
 
-public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardActivityView> {
+public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardActivityView>
+    implements GuessingCard.Actions {
 
     protected static final String CARD_SIDE_STATE_BUNDLE = "cardSideState";
     protected static final String PAYMENT_METHOD_BUNDLE = "paymentMethod";
@@ -846,10 +846,12 @@ public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardAc
         }
     }
 
+    @Override
     public void trackAbort() {
         tracker.trackAbort();
     }
 
+    @Override
     public void trackBack() {
         tracker.trackBack();
     }
