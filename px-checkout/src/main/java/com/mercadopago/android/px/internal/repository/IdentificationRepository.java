@@ -7,6 +7,10 @@ import java.util.List;
 
 public interface IdentificationRepository {
 
+    /**
+     * Get user's identification types according to site.
+     * @return List of IdentificationTypes.
+     */
     MPCall<List<IdentificationType>> getIdentificationTypes();
 
     MPCall<List<IdentificationType>> getIdentificationTypesAsync(@NonNull final String accessToken);
