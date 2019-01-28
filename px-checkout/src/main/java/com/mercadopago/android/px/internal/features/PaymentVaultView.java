@@ -5,10 +5,9 @@ import com.mercadopago.android.px.core.PaymentMethodPlugin;
 import com.mercadopago.android.px.internal.base.MvpView;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
 import com.mercadopago.android.px.internal.features.hooks.Hook;
-import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.CustomSearchItem;
-import com.mercadopago.android.px.model.Discount;
+import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.model.PaymentMethod;
 import com.mercadopago.android.px.model.PaymentMethodSearchItem;
 import com.mercadopago.android.px.model.Site;
@@ -48,7 +47,7 @@ public interface PaymentVaultView extends MvpView {
 
     void finishPaymentMethodSelection(PaymentMethod selectedPaymentMethod);
 
-    void showAmount(@NonNull final DiscountRepository discountRepository,
+    void showAmount(@NonNull final DiscountConfigurationModel discountModel,
         @NonNull final BigDecimal totalAmount,
         @NonNull final Site site);
 
@@ -60,11 +59,5 @@ public interface PaymentVaultView extends MvpView {
 
     void showHook(final Hook hook, final int code);
 
-    void showDetailDialog();
-
-    void showDiscountInputDialog();
-
-    void onSuccessCodeDiscountCallback(final Discount discount);
-
-    void onFailureCodeDiscountCallback();
+    void showDetailDialog(@NonNull final DiscountConfigurationModel discountModel);
 }

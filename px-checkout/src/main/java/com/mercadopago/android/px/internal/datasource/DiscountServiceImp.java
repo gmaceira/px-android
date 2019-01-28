@@ -2,262 +2,109 @@ package com.mercadopago.android.px.internal.datasource;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.mercadopago.android.px.configuration.DiscountConfiguration;
-import com.mercadopago.android.px.configuration.PaymentConfiguration;
-import com.mercadopago.android.px.internal.callbacks.MPCall;
 import com.mercadopago.android.px.internal.repository.DiscountRepository;
-import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
-import com.mercadopago.android.px.model.Campaign;
-import com.mercadopago.android.px.model.Discount;
+import com.mercadopago.android.px.internal.repository.GroupsRepository;
+import com.mercadopago.android.px.internal.repository.UserSelectionRepository;
+import com.mercadopago.android.px.model.Card;
+import com.mercadopago.android.px.model.DiscountConfigurationModel;
+import com.mercadopago.android.px.model.PaymentMethod;
+import com.mercadopago.android.px.model.PaymentMethodSearch;
+import com.mercadopago.android.px.model.PaymentTypes;
+import com.mercadopago.android.px.model.SummaryAmount;
 import com.mercadopago.android.px.model.exceptions.ApiException;
-
 import com.mercadopago.android.px.services.Callback;
-import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.Map;
 
 public class DiscountServiceImp implements DiscountRepository {
 
-    @NonNull /* default */ final DiscountStorageService discountStorageService;
-    @NonNull /* default */ final DiscountApiService discountApiService;
-    @NonNull /* default */ final PaymentSettingRepository paymentSettingRepository;
+    /* default */ ConfigurationSolver configurationSolver;
+    /* default */ Map<String, DiscountConfigurationModel> discountConfigurations;
 
-    /* default */ volatile boolean fetched;
+    @Nullable private String defaultSelectedGuessingConfiguration;
+    @NonNull private final GroupsRepository groupsRepository;
+    private final UserSelectionRepository userSelectionRepository;
 
-    public DiscountServiceImp(@NonNull final DiscountStorageService discountStorageService,
-        @NonNull final DiscountApiService discountApiService,
-        @NonNull final PaymentSettingRepository paymentSettingRepository) {
-        this.discountStorageService = discountStorageService;
-        this.discountApiService = discountApiService;
-        this.paymentSettingRepository = paymentSettingRepository;
-        fetched = false;
-    }
-
-    @Override
-    public void configureMerchantDiscountManually(@Nullable final PaymentConfiguration paymentConfiguration) {
-        if (paymentConfiguration != null && paymentConfiguration.getDiscountConfiguration() != null) {
-            final DiscountConfiguration discountConfiguration = paymentConfiguration.getDiscountConfiguration();
-            discountStorageService.configureDiscountManually(discountConfiguration.getDiscount(),
-                discountConfiguration.getCampaign(), discountConfiguration.isNotAvailable());
-        }
-    }
-
-    @Override
-    public void configureDiscountManually(@Nullable final Discount discount, @Nullable final Campaign campaign) {
-        discountStorageService.configureDiscountManually(discount, campaign, false);
-    }
-
-    @Override
-    public void reset() {
-        fetched = false;
-        discountStorageService.reset();
+    public DiscountServiceImp(@NonNull final GroupsRepository groupsRepository,
+        @NonNull final UserSelectionRepository userSelectionRepository) {
+        this.groupsRepository = groupsRepository;
+        this.userSelectionRepository = userSelectionRepository;
     }
 
     @NonNull
     @Override
-    public MPCall<Boolean> configureDiscountAutomatically(final BigDecimal amountToPay) {
-        return new AutomaticDiscountCall(amountToPay);
-    }
+    public DiscountConfigurationModel getCurrentConfiguration() {
+        // TODO: remove
+        init();
 
-    @NonNull
-    @Override
-    public MPCall<Discount> getCodeDiscount(@NonNull final BigDecimal amount, @NonNull final String inputCode) {
-        return discountApiService.getCodeDiscount(amount, inputCode);
-    }
-
-    @Nullable
-    @Override
-    public Discount getDiscount() {
-        return discountStorageService.getDiscount();
-    }
-
-    @Nullable
-    @Override
-    public String getDiscountCode() {
-        return discountStorageService.getDiscountCode();
-    }
-
-    @Nullable
-    @Override
-    public Campaign getCampaign() {
-        return discountStorageService.getCampaign();
-    }
-
-    @Nullable
-    @Override
-    public Campaign getCampaign(final String discountId) {
-        Campaign discountCampaign = null;
-
-        for (final Campaign campaign : discountStorageService.getCampaigns()) {
-            if (campaign.getId().equals(discountId)) {
-                discountCampaign = campaign;
-            }
-        }
-
-        return discountCampaign;
-    }
-
-    public boolean isNotAvailableDiscount() {
-        return discountStorageService.isNotAvailableDiscount();
-    }
-
-    @Override
-    public void saveDiscountCode(@NonNull final String code) {
-        discountStorageService.saveDiscountCode(code);
-    }
-
-    @Override
-    public boolean hasCodeCampaign() {
-        return discountStorageService.hasCodeCampaign();
-    }
-
-    @Override
-    public boolean hasValidDiscount() {
-        return getDiscount() != null && getCampaign() != null;
-    }
-
-    private class AutomaticDiscountCall implements MPCall<Boolean> {
-
-        /* default */ final BigDecimal amountToPay;
-
-        /* default */ Campaign directCampaign;
-
-        /* default */ AutomaticDiscountCall(final BigDecimal amountToPay) {
-            this.amountToPay = amountToPay;
-        }
-
-        @Override
-        public void enqueue(final Callback<Boolean> callback) {
-            resolveCampaigns(callback, new Callable() {
-                @Nullable
-                @Override
-                public Object call() {
-                    discountApiService.getCampaigns().enqueue(campaignCache(callback, new Callable() {
-                        @Nullable
-                        @Override
-                        public Object call() {
-                            discountApiService.getDiscount(amountToPay).enqueue(directDiscountCallBack(callback));
-                            return null;
-                        }
-                    }));
-                    return null;
-                }
-            });
-        }
-
-        @Override
-        public void execute(final Callback<Boolean> callback) {
-            resolveCampaigns(callback, new Callable() {
-                @Nullable
-                @Override
-                public Object call() {
-                    discountApiService.getCampaigns().execute(campaignCache(callback, new Callable() {
-                        @Nullable
-                        @Override
-                        public Object call() {
-                            discountApiService.getDiscount(amountToPay).execute(directDiscountCallBack(callback));
-                            return null;
-                        }
-                    }));
-                    return null;
-                }
-            });
-        }
-
-        private void resolveCampaigns(final Callback<Boolean> callback, @NonNull final Callable campaignsCall) {
-            if (shouldGetDiscount()) {
-                fetched = true;
-                try {
-                    getFromNetwork(callback, campaignsCall);
-                } catch (final Exception e) {
-                    //Do nothing
-                }
+        final PaymentMethod paymentMethod = userSelectionRepository.getPaymentMethod();
+        final Card card = userSelectionRepository.getCard();
+        // Remember to prioritize the selected discount over the rest when the selector feature is added.
+        // TODO: refactor with solver.
+        if (card == null) {
+            if (paymentMethod == null) {
+                // The user did not select any payment method, thus the dominant discount is the general config
+                return getConfiguration(configurationSolver.getDefaultSelectedAmountConfiguration());
             } else {
-                callback.success(false);
+                if (PaymentTypes.isCardPaymentType(paymentMethod.getPaymentTypeId())) {
+                    // Guessing card config
+                    return getConfiguration(defaultSelectedGuessingConfiguration);
+                } else {
+                    // The user select account money or an off payment method / everything else.
+                    return getConfiguration(configurationSolver.getConfigurationHashFor(paymentMethod.getId()));
+                }
             }
+        } else {
+            // The user has already selected a payment method, thus the dominant discount is the best between the
+            // general discount and the discount associated to the payment method
+            return getConfiguration(configurationSolver.getConfigurationHashFor(card.getId()));
+        }
+    }
+
+    @Override
+    public DiscountConfigurationModel getConfigurationFor(@NonNull final String customOptionId) {
+        init();
+        return getConfiguration(configurationSolver.getConfigurationHashFor(customOptionId));
+    }
+
+
+
+    private DiscountConfigurationModel getConfiguration(@Nullable final String hash) {
+        // TODO: remove
+        init();
+        final DiscountConfigurationModel discountModel = discountConfigurations.get(hash);
+        final DiscountConfigurationModel defaultConfig =
+            discountConfigurations.get(configurationSolver.getDefaultSelectedAmountConfiguration());
+        if(discountModel  == null && defaultConfig == null) return DiscountConfigurationModel.NONE;
+        return discountModel == null ? defaultConfig : discountModel;
+    }
+
+    //TODO: remove init call.
+    private void init() {
+        if (configurationSolver != null && discountConfigurations != null) {
+            return;
         }
 
-        private boolean shouldGetDiscount() {
-            return !fetched && paymentSettingRepository.getPaymentConfiguration()
-                .getPaymentProcessor() instanceof MercadoPagoPaymentProcessor;
-        }
-
-        private void getFromNetwork(final Callback<Boolean> callback, @NonNull final Callable campaignsCall)
-            throws Exception {
-            final List<Campaign> storage = discountStorageService.getCampaigns();
-            if (storage.isEmpty()) {
-                campaignsCall.call();
-            } else {
-                callback.success(true);
+        groupsRepository.getGroups().execute(new Callback<PaymentMethodSearch>() {
+            @Override
+            public void success(final PaymentMethodSearch paymentMethodSearch) {
+                configurationSolver =
+                    new ConfigurationSolverImpl(paymentMethodSearch.getDefaultAmountConfiguration(),
+                        paymentMethodSearch.getCustomSearchItems());
+                discountConfigurations = paymentMethodSearch.getDiscountsConfigurations();
             }
-        }
 
-        /* default */ Callback<List<Campaign>> campaignCache(final Callback<Boolean> callback,
-            final Callable discountCall) {
-            return new Callback<List<Campaign>>() {
-                @Override
-                public void success(final List<Campaign> campaigns) {
-                    successCampaigns(campaigns);
-                }
+            @Override
+            public void failure(final ApiException apiException) {
+                //TODO
+            }
+        });
+    }
 
-                @Override
-                public void failure(final ApiException apiException) {
-                    callback.success(false);
-                }
-
-                private void successCampaigns(final List<Campaign> campaigns) {
-                    if (empty(campaigns)) {
-                        callback.failure(new ApiException());
-                    } else {
-                        analyze(campaigns);
-                    }
-                }
-
-                private boolean empty(final Collection<Campaign> campaigns) {
-                    return campaigns == null || campaigns.isEmpty();
-                }
-
-                private void analyze(@NonNull final List<Campaign> campaigns) {
-                    if (!hasDirectDiscount(campaigns)) {
-                        discountStorageService.saveCampaigns(campaigns);
-                        callback.success(false);
-                    }
-                }
-
-                private boolean hasDirectDiscount(final Iterable<Campaign> campaigns) {
-                    // If there is campaign ...
-                    for (final Campaign campaign : campaigns) {
-                        if (campaign.isDirectDiscountCampaign()) {
-                            directCampaign = campaign;
-                            try {
-                                discountCall.call();
-                            } catch (final Exception e) {
-                                // do nothing.
-                            }
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-            };
-        }
-
-        /* default */ Callback<Discount> directDiscountCallBack(@NonNull final Callback<Boolean> callback) {
-            return new Callback<Discount>() {
-                @Override
-                public void success(final Discount discount) {
-                    discountStorageService.configureDiscountManually(discount, directCampaign, DiscountServiceImp.this
-                        .isNotAvailableDiscount());
-                    callback.success(true);
-                }
-
-                @Override
-                public void failure(final ApiException apiException) {
-                    discountStorageService.reset();
-                    callback.failure(apiException);
-                }
-            };
-        }
+    @Override
+    public void addConfigurations(@NonNull final SummaryAmount summaryAmount) {
+        // TODO: remove
+        init();
+        discountConfigurations.putAll(summaryAmount.getDiscountsConfigurations());
+        defaultSelectedGuessingConfiguration = summaryAmount.getDefaultAmountConfiguration();
     }
 }

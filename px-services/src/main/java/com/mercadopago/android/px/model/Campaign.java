@@ -27,6 +27,8 @@ public class Campaign implements Serializable, Parcelable {
     private final int maxRedeemPerUser;
     @SerializedName("end_date")
     private final Date endDate;
+    @SerializedName("legal_terms")
+    private final String legalTermsUrl;
 
     private static final String CODE_TYPE_SINGLE = "single";
     private static final String CODE_TYPE_MULTIPLE = "multiple";
@@ -38,6 +40,7 @@ public class Campaign implements Serializable, Parcelable {
         codeType = builder.codeType;
         maxRedeemPerUser = builder.maxRedeemPerUser;
         endDate = builder.endDate;
+        legalTermsUrl = builder.legalTermsUrl;
     }
 
     public int getMaxRedeemPerUser() {
@@ -95,6 +98,7 @@ public class Campaign implements Serializable, Parcelable {
         codeType = in.readString();
         maxRedeemPerUser = in.readInt();
         endDate = new Date(in.readLong());
+        legalTermsUrl = in.readString();
     }
 
     public static final Creator<Campaign> CREATOR = new Creator<Campaign>() {
@@ -121,11 +125,30 @@ public class Campaign implements Serializable, Parcelable {
         dest.writeString(codeType);
         dest.writeInt(maxRedeemPerUser);
         dest.writeLong(endDate.getTime());
+        dest.writeString(legalTermsUrl);
     }
 
-    public String getCampaignTermsUrl() {
-        return String
-            .format(Locale.US, "https://api.mercadolibre.com/campaigns/%s/terms_and_conditions?format_type=html", id);
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Campaign)) {
+            return false;
+        }
+
+        final Campaign campaign = (Campaign) o;
+
+        return id.equals(campaign.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    public String getLegalTermsUrl() {
+        return legalTermsUrl;
     }
 
     @SuppressWarnings("unused")
@@ -139,6 +162,7 @@ public class Campaign implements Serializable, Parcelable {
         /* default */ @Nullable String codeType;
         /* default */ int maxRedeemPerUser = 1;
         /* default */ @Nullable Date endDate;
+        /* default */ @Nullable String legalTermsUrl;
 
         /**
          * Builder for campaign construction.
@@ -193,6 +217,17 @@ public class Campaign implements Serializable, Parcelable {
          */
         public Builder setEndDate(final Date endDate) {
             this.endDate = endDate;
+            return this;
+        }
+
+        /**
+         * This string represents discount campaign's terms and conditions URL.
+         *
+         * @param legalTermsUrl for discount campaign.
+         * @return builder.
+         */
+        public Builder setLegalTermsUrl(final String legalTermsUrl) {
+            this.legalTermsUrl = legalTermsUrl;
             return this;
         }
 

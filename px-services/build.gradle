@@ -7,9 +7,23 @@ android {
     defaultConfig {
         buildConfigField "String", "USER_AGENT", "\"$user_agent\""
     }
+
+    buildTypes {
+        debug {
+            buildConfigField "String", "API_ENVIRONMENT", "\"beta\""
+            buildConfigField "boolean", "HTTP_CLIENT_LOG", "true"
+        }
+
+        release {
+            buildConfigField "String", "API_ENVIRONMENT", "\"v1\""
+            buildConfigField "boolean", "HTTP_CLIENT_LOG", "false"
+        }
+    }
 }
 
 dependencies {
+    testImplementation "junit:junit:$junit"
+    testImplementation "org.mockito:mockito-core:$mockito_version"
     androidTestImplementation project(":testlib")
 
     implementation "com.android.support:appcompat-v7:$support_library_version"

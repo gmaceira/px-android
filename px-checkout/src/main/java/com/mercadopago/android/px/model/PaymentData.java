@@ -12,6 +12,11 @@ public class PaymentData implements Serializable {
     private PayerCost payerCost;
     private Token token;
     private Payer payer;
+
+    /**
+     * @deprecated CouponCode discount is not supported anymore.
+     */
+    @Deprecated
     private String couponCode;
 
     @Nullable private Discount discount;
@@ -26,7 +31,7 @@ public class PaymentData implements Serializable {
         return paymentMethod;
     }
 
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
+    public void setPaymentMethod(final PaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
 
@@ -34,7 +39,7 @@ public class PaymentData implements Serializable {
         return issuer;
     }
 
-    public void setIssuer(Issuer issuer) {
+    public void setIssuer(final Issuer issuer) {
         this.issuer = issuer;
     }
 
@@ -42,7 +47,7 @@ public class PaymentData implements Serializable {
         return payerCost;
     }
 
-    public void setPayerCost(PayerCost payerCost) {
+    public void setPayerCost(final PayerCost payerCost) {
         this.payerCost = payerCost;
     }
 
@@ -50,7 +55,7 @@ public class PaymentData implements Serializable {
         return token;
     }
 
-    public void setToken(Token token) {
+    public void setToken(final Token token) {
         this.token = token;
     }
 
@@ -67,14 +72,24 @@ public class PaymentData implements Serializable {
         return payer;
     }
 
-    public void setPayer(Payer payer) {
+    public void setPayer(final Payer payer) {
         this.payer = payer;
     }
 
-    public void setCouponCode(String couponCode) {
+    /**
+     * @param couponCode The coupon code
+     * @deprecated CouponCode discount is not supported anymore.
+     */
+    @Deprecated
+    public void setCouponCode(final String couponCode) {
         this.couponCode = couponCode;
     }
 
+    /**
+     * @return code
+     * @deprecated CouponCode discount is not supported anymore.
+     */
+    @Deprecated
     public String getCouponCode() {
         return couponCode;
     }
@@ -83,7 +98,7 @@ public class PaymentData implements Serializable {
         return transactionAmount;
     }
 
-    public void setTransactionAmount(BigDecimal transactionAmount) {
+    public void setTransactionAmount(final BigDecimal transactionAmount) {
         this.transactionAmount = transactionAmount;
     }
 

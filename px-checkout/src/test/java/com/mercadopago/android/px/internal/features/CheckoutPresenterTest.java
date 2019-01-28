@@ -5,8 +5,6 @@ import com.mercadopago.android.px.internal.callbacks.TaggedCallback;
 import com.mercadopago.android.px.internal.configuration.InternalConfiguration;
 import com.mercadopago.android.px.internal.features.hooks.Hook;
 import com.mercadopago.android.px.internal.features.providers.CheckoutProvider;
-import com.mercadopago.android.px.internal.repository.AmountRepository;
-import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.PaymentRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
@@ -21,7 +19,7 @@ import com.mercadopago.android.px.mocks.PaymentMethodSearchs;
 import com.mercadopago.android.px.mocks.Payments;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.Customer;
-import com.mercadopago.android.px.model.ExpressMetadata;
+import com.mercadopago.android.px.model.IPayment;
 import com.mercadopago.android.px.model.Issuer;
 import com.mercadopago.android.px.model.Payer;
 import com.mercadopago.android.px.model.PayerCost;
@@ -38,10 +36,8 @@ import com.mercadopago.android.px.model.exceptions.CheckoutPreferenceException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.preferences.PaymentPreference;
-import com.mercadopago.android.px.utils.PluginInitializationSuccess;
 import com.mercadopago.android.px.utils.StubSuccessMpCall;
 import java.util.ArrayList;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -70,9 +66,7 @@ public class CheckoutPresenterTest {
     @Mock private CheckoutView checkoutView;
     @Mock private CheckoutProvider checkoutProvider;
     @Mock private PaymentSettingRepository paymentSettingRepository;
-    @Mock private AmountRepository amountRepository;
     @Mock private UserSelectionRepository userSelectionRepository;
-    @Mock private DiscountRepository discountRepository;
     @Mock private GroupsRepository groupsRepository;
     @Mock private PluginRepository pluginRepository;
     @Mock private PaymentRepository paymentRepository;
@@ -86,8 +80,6 @@ public class CheckoutPresenterTest {
     public void setUp() {
         stubView = new MockedView();
         stubProvider = new MockedProvider();
-        when(discountRepository.configureDiscountAutomatically(amountRepository.getAmountToPay()))
-            .thenReturn(new StubSuccessMpCall<>(true));
     }
 
     @NonNull
@@ -120,11 +112,9 @@ public class CheckoutPresenterTest {
         final CheckoutView view,
         final CheckoutProvider provider) {
 
-        when(pluginRepository.getInitTask(false)).thenReturn(new PluginInitializationSuccess());
-
         final CheckoutPresenter presenter =
-            new CheckoutPresenter(new CheckoutStateModel(), paymentSettingRepository, amountRepository,
-                userSelectionRepository, discountRepository,
+            new CheckoutPresenter(new CheckoutStateModel(), paymentSettingRepository,
+                userSelectionRepository,
                 groupsRepository,
                 pluginRepository,
                 paymentRepository,
@@ -136,7 +126,7 @@ public class CheckoutPresenterTest {
         return presenter;
     }
 
-    private void whenFlowHasRecoverableTokenProcess(final Payment payment) {
+    private void whenFlowHasRecoverableTokenProcess(final IPayment payment) {
         final Token token = mock(Token.class);
         final PaymentMethod paymentMethod = mock(PaymentMethod.class);
         final PayerCost payerCost = mock(PayerCost.class);

@@ -8,17 +8,13 @@ import com.mercadopago.android.px.internal.callbacks.PaymentServiceHandler;
 import com.mercadopago.android.px.internal.callbacks.TaggedCallback;
 import com.mercadopago.android.px.internal.configuration.InternalConfiguration;
 import com.mercadopago.android.px.internal.datasource.CheckoutStore;
-import com.mercadopago.android.px.internal.datasource.PluginInitializationAsync;
 import com.mercadopago.android.px.internal.features.hooks.Hook;
 import com.mercadopago.android.px.internal.features.hooks.HookHelper;
 import com.mercadopago.android.px.internal.features.providers.CheckoutProvider;
 import com.mercadopago.android.px.internal.navigation.DefaultPaymentMethodDriver;
-import com.mercadopago.android.px.internal.repository.AmountRepository;
-import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.PaymentRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
-import com.mercadopago.android.px.internal.repository.PluginInitTask;
 import com.mercadopago.android.px.internal.repository.PluginRepository;
 import com.mercadopago.android.px.internal.repository.UserSelectionRepository;
 import com.mercadopago.android.px.internal.util.ApiUtil;
@@ -26,7 +22,6 @@ import com.mercadopago.android.px.internal.viewmodel.CheckoutStateModel;
 import com.mercadopago.android.px.internal.viewmodel.PostPaymentAction;
 import com.mercadopago.android.px.internal.viewmodel.mappers.BusinessModelMapper;
 import com.mercadopago.android.px.model.BusinessPayment;
-import com.mercadopago.android.px.model.Campaign;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.Cause;
 import com.mercadopago.android.px.model.GenericPayment;
@@ -48,17 +43,16 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
     PostPaymentAction.ActionController {
 
     @NonNull /* default */ final CheckoutStateModel state;
-    @NonNull /* default */ final PluginRepository pluginRepository;
+
+    @NonNull private final PluginRepository pluginRepository;
+
     @NonNull private final PaymentRepository paymentRepository;
 
     @NonNull
     private final GroupsRepository groupsRepository;
     @NonNull
-    private final DiscountRepository discountRepository;
-    @NonNull
     /* default */ final PaymentSettingRepository paymentSettingRepository;
-    @NonNull
-    private final AmountRepository amountRepository;
+
     @NonNull
     /* default */ final UserSelectionRepository userSelectionRepository;
 
@@ -70,22 +64,16 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
 
     private transient FailureRecovery failureRecovery;
 
-    private PluginInitTask pluginInitializationTask; //instance saved as attribute to cancel and avoid crash
-
     public CheckoutPresenter(@NonNull final CheckoutStateModel persistentData,
         @NonNull final PaymentSettingRepository paymentSettingRepository,
-        @NonNull final AmountRepository amountRepository,
         @NonNull final UserSelectionRepository userSelectionRepository,
-        @NonNull final DiscountRepository discountRepository,
         @NonNull final GroupsRepository groupsRepository,
         @NonNull final PluginRepository pluginRepository,
         @NonNull final PaymentRepository paymentRepository,
         @NonNull final InternalConfiguration internalConfiguration,
         @NonNull final BusinessModelMapper businessModelMapper) {
         this.paymentSettingRepository = paymentSettingRepository;
-        this.amountRepository = amountRepository;
         this.userSelectionRepository = userSelectionRepository;
-        this.discountRepository = discountRepository;
         this.groupsRepository = groupsRepository;
         this.pluginRepository = pluginRepository;
         this.paymentRepository = paymentRepository;
@@ -127,7 +115,7 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
             getCheckoutPreference().validate();
             getView().trackScreen();
             startCheckout();
-        } catch (CheckoutPreferenceException e) {
+        } catch (final CheckoutPreferenceException e) {
             final String message = getResourcesProvider().getCheckoutExceptionMessage(e);
             getView().showError(new MercadoPagoError(message, false));
         }
@@ -135,44 +123,7 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
 
     private void startCheckout() {
         getResourcesProvider().fetchFonts();
-        initializePluginsData();
-    }
-
-    private void initializePluginsData() {
-        pluginInitializationTask = pluginRepository.getInitTask(false);
-        pluginInitializationTask.init(getDataInitializationCallback());
-    }
-
-    @NonNull
-    private PluginInitializationAsync.DataInitializationCallbacks getDataInitializationCallback() {
-        return new PluginInitializationAsync.DataInitializationCallbacks() {
-            @Override
-            public void onDataInitialized() {
-                pluginRepository.initialized();
-                finishInitializingPluginsData();
-            }
-
-            @Override
-            public void onFailure(@NonNull final Exception e) {
-                pluginRepository.initialized();
-                finishInitializingPluginsData();
-            }
-        };
-    }
-
-    /* default */ void finishInitializingPluginsData() {
-        discountRepository.configureDiscountAutomatically(amountRepository.getAmountToPay())
-            .enqueue(new Callback<Boolean>() {
-                @Override
-                public void success(final Boolean automatic) {
-                    retrievePaymentMethodSearch();
-                }
-
-                @Override
-                public void failure(final ApiException apiException) {
-                    retrievePaymentMethodSearch();
-                }
-            });
+        retrievePaymentMethodSearch();
     }
 
     public void retrievePaymentMethodSearch() {
@@ -188,8 +139,8 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
                 @Override
                 public void failure(final ApiException apiException) {
                     if (isViewAttached()) {
-                        getView()
-                            .showError(new MercadoPagoError(apiException, ApiUtil.RequestOrigin.GET_PAYMENT_METHODS));
+                        getView().showError(
+                            new MercadoPagoError(apiException, ApiUtil.RequestOrigin.GET_PAYMENT_METHODS));
                     }
                 }
             });
@@ -240,10 +191,9 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
         return paymentSettingRepository.getAdvancedConfiguration().isEscEnabled();
     }
 
-    private void retrieveCheckoutPreference(final String checkoutPreferenceId) {
+    /* default */ void retrieveCheckoutPreference(final String checkoutPreferenceId) {
         getResourcesProvider().getCheckoutPreference(checkoutPreferenceId,
             new TaggedCallback<CheckoutPreference>(ApiUtil.RequestOrigin.GET_PREFERENCE) {
-
                 @Override
                 public void onSuccess(final CheckoutPreference checkoutPreference) {
                     paymentSettingRepository.configure(checkoutPreference);
@@ -275,12 +225,12 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
         }
     }
 
-    private boolean isIdentificationInvalidInPayment(final MercadoPagoError mercadoPagoError) {
+    private boolean isIdentificationInvalidInPayment(@Nullable final MercadoPagoError mercadoPagoError) {
         boolean identificationInvalid = false;
         if (mercadoPagoError != null && mercadoPagoError.isApiException()) {
-            List<Cause> causeList = mercadoPagoError.getApiException().getCause();
+            final List<Cause> causeList = mercadoPagoError.getApiException().getCause();
             if (causeList != null && !causeList.isEmpty()) {
-                Cause cause = causeList.get(0);
+                final Cause cause = causeList.get(0);
                 if (cause.getCode().equals(ApiException.ErrorCodes.INVALID_IDENTIFICATION_NUMBER)) {
                     identificationInvalid = true;
                 }
@@ -438,10 +388,6 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
         return paymentSettingRepository.getCheckoutPreference();
     }
 
-    public Campaign getCampaign() {
-        return discountRepository.getCampaign();
-    }
-
     //### Hooks #####################
 
     private boolean showHook2(final PaymentData paymentData) {
@@ -459,10 +405,6 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
         return false;
     }
 
-    private boolean showHook3(final PaymentData paymentData) {
-        return showHook3(paymentData, Constants.Activities.HOOK_3);
-    }
-
     private boolean showHook3(final PaymentData paymentData, final int requestCode) {
         final Map<String, Object> data = CheckoutStore.getInstance().getData();
         final Hook hook = HookHelper.activateBeforePayment(
@@ -476,12 +418,6 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
 
     public void hook2Continue() {
         showReviewAndConfirm();
-    }
-
-    public void cancelInitialization() {
-        if (pluginInitializationTask != null) {
-            pluginInitializationTask.cancel();
-        }
     }
 
     private void finishCheckout() {
@@ -605,7 +541,7 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
 
         if (internalConfiguration.shouldExitOnPaymentMethodChange()) {
             final IPayment payment = paymentRepository.getPayment();
-            if (payment != null && payment instanceof Payment) {
+            if (payment instanceof Payment) {
                 getView().finishWithPaymentResult(Constants.RESULT_CHANGE_PAYMENT_METHOD, (Payment) payment);
             } else {
                 getView().finishWithPaymentResult(Constants.RESULT_CHANGE_PAYMENT_METHOD);

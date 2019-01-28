@@ -5,24 +5,27 @@ import android.support.annotation.Nullable;
 import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PaymentMethodSearch implements Serializable {
 
     /**
      * express list contains the list of user related payment methods to offer inside ExpressCheckout
      */
-    @Nullable
-    private List<ExpressMetadata> express;
-
+    @Nullable private List<ExpressMetadata> express;
+    private List<PaymentMethod> paymentMethods;
     private List<PaymentMethodSearchItem> groups;
-
+    private List<Card> cards;
     @SerializedName("custom_options")
     private List<CustomSearchItem> customSearchItems;
 
-    private List<PaymentMethod> paymentMethods;
-
-    private List<Card> cards;
+    /**
+     * amount management
+     **/
+    private String defaultAmountConfiguration;
+    private Map<String, DiscountConfigurationModel> discountsConfigurations;
 
     //region deprecated
 
@@ -92,8 +95,8 @@ public class PaymentMethodSearch implements Serializable {
             customSearchItems = new ArrayList<>();
             this.cards = new ArrayList<>();
 
-            for (Card card : cards) {
-                CustomSearchItem searchItem = new CustomSearchItem();
+            for (final Card card : cards) {
+                final CustomSearchItem searchItem = new CustomSearchItem();
                 searchItem.setDescription(lastFourDigitsText + " " + card.getLastFourDigits());
                 searchItem.setType(card.getPaymentMethod().getPaymentTypeId());
                 searchItem.setId(card.getId());
@@ -135,10 +138,6 @@ public class PaymentMethodSearch implements Serializable {
         return paymentMethods == null ? new ArrayList<PaymentMethod>() : paymentMethods;
     }
 
-    public boolean hasSearchItems() {
-        return groups != null && !groups.isEmpty();
-    }
-
     public PaymentMethod getPaymentMethodBySearchItem(final PaymentMethodSearchItem item) {
         PaymentMethod requiredPaymentMethod = null;
         if (paymentMethods != null && item != null && item.getId() != null) {
@@ -152,10 +151,10 @@ public class PaymentMethodSearch implements Serializable {
         return requiredPaymentMethod;
     }
 
-    private String getPaymentTypeIdFromItem(PaymentMethodSearchItem item, PaymentMethod paymentMethod) {
+    private String getPaymentTypeIdFromItem(final PaymentMethodSearchItem item, final PaymentMethod paymentMethod) {
         //Remove payment method id from item id and the splitter
-        String paymentType;
-        String itemIdWithoutPaymentMethod = item.getId().replaceFirst(paymentMethod.getId(), "");
+        final String paymentType;
+        final String itemIdWithoutPaymentMethod = item.getId().replaceFirst(paymentMethod.getId(), "");
         if (itemIdWithoutPaymentMethod.isEmpty()) {
             paymentType = paymentMethod.getPaymentTypeId();
         } else {
@@ -164,11 +163,11 @@ public class PaymentMethodSearch implements Serializable {
         return paymentType;
     }
 
-    private boolean itemMatchesPaymentMethod(PaymentMethodSearchItem item, PaymentMethod paymentMethod) {
+    private boolean itemMatchesPaymentMethod(final PaymentMethodSearchItem item, final PaymentMethod paymentMethod) {
         return item.getId().startsWith(paymentMethod.getId());
     }
 
-    public PaymentMethodSearchItem getSearchItemByPaymentMethod(PaymentMethod selectedPaymentMethod) {
+    public PaymentMethodSearchItem getSearchItemByPaymentMethod(final PaymentMethod selectedPaymentMethod) {
         PaymentMethodSearchItem requiredItem = null;
         if (selectedPaymentMethod != null) {
 
@@ -177,11 +176,12 @@ public class PaymentMethodSearch implements Serializable {
         return requiredItem;
     }
 
-    private PaymentMethodSearchItem searchItemMatchingPaymentMethod(PaymentMethod paymentMethod) {
+    private PaymentMethodSearchItem searchItemMatchingPaymentMethod(final PaymentMethod paymentMethod) {
         return searchItemInList(groups, paymentMethod);
     }
 
-    private PaymentMethodSearchItem searchItemInList(List<PaymentMethodSearchItem> list, PaymentMethod paymentMethod) {
+    private PaymentMethodSearchItem searchItemInList(final List<PaymentMethodSearchItem> list,
+        final PaymentMethod paymentMethod) {
         PaymentMethodSearchItem requiredItem = null;
         for (final PaymentMethodSearchItem currentItem : list) {
 
@@ -210,7 +210,7 @@ public class PaymentMethodSearch implements Serializable {
     }
 
     @Nullable
-    public PaymentMethod getPaymentMethodById(@Nullable String paymentMethodId) {
+    public PaymentMethod getPaymentMethodById(@Nullable final String paymentMethodId) {
         PaymentMethod foundPaymentMethod = null;
         if (paymentMethods != null) {
             for (final PaymentMethod paymentMethod : paymentMethods) {
@@ -249,16 +249,12 @@ public class PaymentMethodSearch implements Serializable {
                 return customSearchItem;
             }
         }
-        return  null;
+        return null;
     }
 
-    @Nullable
+    @NonNull
     public List<Card> getCards() {
-        return cards;
-    }
-
-    public boolean hasCustomSearchItems() {
-        return customSearchItems != null && !customSearchItems.isEmpty();
+        return cards == null ? new ArrayList<Card>() : cards;
     }
 
     /**
@@ -273,7 +269,15 @@ public class PaymentMethodSearch implements Serializable {
      * @return boolean that represents if there is express information.
      */
     public boolean hasExpressCheckoutMetadata() {
-        return express != null && !express.isEmpty();
+        return getExpress() != null && !getExpress().isEmpty();
+    }
+
+    public boolean hasCustomSearchItems() {
+        return !getCustomSearchItems().isEmpty();
+    }
+
+    public boolean hasSearchItems() {
+        return !getGroups().isEmpty();
     }
 
     @Nullable
@@ -286,5 +290,16 @@ public class PaymentMethodSearch implements Serializable {
     public String getLastFourDigits(@NonNull final String cardId) {
         final Card foundCard = getCardById(cardId);
         return foundCard == null ? null : foundCard.getLastFourDigits();
+    }
+
+    @NonNull
+    public String getDefaultAmountConfiguration() {
+        return defaultAmountConfiguration;
+    }
+
+    @NonNull
+    public Map<String, DiscountConfigurationModel> getDiscountsConfigurations() {
+        return discountsConfigurations == null ? new HashMap<String, DiscountConfigurationModel>()
+            : discountsConfigurations;
     }
 }

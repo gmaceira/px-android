@@ -1,24 +1,29 @@
 package com.mercadopago.android.px.internal.features.express;
 
+import com.mercadopago.android.px.internal.features.express.slider.PaymentMethodAdapter;
 import com.mercadopago.android.px.internal.repository.AmountRepository;
 import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
+import com.mercadopago.android.px.internal.repository.PayerCostRepository;
 import com.mercadopago.android.px.internal.repository.PaymentRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
+import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.internal.view.ElementDescriptorView;
-import com.mercadopago.android.px.internal.view.InstallmentsDescriptorView;
-import com.mercadopago.android.px.internal.view.SummaryView;
+import com.mercadopago.android.px.internal.view.PaymentMethodDescriptorView;
 import com.mercadopago.android.px.internal.viewmodel.drawables.DrawableFragmentItem;
-import com.mercadopago.android.px.internal.viewmodel.mappers.ElementDescriptorMapper;
 import com.mercadopago.android.px.model.CardMetadata;
+import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.model.ExpressMetadata;
+import com.mercadopago.android.px.model.Item;
 import com.mercadopago.android.px.model.PayerCost;
+import com.mercadopago.android.px.model.AmountConfiguration;
 import com.mercadopago.android.px.model.PaymentMethodSearch;
 import com.mercadopago.android.px.model.Site;
 import com.mercadopago.android.px.model.Sites;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.utils.StubSuccessMpCall;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,13 +52,13 @@ public class ExpressPaymentPresenterTest {
     private PaymentSettingRepository configuration;
 
     @Mock
-    private ElementDescriptorMapper elementDescriptorMapper;
-
-    @Mock
     private GroupsRepository groupsRepository;
 
     @Mock
     private DiscountRepository discountRepository;
+
+    @Mock
+    private PayerCostRepository payerCostRepository;
 
     @Mock
     private AmountRepository amountRepository;
@@ -67,6 +72,12 @@ public class ExpressPaymentPresenterTest {
     @Mock
     private CardMetadata cardMetadata;
 
+    @Mock
+    private AmountConfiguration amountConfiguration;
+
+    @Mock
+    private DiscountConfigurationModel discountConfigurationModel;
+
     private ExpressPaymentPresenter expressPaymentPresenter;
 
     @Before
@@ -74,15 +85,20 @@ public class ExpressPaymentPresenterTest {
         //This is needed for the presenter constructor
         final CheckoutPreference preference = mock(CheckoutPreference.class);
         when(preference.getSite()).thenReturn(Sites.ARGENTINA);
+        when(preference.getItems()).thenReturn(Collections.singletonList(mock(Item.class)));
         when(configuration.getCheckoutPreference()).thenReturn(preference);
-
         when(groupsRepository.getGroups())
             .thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
-        when(paymentMethodSearch.getExpress()).thenReturn(Arrays.asList(expressMetadata));
+        when(paymentMethodSearch.getExpress()).thenReturn(Collections.singletonList(expressMetadata));
         when(expressMetadata.getCard()).thenReturn(cardMetadata);
+        when(expressMetadata.isCard()).thenReturn(true);
+        when(cardMetadata.getId()).thenReturn("123");
+        when(discountRepository.getConfigurationFor("123")).thenReturn(discountConfigurationModel);
+        when(discountRepository.getConfigurationFor(TextUtil.EMPTY)).thenReturn(discountConfigurationModel);
+        when(payerCostRepository.getConfigurationFor("123")).thenReturn(amountConfiguration);
 
         expressPaymentPresenter = new ExpressPaymentPresenter(paymentRepository, configuration, discountRepository,
-            amountRepository, elementDescriptorMapper, groupsRepository);
+            amountRepository, groupsRepository, payerCostRepository);
 
         verifyAttachView();
     }
@@ -90,6 +106,7 @@ public class ExpressPaymentPresenterTest {
     @Test
     public void whenCanceledThenCancelAndTrack() {
         expressPaymentPresenter.cancel();
+
         verify(view).cancel();
         verifyNoMoreInteractions(view);
     }
@@ -113,9 +130,9 @@ public class ExpressPaymentPresenterTest {
     @Test
     public void whenViewIsResumedAndPaymentRepositoryHasPaymentThenCancelLoading() {
         when(paymentRepository.hasPayment()).thenReturn(true);
+
         verifyOnViewResumed();
         verify(view).enableToolbarBack();
-        verify(view).showConfirmButton();
         verify(view).cancelLoading();
         verifyNoMoreInteractions(paymentRepository);
         verifyNoMoreInteractions(view);
@@ -124,11 +141,12 @@ public class ExpressPaymentPresenterTest {
     @Test
     public void whenSliderOptionSelectedThenShowInstallmentsRow() {
         final int currentElementPosition = 1;
+
         expressPaymentPresenter.onSliderOptionSelected(currentElementPosition);
+
         verify(view).hideInstallmentsSelection();
         verify(view).showInstallmentsDescriptionRow(currentElementPosition,
-            InstallmentsDescriptorView.Model.SELECTED_PAYER_COST_NONE);
-        verify(view).disablePaymentButton();
+            PaymentMethodDescriptorView.Model.SELECTED_PAYER_COST_NONE);
         verifyNoMoreInteractions(view);
     }
 
@@ -136,36 +154,30 @@ public class ExpressPaymentPresenterTest {
     public void whenPayerCostSelectedThenItsReflectedOnView() {
         final int paymentMethodIndex = 0;
         final int selectedPayerCostIndex = 1;
+        final PayerCost firstPayerCost = mock(PayerCost.class);
         final List<PayerCost> payerCostList =
-            Arrays.asList(mock(PayerCost.class), mock(PayerCost.class), mock(PayerCost.class));
+            Arrays.asList(mock(PayerCost.class), firstPayerCost, mock(PayerCost.class));
+        when(amountConfiguration.getPayerCosts()).thenReturn(payerCostList);
 
-        when(cardMetadata.getPayerCosts()).thenReturn(payerCostList);
-
-        expressPaymentPresenter
-            .onPayerCostSelected(paymentMethodIndex, payerCostList.get(selectedPayerCostIndex));
+        expressPaymentPresenter.onPayerCostSelected(paymentMethodIndex, payerCostList.get(selectedPayerCostIndex));
 
         verify(view).hideInstallmentsSelection();
         verify(view).showInstallmentsDescriptionRow(paymentMethodIndex, selectedPayerCostIndex);
         verify(view).collapseInstallmentsSelection();
-        verify(view).enablePaymentButton();
         verifyNoMoreInteractions(view);
     }
 
     private void verifyAttachView() {
-        final ElementDescriptorView.Model model = mock(ElementDescriptorView.Model.class);
-
-        when(elementDescriptorMapper.map(configuration.getCheckoutPreference())).thenReturn(model);
-
         expressPaymentPresenter.attachView(view);
 
-        verify(view).updateSummary(any(SummaryView.Model.class));
-        verify(view).showToolbarElementDescriptor(model);
-        verify(view).configurePagerAndInstallments(anyListOf(DrawableFragmentItem.class), any(Site.class),
-            anyInt(), anyListOf(InstallmentsDescriptorView.Model.class));
+        verify(view).showToolbarElementDescriptor(any(ElementDescriptorView.Model.class));
+        verify(view).configureAdapters(anyListOf(DrawableFragmentItem.class), any(Site.class), anyInt(),
+            any(PaymentMethodAdapter.Model.class));
     }
 
     private void verifyOnViewResumed() {
         expressPaymentPresenter.onViewResumed();
+
         verify(paymentRepository).hasPayment();
         verify(paymentRepository).attach(expressPaymentPresenter);
     }

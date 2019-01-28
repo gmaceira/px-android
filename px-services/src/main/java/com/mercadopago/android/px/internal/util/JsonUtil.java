@@ -15,8 +15,10 @@ public final class JsonUtil {
     private final Gson mGson;
 
     private JsonUtil() {
-        mGson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).serializeNulls()
-            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
+        mGson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .serializeNulls()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+            .create();
     }
 
     public static JsonUtil getInstance() {
@@ -27,10 +29,8 @@ public final class JsonUtil {
     }
 
     public <T> T fromJson(@NonNull final String json, @NonNull final Class<T> classOfT) {
-
         return mGson.fromJson(json, classOfT);
     }
-
 
     public <T> T fromJson(@NonNull final String json, @NonNull final Type classOfT) {
         return mGson.fromJson(json, classOfT);
@@ -48,13 +48,10 @@ public final class JsonUtil {
     }
 
     public String toJson(final Object src) {
-
         return mGson.toJson(src);
     }
 
     public Gson getGson() {
-
         return mGson;
     }
-
 }

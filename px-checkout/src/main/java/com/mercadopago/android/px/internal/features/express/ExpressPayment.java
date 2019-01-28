@@ -4,11 +4,11 @@ import android.support.annotation.NonNull;
 import com.mercadopago.android.px.internal.base.MvpView;
 import com.mercadopago.android.px.internal.callbacks.PaymentServiceHandler;
 import com.mercadopago.android.px.internal.features.explode.ExplodeDecorator;
+import com.mercadopago.android.px.internal.features.express.slider.PaymentMethodAdapter;
 import com.mercadopago.android.px.internal.view.ElementDescriptorView;
-import com.mercadopago.android.px.internal.view.InstallmentsDescriptorView;
-import com.mercadopago.android.px.internal.view.SummaryView;
 import com.mercadopago.android.px.internal.viewmodel.drawables.DrawableFragmentItem;
 import com.mercadopago.android.px.model.Card;
+import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.model.IPayment;
 import com.mercadopago.android.px.model.PayerCost;
 import com.mercadopago.android.px.model.PaymentRecovery;
@@ -20,12 +20,10 @@ public interface ExpressPayment {
 
     interface View extends MvpView {
 
-        void configurePagerAndInstallments(@NonNull List<DrawableFragmentItem> items, @NonNull final Site site,
-            final int selectedPayerCost, @NonNull List<InstallmentsDescriptorView.Model> models);
+        void configureAdapters(@NonNull List<DrawableFragmentItem> items, @NonNull final Site site,
+            final int selectedPayerCost, @NonNull PaymentMethodAdapter.Model paymentMethodViewModel);
 
         void cancel();
-
-        void updateSummary(@NonNull SummaryView.Model model);
 
         void showCardFlow(@NonNull final Card card);
 
@@ -51,10 +49,6 @@ public interface ExpressPayment {
 
         void disableToolbarBack();
 
-        void showConfirmButton();
-
-        void hideConfirmButton();
-
         void showErrorSnackBar(@NonNull final MercadoPagoError error);
 
         void showInstallmentsDescriptionRow(final int paymentMethodIndex, final int payerCostSelected);
@@ -63,21 +57,16 @@ public interface ExpressPayment {
 
         void hideInstallmentsSelection();
 
-        void disablePaymentButton();
-
-        void enablePaymentButton();
-
         void showToolbarElementDescriptor(@NonNull final ElementDescriptorView.Model elementDescriptorModel);
 
         void collapseInstallmentsSelection();
 
+        void showDiscountDetailDialog(@NonNull final DiscountConfigurationModel discountModel);
     }
 
     interface Actions extends PaymentServiceHandler {
 
         void trackExpressView();
-
-        void trackConfirmButton(final int paymentMethodSelectedIndex);
 
         void confirmPayment(final int paymentMethodSelectedIndex);
 

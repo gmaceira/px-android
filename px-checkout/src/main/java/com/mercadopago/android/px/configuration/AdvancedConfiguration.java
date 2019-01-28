@@ -23,6 +23,7 @@ public class AdvancedConfiguration implements Serializable {
     @NonNull private final DynamicFragmentConfiguration dynamicFragmentConfiguration;
     @NonNull private final DynamicDialogConfiguration dynamicDialogConfiguration;
     @NonNull private final CustomStringConfiguration customStringConfiguration;
+    @NonNull private final DiscountParamsConfiguration discountParamsConfiguration;
 
     /* default */ AdvancedConfiguration(final Builder builder) {
         bankDealsEnabled = builder.bankDealsEnabled;
@@ -34,6 +35,7 @@ public class AdvancedConfiguration implements Serializable {
         dynamicFragmentConfiguration = builder.dynamicFragmentConfiguration;
         dynamicDialogConfiguration = builder.dynamicDialogConfiguration;
         customStringConfiguration = builder.customStringConfiguration;
+        discountParamsConfiguration = builder.discountParamsConfiguration;
     }
 
     public boolean isBankDealsEnabled() {
@@ -73,8 +75,13 @@ public class AdvancedConfiguration implements Serializable {
     }
 
     @NonNull
-    public CustomStringConfiguration getCustomStringConfiguration(){
+    public CustomStringConfiguration getCustomStringConfiguration() {
         return customStringConfiguration;
+    }
+
+    @NonNull
+    public DiscountParamsConfiguration getDiscountParamsConfiguration() {
+        return discountParamsConfiguration;
     }
 
     @SuppressWarnings("unused")
@@ -93,7 +100,8 @@ public class AdvancedConfiguration implements Serializable {
             new DynamicDialogConfiguration.Builder().build();
         /* default */ @NonNull CustomStringConfiguration customStringConfiguration =
             new CustomStringConfiguration.Builder().build();
-
+        /* default */ @NonNull DiscountParamsConfiguration discountParamsConfiguration =
+            new DiscountParamsConfiguration.Builder().build();
 
 
         /**
@@ -211,10 +219,20 @@ public class AdvancedConfiguration implements Serializable {
             return this;
         }
 
+        /**
+         * Set productId additional info that will be applied to filter Mercado Pago discounts.
+         *
+         * @param discountParamsConfiguration additional productId info
+         * @return builder to keep operating
+         */
+        public Builder setDiscountParamsConfiguration(
+            @NonNull final DiscountParamsConfiguration discountParamsConfiguration) {
+            this.discountParamsConfiguration = discountParamsConfiguration;
+            return this;
+        }
 
         public AdvancedConfiguration build() {
             return new AdvancedConfiguration(this);
         }
-
     }
 }

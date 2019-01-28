@@ -23,6 +23,7 @@ import android.widget.TextView;
 import com.google.gson.reflect.TypeToken;
 import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.internal.adapters.IdentificationTypesAdapter;
+import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.callbacks.card.TicketIdentificationNameEditTextCallback;
 import com.mercadopago.android.px.internal.callbacks.card.TicketIdentificationNumberEditTextCallback;
 import com.mercadopago.android.px.internal.di.Session;
@@ -47,7 +48,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PayerInformationActivity extends MercadoPagoBaseActivity implements PayerInformationView {
+public class PayerInformationActivity extends PXActivity implements PayerInformationView {
 
     public static final String IDENTIFICATION_NUMBER_BUNDLE = "mIdentificationNumber";
     public static final String IDENTIFICATION_NAME_BUNDLE = "mIdentificationName";
@@ -478,7 +479,7 @@ public class PayerInformationActivity extends MercadoPagoBaseActivity implements
             @Override
             public void onClick(View v) {
                 if (mCurrentEditingEditText.equals(IDENTIFICATION_NUMBER_INPUT)) {
-                    finishWithCancelResult();
+                    onBackPressed();
                 } else {
                     checkIsEmptyOrValid();
                 }
@@ -486,18 +487,9 @@ public class PayerInformationActivity extends MercadoPagoBaseActivity implements
         });
     }
 
-    /* default */ void finishWithCancelResult() {
-        Intent returnIntent = new Intent();
-        returnIntent.putExtra("backButtonPressed", true);
-        setResult(RESULT_CANCELED, returnIntent);
-        finish();
-    }
-
     @Override
     public void onBackPressed() {
-        Intent returnIntent = new Intent();
-        returnIntent.putExtra("backButtonPressed", true);
-        setResult(RESULT_CANCELED, returnIntent);
+        setResult(RESULT_CANCELED);
         finish();
     }
 

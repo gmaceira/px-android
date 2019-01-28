@@ -12,8 +12,6 @@
     <string name="px_amount_with_installments_holder">%1$sx %2$s</string>
     <string name="px_total_amount_holder" translatable="false">(%1$s)</string>
     <string name="px_string_holder" translatable="false">%1$s</string>
-    <string name="px_payment_detail_title_modal">Detail</string>
-    <string name="px_quantity_modal" translatable="false">%1$d %2$s</string>
     <string name="px_processing_payment_button">Processing your payment</string>
     <string name="px_summary_detail_item_description">Your purchase</string>
     <string name="px_pay">Pay</string>
@@ -73,7 +71,6 @@
     <string name="px_lastname">Surname</string>
     <string name="px_bank_deals_action">See deals</string>
     <string name="px_security_code">Security code</string>
-    <string name="px_continue_label">Continue</string>
 
     <string name="px_invalid_card_bin">The card number you entered does not match with the card type</string>
     <string name="px_invalid_card_luhn">The card number you entered is incorrect</string>
@@ -153,11 +150,7 @@
     <string name="px_standard_error_message">We are going to fix it. Try later.</string>
     <string name="px_error_message_email_required">Email is required</string>
     <string name="px_error_message_missing_public_key">Public key is required</string>
-    <string name="px_error_message_missing_amount">Amount is required</string>
-    <string name="px_error_message_missing_site">Site is required</string>
     <string name="px_error_message_missing_payer_cost">No installments found</string>
-    <string name="px_error_message_missing_installment_for_issuer">No installments found for this issuer</string>
-    <string name="px_error_message_multiple_installments_for_issuer">Multiple installments have been found for this issuer</string>
     <string name="px_error_message_missing_identification_types">No identification type found</string>
     <string name="px_error_message_missing_setting_for_bin">No setting found for that bin</string>
 
@@ -244,20 +237,10 @@
     <string name="px_discount_percent_off" translatable="false">%1$s%% OFF</string>
     <string name="px_discount_amount_off_with_minus" translatable="false">- %1$s OFF</string>
     <string name="px_discount_amount_off" translatable="false">%1$s OFF</string>
-
-    <string name="px_invalid_code">Invalid code</string>
-    <string name="px_merchant_without_discount_available">Merchant without discount available</string>
-    <string name="px_ran_out_of_quantity_uses_quantity">Ran out of quantity uses of discount </string>
-    <string name="px_amount_doesnt_match">Amount out of reach</string>
-    <string name="px_campaign_expired">Campaign expired</string>
-
-    <string name="px_something_went_wrong">Oops! Something went wrong…</string>
     <string name="px_we_apply_the_best_available_discount">Discounts are not cumulative. We apply the best available discount</string>
     <string name="px_max_coupon_amount">Discount limit: %1$s</string>
     <string name="px_with_max_coupon_amount">With max coupon amount</string>
     <string name="px_total_to_pay">Total to %1$s</string>
-    <string name="px_enter_coupon_code">Enter your discount coupon</string>
-    <string name="px_enter_coupon_code_title">Enter your coupon</string>
     <string name="px_always_on_discount_detail">With each payment to this brand you will consume the discounts until you reach the limit.</string>
     <string name="px_one_shot_discount_detail">The limit is available for one single payment.</string>
     <string name="px_discount_detail_end_date">Valid until %s.</string>
@@ -265,21 +248,14 @@
     <string name="px_used_up_discount_title">You reached the limit</string>
     <string name="px_used_up_discount_detail">This discount is not applicable, because you have reached the limit.</string>
 
-    <string name="px_interest_label">Doesn\'t include bank interest</string>
-    <string name="px_excellent">¡Excellent!</string>
-    <string name="px_get_your_discount_amount">Now pay your purchase and get\n %1$s discount</string>
-    <string name="px_get_your_discount_percent">Now pay your purchase and get %1$s%% discount</string>
-    <string name="px_discount_error_check_this_data">Check this data</string>
-    <string name="px_error_something_went_wrong_try_again">Something went wrong, try again.</string>
+    <string name="px_interest_label">Does\'t include bank interest</string>
 
     <!-- Unlock Card -->
     <string name="px_text_unlock_card_start">Remember to</string>
     <string name="px_text_unlock_card_linked">unlock your card</string>
     <string name="px_text_unlock_card_end">before you confirm the payment.</string>
 
-    <string name="px_error_message_detail_no_installments">No installments found for an issuer at InstallmentsActivity</string>
     <string name="px_error_message_detail_no_payer_cost_found">No payer costs found at InstallmentsActivity</string>
-    <string name="px_error_message_detail_multiple_installments">Multiple installments found for an issuer at InstallmentsActivity</string>
     <string name="px_error_message_detail_issuers">No issuers found at IssuersActivity</string>
     <string name="px_error_message_detail_no_payment_method_list">No payment method list found at ReviewPaymentMethodsActivity</string>
 

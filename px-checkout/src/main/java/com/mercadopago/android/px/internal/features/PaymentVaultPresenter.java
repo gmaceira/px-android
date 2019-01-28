@@ -19,6 +19,7 @@ import com.mercadopago.android.px.internal.repository.UserSelectionRepository;
 import com.mercadopago.android.px.internal.view.AmountView;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.CustomSearchItem;
+import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.model.PaymentMethod;
 import com.mercadopago.android.px.model.PaymentMethodSearch;
 import com.mercadopago.android.px.model.PaymentMethodSearchItem;
@@ -89,7 +90,6 @@ public class PaymentVaultPresenter extends MvpPresenter<PaymentVaultView, Paymen
             public void success(final PaymentMethodSearch paymentMethodSearch) {
                 if (isViewAttached()) {
                     PaymentVaultPresenter.this.paymentMethodSearch = paymentMethodSearch;
-                    getView().onSuccessCodeDiscountCallback(discountRepository.getDiscount());
                     initPaymentMethodSearch();
                 }
             }
@@ -105,7 +105,6 @@ public class PaymentVaultPresenter extends MvpPresenter<PaymentVaultView, Paymen
                         initPaymentVaultFlow();
                     }
                 });
-                getView().onFailureCodeDiscountCallback();
             }
         });
     }
@@ -122,13 +121,9 @@ public class PaymentVaultPresenter extends MvpPresenter<PaymentVaultView, Paymen
 
     public void initializeAmountRow() {
         if (isViewAttached()) {
-            if(paymentSettingRepository.getAdvancedConfiguration().isAmountRowEnabled()){
-                getView().showAmount(discountRepository,
-                        paymentSettingRepository.getCheckoutPreference().getTotalAmount(),
-                        paymentSettingRepository.getCheckoutPreference().getSite());
-            } else {
-                getView().hideAmountRow();
-            }
+            getView().showAmount(discountRepository.getCurrentConfiguration(),
+                paymentSettingRepository.getCheckoutPreference().getTotalAmount(),
+                paymentSettingRepository.getCheckoutPreference().getSite());
         }
     }
 
@@ -341,9 +336,6 @@ public class PaymentVaultPresenter extends MvpPresenter<PaymentVaultView, Paymen
 
         if (paymentMethodSearch != null && paymentMethodSearch.hasSearchItems()) {
             groupCount = paymentMethodSearch.getGroups().size();
-        }
-
-        if (paymentMethodSearch != null && paymentMethodSearch.hasCustomSearchItems()) {
             customCount = paymentMethodSearch.getCustomSearchItems().size();
         }
 
@@ -433,13 +425,8 @@ public class PaymentVaultPresenter extends MvpPresenter<PaymentVaultView, Paymen
     }
 
     @Override
-    public void onDetailClicked() {
-        getView().showDetailDialog();
-    }
-
-    @Override
-    public void onInputRequestClicked() {
-        getView().showDiscountInputDialog();
+    public void onDetailClicked(@NonNull final DiscountConfigurationModel discountModel) {
+        getView().showDetailDialog(discountModel);
     }
 
     public void selectPluginPaymentMethod(final PaymentMethodPlugin plugin) {
@@ -475,6 +462,6 @@ public class PaymentVaultPresenter extends MvpPresenter<PaymentVaultView, Paymen
     }
 
     private boolean isDiscountAvailable() {
-        return discountRepository.getDiscount() != null || discountRepository.hasCodeCampaign();
+        return discountRepository.getCurrentConfiguration().getDiscount() != null;
     }
 }

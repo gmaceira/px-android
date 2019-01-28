@@ -3,8 +3,7 @@ package com.mercadopago.android.px.internal.features.review_and_confirm;
 import android.support.annotation.NonNull;
 import com.mercadopago.android.px.configuration.DynamicDialogConfiguration;
 import com.mercadopago.android.px.core.DynamicDialogCreator;
-import com.mercadopago.android.px.internal.base.DefaultProvider;
-import com.mercadopago.android.px.internal.base.MvpPresenter;
+import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.callbacks.FailureRecovery;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
 import com.mercadopago.android.px.internal.features.explode.ExplodeDecoratorMapper;
@@ -28,7 +27,7 @@ import com.mercadopago.android.px.tracking.internal.events.ConfirmEvent;
 import com.mercadopago.android.px.tracking.internal.views.ReviewAndConfirmViewTracker;
 import java.util.Set;
 
-/* default */ final class ReviewAndConfirmPresenter extends MvpPresenter<ReviewAndConfirm.View, DefaultProvider>
+/* default */ final class ReviewAndConfirmPresenter extends BasePresenter<ReviewAndConfirm.View>
     implements ReviewAndConfirm.Action {
 
     @NonNull /* default */ final PaymentRepository paymentRepository;
@@ -37,6 +36,7 @@ import java.util.Set;
     private final ExplodeDecoratorMapper explodeDecoratorMapper;
     private final ReviewAndConfirmViewTracker reviewAndConfirmViewTracker;
     private final ConfirmEvent confirmEvent;
+    private final UserSelectionRepository userSelectionRepository;
     private FailureRecovery recovery;
 
     /* default */ ReviewAndConfirmPresenter(@NonNull final PaymentRepository paymentRepository,
@@ -49,9 +49,12 @@ import java.util.Set;
         this.paymentRepository = paymentRepository;
         this.businessModelMapper = businessModelMapper;
         this.paymentSettings = paymentSettings;
+        this.userSelectionRepository = userSelectionRepository;
+
         explodeDecoratorMapper = new ExplodeDecoratorMapper();
         reviewAndConfirmViewTracker =
-            new ReviewAndConfirmViewTracker(escCardIds, userSelectionRepository, paymentSettings, discountRepository);
+            new ReviewAndConfirmViewTracker(escCardIds, userSelectionRepository, paymentSettings,
+                discountRepository.getCurrentConfiguration());
         confirmEvent = ConfirmEvent.from(escCardIds, userSelectionRepository);
     }
 
@@ -64,7 +67,7 @@ import java.util.Set;
     @Override
     public void onViewResumed(final ReviewAndConfirm.View view) {
         attachView(view);
-        reviewAndConfirmViewTracker.track();
+        setCurrentViewTracker(reviewAndConfirmViewTracker);
         resolveDynamicDialog(DynamicDialogConfiguration.DialogLocation.ENTER_REVIEW_AND_CONFIRM);
     }
 
@@ -233,5 +236,9 @@ import java.util.Set;
 
     public void onPayerInformationResponse() {
         getView().reloadBody();
+    }
+
+    public void removeUserSelection() {
+        userSelectionRepository.reset();
     }
 }

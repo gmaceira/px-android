@@ -7,14 +7,10 @@ import com.mercadopago.android.px.internal.features.providers.SecurityCodeProvid
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.mocks.Cards;
-import com.mercadopago.android.px.mocks.Issuers;
-import com.mercadopago.android.px.mocks.PayerCosts;
 import com.mercadopago.android.px.mocks.PaymentMethods;
 import com.mercadopago.android.px.mocks.Tokens;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.CardInfo;
-import com.mercadopago.android.px.model.Issuer;
-import com.mercadopago.android.px.model.PayerCost;
 import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentMethod;
 import com.mercadopago.android.px.model.PaymentRecovery;
@@ -28,6 +24,7 @@ import com.mercadopago.android.px.model.exceptions.CardTokenException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.utils.MVPStructure;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,10 +64,10 @@ public class SecurityCodePresenterTest {
 
         mvp.getPresenter().initialize();
 
-        assertTrue(mvp.getProvider().standardErrorMessageGotten);
-        assertTrue(isErrorShown(mvp.getView()));
-        assertFalse(mvp.getView().initializeDone);
-        assertEquals(mvp.getProvider().errorMessage, CARD_AND_TOKEN_NOT_SET);
+        Assert.assertTrue(mvp.getProvider().standardErrorMessageGotten);
+        Assert.assertTrue(isErrorShown(mvp.getView()));
+        Assert.assertFalse(mvp.getView().initializeDone);
+        assertEquals(CARD_AND_TOKEN_NOT_SET, mvp.getProvider().errorMessage);
     }
 
     @Test
@@ -142,7 +139,7 @@ public class SecurityCodePresenterTest {
 
         mvp.getPresenter().setCard(Cards.getCard());
         mvp.getPresenter().setToken(Tokens.getTokenWithESC());
-        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForESC(mockedPM));
+        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForESC());
         mvp.getPresenter().setPaymentMethod(mockedPM);
         mvp.getPresenter().setCardInfo(new CardInfo(Cards.getCard()));
 
@@ -162,7 +159,7 @@ public class SecurityCodePresenterTest {
 
         mvp.getPresenter().setCard(Cards.getCard());
         mvp.getPresenter().setToken(Tokens.getTokenWithESC());
-        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForESC(mockedPaymentMethod));
+        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForESC());
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
         mvp.getPresenter().setCardInfo(new CardInfo(Cards.getCard()));
 
@@ -181,7 +178,7 @@ public class SecurityCodePresenterTest {
 
         mvp.getPresenter().setCard(mockedCard);
         mvp.getPresenter().setToken(Tokens.getTokenWithESC());
-        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForESC(mockedPaymentMethod));
+        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForESC());
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
         mvp.getPresenter().setCardInfo(new CardInfo(mockedCard));
 
@@ -199,7 +196,7 @@ public class SecurityCodePresenterTest {
         Token mockedToken = Tokens.getToken();
 
         mvp.getPresenter().setToken(mockedToken);
-        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth(mockedPaymentMethod));
+        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth());
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
         mvp.getPresenter().setCardInfo(new CardInfo(mockedToken));
 
@@ -223,7 +220,7 @@ public class SecurityCodePresenterTest {
         Token mockedToken = Tokens.getToken();
 
         mvp.getPresenter().setToken(mockedToken);
-        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth(mockedPaymentMethod));
+        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth());
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
         mvp.getPresenter().setCardInfo(new CardInfo(mockedToken));
 
@@ -245,11 +242,11 @@ public class SecurityCodePresenterTest {
         MVPStructure<SecurityCodePresenter, SecurityCodeMockedProvider, SecurityCodeMockedView, SecurityCode> mvp =
             getMVPStructure();
 
-        PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
-        Token mockedToken = Tokens.getToken();
+        final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
+        final Token mockedToken = Tokens.getToken();
 
         mvp.getPresenter().setToken(mockedToken);
-        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth(mockedPaymentMethod));
+        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth());
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
         mvp.getPresenter().setCardInfo(new CardInfo(mockedToken));
 
@@ -257,14 +254,14 @@ public class SecurityCodePresenterTest {
         mvp.getPresenter().initializeSettings();
 
         //Input for security code
-        ApiException apiException = Tokens.getInvalidCloneToken();
-        MercadoPagoError mpException = new MercadoPagoError(apiException, "");
+        final ApiException apiException = Tokens.getInvalidCloneToken();
+        final MercadoPagoError mpException = new MercadoPagoError(apiException, "");
         mvp.getProvider().setCloneTokenResponse(mpException);
 
         mvp.getPresenter().saveSecurityCode("123");
         mvp.getPresenter().validateSecurityCodeInput();
-        assertEquals(mvp.getProvider().failedResponse, mpException);
-        assertTrue(mvp.getView().errorState);
+        Assert.assertEquals(mvp.getProvider().failedResponse, mpException);
+        Assert.assertTrue(mvp.getView().errorState);
     }
 
     @Test
@@ -272,11 +269,11 @@ public class SecurityCodePresenterTest {
         MVPStructure<SecurityCodePresenter, SecurityCodeMockedProvider, SecurityCodeMockedView, SecurityCode> mvp =
             getMVPStructure();
 
-        PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
-        Token mockedToken = Tokens.getToken();
+        final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
+        final Token mockedToken = Tokens.getToken();
 
         mvp.getPresenter().setToken(mockedToken);
-        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth(mockedPaymentMethod));
+        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth());
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
         mvp.getPresenter().setCardInfo(new CardInfo(mockedToken));
 
@@ -286,15 +283,15 @@ public class SecurityCodePresenterTest {
         //Input for security code
         mvp.getProvider().setCloneTokenResponse(mockedToken);
         mvp.getPresenter().saveSecurityCode("123");
-        assertEquals(mvp.getProvider().successfulCloneTokenResponse, mockedToken);
+        Assert.assertEquals(mvp.getProvider().successfulCloneTokenResponse, mockedToken);
 
-        ApiException apiException = Tokens.getInvalidCloneToken();
-        MercadoPagoError mpException = new MercadoPagoError(apiException, "");
+        final ApiException apiException = Tokens.getInvalidCloneToken();
+        final MercadoPagoError mpException = new MercadoPagoError(apiException, "");
         mvp.getProvider().setPutSecurityCodeResponse(mpException);
 
         mvp.getPresenter().putSecurityCode();
-        assertEquals(mvp.getProvider().failedResponse, mpException);
-        assertTrue(mvp.getView().errorState);
+        Assert.assertEquals(mvp.getProvider().failedResponse, mpException);
+        Assert.assertTrue(mvp.getView().errorState);
     }
 
     @Test
@@ -306,7 +303,7 @@ public class SecurityCodePresenterTest {
         Token mockedToken = Tokens.getToken();
 
         mvp.getPresenter().setToken(mockedToken);
-        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth(mockedPaymentMethod));
+        mvp.getPresenter().setPaymentRecovery(getPaymentRecoveryForCallForAuth());
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
         mvp.getPresenter().setCardInfo(new CardInfo(mockedToken));
 
@@ -387,7 +384,7 @@ public class SecurityCodePresenterTest {
         PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
         Token mockedToken = Tokens.getTokenWithESC();
         Card mockedCard = Cards.getCard();
-        PaymentRecovery paymentRecovery = getPaymentRecoveryForESC(mockedPaymentMethod);
+        PaymentRecovery paymentRecovery = getPaymentRecoveryForESC();
 
         mvp.getPresenter().setCard(mockedCard);
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
@@ -405,7 +402,7 @@ public class SecurityCodePresenterTest {
         mvp.getProvider().setCreateTokenWithEscResponse(mockedToken);
         mvp.getPresenter().saveSecurityCode("123");
         mvp.getPresenter().validateSecurityCodeInput();
-        assertEquals(mvp.getProvider().successfulcreateESCTokenResponse, mockedToken);
+        Assert.assertEquals(mvp.getProvider().successfulcreateESCTokenResponse, mockedToken);
     }
 
     @Test
@@ -413,8 +410,8 @@ public class SecurityCodePresenterTest {
         MVPStructure<SecurityCodePresenter, SecurityCodeMockedProvider, SecurityCodeMockedView, SecurityCode> mvp =
             getMVPStructure();
 
-        PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
-        Card mockedCard = Cards.getCard();
+        final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
+        final Card mockedCard = Cards.getCard();
 
         mvp.getPresenter().setCard(mockedCard);
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
@@ -427,11 +424,11 @@ public class SecurityCodePresenterTest {
         mvp.getPresenter().initializeSettings();
 
         //Input for security code
-        Token mockedToken = Tokens.getToken();
+        final Token mockedToken = Tokens.getToken();
         mvp.getProvider().setCreateTokenWithSavedCardTokenResponse(mockedToken);
         mvp.getPresenter().saveSecurityCode("123");
         mvp.getPresenter().validateSecurityCodeInput();
-        assertEquals(mvp.getProvider().successfulcreateTokenWithSavedCardTokenResponse, mockedToken);
+        Assert.assertEquals(mvp.getProvider().successfulcreateTokenWithSavedCardTokenResponse, mockedToken);
     }
 
     @Test
@@ -439,8 +436,8 @@ public class SecurityCodePresenterTest {
         MVPStructure<SecurityCodePresenter, SecurityCodeMockedProvider, SecurityCodeMockedView, SecurityCode> mvp =
             getMVPStructure();
 
-        PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
-        Card mockedCard = Cards.getCard();
+        final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
+        final Card mockedCard = Cards.getCard();
 
         mvp.getPresenter().setCard(mockedCard);
         mvp.getPresenter().setPaymentMethod(mockedPaymentMethod);
@@ -453,13 +450,13 @@ public class SecurityCodePresenterTest {
         mvp.getPresenter().initializeSettings();
 
         //Input for security code
-        ApiException apiException = Tokens.getInvalidCreateToken();
-        MercadoPagoError mpException = new MercadoPagoError(apiException, "");
+        final ApiException apiException = Tokens.getInvalidCreateToken();
+        final MercadoPagoError mpException = new MercadoPagoError(apiException, "");
         mvp.getProvider().setCreateTokenWithSavedCardTokenResponse(mpException);
 
         mvp.getPresenter().saveSecurityCode("123");
         mvp.getPresenter().validateSecurityCodeInput();
-        assertEquals(mvp.getProvider().failedResponse, mpException);
+        Assert.assertEquals(mvp.getProvider().failedResponse, mpException);
     }
 
     @Test
@@ -467,9 +464,9 @@ public class SecurityCodePresenterTest {
         MVPStructure<SecurityCodePresenter, SecurityCodeMockedProvider, SecurityCodeMockedView, SecurityCode> mvp =
             getMVPStructure();
 
-        PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
-        Token mockedToken = Tokens.getTokenWithESC();
-        PaymentRecovery paymentRecovery = getPaymentRecoveryForESC(mockedPaymentMethod);
+        final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
+        final Token mockedToken = Tokens.getTokenWithESC();
+        final PaymentRecovery paymentRecovery = getPaymentRecoveryForESC();
 
         //With wallet integration, with payment result with invalid esc in payment
         //we dont have a card, we only have a token in payment data
@@ -495,31 +492,23 @@ public class SecurityCodePresenterTest {
         return !TextUtil.isEmpty(view.errorMessage);
     }
 
-    private PaymentRecovery getPaymentRecoveryForESC(PaymentMethod paymentMethod) {
-        Token mockedToken = Tokens.getTokenWithESC();
-        PayerCost mockedPayerCost = PayerCosts.getPayerCost();
-        Issuer mockedIssuer = Issuers.getIssuerMLA();
-        return new PaymentRecovery(mockedToken, paymentMethod, mockedPayerCost, mockedIssuer,
-            Payment.StatusCodes.STATUS_REJECTED, Payment.StatusDetail.STATUS_DETAIL_INVALID_ESC);
+    private PaymentRecovery getPaymentRecoveryForESC() {
+        return new PaymentRecovery(Payment.StatusDetail.STATUS_DETAIL_INVALID_ESC);
     }
 
-    private PaymentRecovery getPaymentRecoveryForCallForAuth(PaymentMethod paymentMethod) {
-        Token mockedToken = Tokens.getToken();
-        PayerCost mockedPayerCost = PayerCosts.getPayerCost();
-        Issuer mockedIssuer = Issuers.getIssuerMLA();
-        return new PaymentRecovery(mockedToken, paymentMethod, mockedPayerCost, mockedIssuer,
-            Payment.StatusCodes.STATUS_REJECTED, Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CALL_FOR_AUTHORIZE);
+    private PaymentRecovery getPaymentRecoveryForCallForAuth() {
+        return new PaymentRecovery(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CALL_FOR_AUTHORIZE);
     }
 
     private MVPStructure<SecurityCodePresenter, SecurityCodeMockedProvider, SecurityCodeMockedView, SecurityCode> getMVPStructure() {
-        MVPStructure<SecurityCodePresenter, SecurityCodeMockedProvider, SecurityCodeMockedView, SecurityCode>
+        final MVPStructure<SecurityCodePresenter, SecurityCodeMockedProvider, SecurityCodeMockedView, SecurityCode>
             mvpStructure = new MVPStructure<>();
 
-        SecurityCodeMockedView view = new SecurityCodeMockedView();
+        final SecurityCodeMockedView view = new SecurityCodeMockedView();
 
-        SecurityCodePresenter presenter = new SecurityCodePresenter(configuration);
+        final SecurityCodePresenter presenter = new SecurityCodePresenter(configuration);
         presenter.attachView(view);
-        SecurityCodeMockedProvider provider = new SecurityCodeMockedProvider();
+        final SecurityCodeMockedProvider provider = new SecurityCodeMockedProvider();
         presenter.attachResourcesProvider(provider);
 
         mvpStructure.setPresenter(presenter);
@@ -529,67 +518,67 @@ public class SecurityCodePresenterTest {
         return mvpStructure;
     }
 
-    private class SecurityCodeMockedProvider implements SecurityCodeProvider {
+    private static class SecurityCodeMockedProvider implements SecurityCodeProvider {
 
         private boolean isEscEnabled;
-        private boolean standardErrorMessageGotten = false;
+        /* default */ boolean standardErrorMessageGotten = false;
         private String errorMessage;
         private boolean putSecurityCodeShouldFail = false;
         private boolean cloneTokenShouldFail = false;
         private boolean createTokenWithSavedCardTokenShouldFail = false;
         private boolean createESCTokenShouldFail = false;
         private MercadoPagoError failedResponse;
-        private Token successfulCloneTokenResponse;
+        /* default */ Token successfulCloneTokenResponse;
         private Token successfulPutSecurityCodeResponse;
         private Token successfulcreateTokenWithSavedCardTokenResponse;
         private Token successfulcreateESCTokenResponse;
         private boolean shouldFailSecurityCodeValidation = false;
 
-        public void enableESC(boolean enable) {
-            this.isEscEnabled = enable;
+        public void enableESC(final boolean enable) {
+            isEscEnabled = enable;
         }
 
         public String getStandardErrorMessageGotten() {
-            this.standardErrorMessageGotten = true;
+            standardErrorMessageGotten = true;
             return "We are going to fix it. Try later.";
         }
 
         @Override
         public String getTokenAndCardNotSetMessage() {
-            this.errorMessage = CARD_AND_TOKEN_NOT_SET;
+            errorMessage = CARD_AND_TOKEN_NOT_SET;
             return errorMessage;
         }
 
         @Override
         public String getTokenAndCardWithoutRecoveryCantBeBothSetMessage() {
-            this.errorMessage = CARD_AND_TOKEN_SET_WITHOUT_RECOVERY;
+            errorMessage = CARD_AND_TOKEN_SET_WITHOUT_RECOVERY;
             return errorMessage;
         }
 
         @Override
         public String getPaymentMethodNotSetMessage() {
-            this.errorMessage = PAYMENT_METHOD_NOT_SET;
+            errorMessage = PAYMENT_METHOD_NOT_SET;
             return errorMessage;
         }
 
         @Override
         public String getCardInfoNotSetMessage() {
-            this.errorMessage = CARD_INFO_NOT_SET;
+            errorMessage = CARD_INFO_NOT_SET;
             return errorMessage;
         }
 
-        public void setCloneTokenResponse(MercadoPagoError exception) {
+        public void setCloneTokenResponse(final MercadoPagoError exception) {
             cloneTokenShouldFail = true;
             failedResponse = exception;
         }
 
-        public void setCloneTokenResponse(Token token) {
+        public void setCloneTokenResponse(final Token token) {
             cloneTokenShouldFail = false;
             successfulCloneTokenResponse = token;
         }
 
         @Override
-        public void cloneToken(String tokenId, TaggedCallback<Token> taggedCallback) {
+        public void cloneToken(final String tokenId, final TaggedCallback<Token> taggedCallback) {
             if (cloneTokenShouldFail) {
                 taggedCallback.onFailure(failedResponse);
             } else {
@@ -597,18 +586,19 @@ public class SecurityCodePresenterTest {
             }
         }
 
-        public void setPutSecurityCodeResponse(MercadoPagoError exception) {
+        public void setPutSecurityCodeResponse(final MercadoPagoError exception) {
             putSecurityCodeShouldFail = true;
             failedResponse = exception;
         }
 
-        public void setPutSecurityCodeResponse(Token token) {
+        public void setPutSecurityCodeResponse(final Token token) {
             putSecurityCodeShouldFail = false;
             successfulPutSecurityCodeResponse = token;
         }
 
         @Override
-        public void putSecurityCode(String securityCode, String tokenId, TaggedCallback<Token> taggedCallback) {
+        public void putSecurityCode(final String securityCode, final String tokenId,
+            final TaggedCallback<Token> taggedCallback) {
             if (putSecurityCodeShouldFail) {
                 taggedCallback.onFailure(failedResponse);
             } else {
@@ -616,18 +606,18 @@ public class SecurityCodePresenterTest {
             }
         }
 
-        public void setCreateTokenWithSavedCardTokenResponse(MercadoPagoError exception) {
+        public void setCreateTokenWithSavedCardTokenResponse(final MercadoPagoError exception) {
             createTokenWithSavedCardTokenShouldFail = true;
             failedResponse = exception;
         }
 
-        public void setCreateTokenWithSavedCardTokenResponse(Token token) {
+        public void setCreateTokenWithSavedCardTokenResponse(final Token token) {
             createTokenWithSavedCardTokenShouldFail = false;
             successfulcreateTokenWithSavedCardTokenResponse = token;
         }
 
         @Override
-        public void createToken(SavedCardToken savedCardToken, TaggedCallback<Token> taggedCallback) {
+        public void createToken(final SavedCardToken savedCardToken, final TaggedCallback<Token> taggedCallback) {
             if (createTokenWithSavedCardTokenShouldFail) {
                 taggedCallback.onFailure(failedResponse);
             } else {
@@ -635,18 +625,18 @@ public class SecurityCodePresenterTest {
             }
         }
 
-        public void setCreateTokenWithEscResponse(MercadoPagoError exception) {
+        public void setCreateTokenWithEscResponse(final MercadoPagoError exception) {
             createESCTokenShouldFail = true;
             failedResponse = exception;
         }
 
-        public void setCreateTokenWithEscResponse(Token token) {
+        public void setCreateTokenWithEscResponse(final Token token) {
             createESCTokenShouldFail = false;
             successfulcreateESCTokenResponse = token;
         }
 
         @Override
-        public void createToken(SavedESCCardToken savedESCCardToken, TaggedCallback<Token> taggedCallback) {
+        public void createToken(final SavedESCCardToken savedESCCardToken, final TaggedCallback<Token> taggedCallback) {
             if (createESCTokenShouldFail) {
                 taggedCallback.onFailure(failedResponse);
             } else {
@@ -660,20 +650,21 @@ public class SecurityCodePresenterTest {
         }
 
         @Override
-        public void validateSecurityCodeFromToken(String mSecurityCode, PaymentMethod mPaymentMethod,
-            String firstSixDigits) throws CardTokenException {
+        public void validateSecurityCodeFromToken(final String mSecurityCode, final PaymentMethod mPaymentMethod,
+            final String firstSixDigits) throws CardTokenException {
             if (shouldFailSecurityCodeValidation) {
                 throw new CardTokenException(CARD_TOKEN_INVALID_SECURITY_CODE);
             }
         }
 
         @Override
-        public void validateSecurityCodeFromToken(String mSecurityCode) {
+        public void validateSecurityCodeFromToken(final String mSecurityCode) {
 
         }
 
         @Override
-        public void validateSecurityCodeFromToken(SavedCardToken savedCardToken, Card card) throws CardTokenException {
+        public void validateSecurityCodeFromToken(final SavedCardToken savedCardToken, final Card card)
+            throws CardTokenException {
             if (shouldFailSecurityCodeValidation) {
                 throw new CardTokenException(CARD_TOKEN_INVALID_SECURITY_CODE);
             }
@@ -705,20 +696,20 @@ public class SecurityCodePresenterTest {
         }
 
         @Override
-        public void showError(MercadoPagoError error, String requestOrigin) {
+        public void showError(final MercadoPagoError error, final String requestOrigin) {
             this.error = error;
-            this.errorMessage = error.getMessage();
-            this.errorState = true;
+            errorMessage = error.getMessage();
+            errorState = true;
         }
 
         @Override
-        public void showApiExceptionError(ApiException exception, String requestOrigin) {
+        public void showApiExceptionError(final ApiException exception, final String requestOrigin) {
         }
 
         @Override
-        public void setErrorView(CardTokenException exception) {
-            this.cardTokenErrorCode = exception.getErrorCode();
-            this.errorState = true;
+        public void setErrorView(final CardTokenException exception) {
+            cardTokenErrorCode = exception.getErrorCode();
+            errorState = true;
         }
 
         @Override
@@ -727,22 +718,22 @@ public class SecurityCodePresenterTest {
 
         @Override
         public void showLoadingView() {
-            this.loadingViewShown = true;
+            loadingViewShown = true;
         }
 
         @Override
         public void stopLoadingView() {
-            this.loadingViewShown = false;
+            loadingViewShown = false;
         }
 
         @Override
         public void showTimer() {
-            this.timerShown = true;
+            timerShown = true;
         }
 
         @Override
         public void finishWithResult() {
-            this.finishWithResult = true;
+            finishWithResult = true;
         }
 
         @Override

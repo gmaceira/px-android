@@ -9,8 +9,6 @@ import com.mercadopago.android.px.testcheckout.pages.CashPage;
 import com.mercadopago.android.px.testcheckout.pages.CongratsPage;
 import com.mercadopago.android.px.testcheckout.pages.CreditCardPage;
 import com.mercadopago.android.px.testcheckout.pages.DebitCardPage;
-import com.mercadopago.android.px.testcheckout.pages.DiscountCodeInputPage;
-import com.mercadopago.android.px.testcheckout.pages.DiscountCongratsPage;
 import com.mercadopago.android.px.testcheckout.pages.DiscountDetailPage;
 import com.mercadopago.android.px.testcheckout.pages.ExpiryDatePage;
 import com.mercadopago.android.px.testcheckout.pages.ExpressPaymentPage;
@@ -128,16 +126,6 @@ public class DefaultValidator implements CheckoutValidator {
         onView(discountSubDetails).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
         onView(discountSubDetails)
             .check(matches(withText(com.mercadopago.android.px.R.string.px_we_apply_the_best_available_discount)));
-    }
-
-    @Override
-    public void validate(@NonNull final DiscountCodeInputPage discountCodeInputPage) {
-        //TODO implement default PX Validations
-    }
-
-    @Override
-    public void validate(@NonNull final DiscountCongratsPage discountCongratsPage) {
-        //TODO implement default PX Validations
     }
 
     @Override

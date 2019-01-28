@@ -19,6 +19,7 @@ import com.mercadopago.android.px.internal.repository.UserSelectionRepository;
 import com.mercadopago.android.px.internal.viewmodel.mappers.AccountMoneyMapper;
 import com.mercadopago.android.px.internal.viewmodel.mappers.CardMapper;
 import com.mercadopago.android.px.model.Card;
+import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.model.ExpressMetadata;
 import com.mercadopago.android.px.model.IPayment;
 import com.mercadopago.android.px.model.PayerCost;
@@ -34,19 +35,16 @@ import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.services.Callback;
-import javax.annotation.Nonnull;
-
-import static com.mercadopago.android.px.internal.util.TextUtil.isEmpty;
 
 public class PaymentService implements PaymentRepository {
 
     @NonNull /* default */ final UserSelectionRepository userSelectionRepository;
     @NonNull private final PaymentSettingRepository paymentSettingRepository;
+    @NonNull /* default */ final PluginRepository pluginRepository;
     @NonNull private final DiscountRepository discountRepository;
     @NonNull private final AmountRepository amountRepository;
     @NonNull private final PaymentProcessor paymentProcessor;
     @NonNull private final Context context;
-    @Nonnull private final PluginRepository pluginRepository;
     @NonNull private final TokenRepository tokenRepository;
     @NonNull private final GroupsRepository groupsRepository;
     @NonNull private final EscManager escManager;
@@ -77,6 +75,7 @@ public class PaymentService implements PaymentRepository {
         this.context = context;
         this.tokenRepository = tokenRepository;
         this.groupsRepository = groupsRepository;
+
         handlerWrapper = new PaymentServiceHandlerWrapper(this, escManager, instructionsRepository);
     }
 
@@ -110,20 +109,13 @@ public class PaymentService implements PaymentRepository {
     @NonNull
     @Override
     public PaymentRecovery createRecoveryForInvalidESC() {
-        return new PaymentRecovery(paymentSettingRepository.getToken(), userSelectionRepository.getPaymentMethod(),
-            userSelectionRepository.getPayerCost(), userSelectionRepository.getIssuer(),
-            Payment.StatusCodes.STATUS_REJECTED,
-            Payment.StatusDetail.STATUS_DETAIL_INVALID_ESC);
+        return new PaymentRecovery(Payment.StatusDetail.STATUS_DETAIL_INVALID_ESC);
     }
 
     @NonNull
     @Override
     public PaymentRecovery createPaymentRecovery() {
-        return new PaymentRecovery(paymentSettingRepository.getToken(),
-            userSelectionRepository.getPaymentMethod(),
-            userSelectionRepository.getPayerCost(),
-            userSelectionRepository.getIssuer(), getPayment().getPaymentStatus(),
-            getPayment().getPaymentStatusDetail());
+        return new PaymentRecovery(getPayment().getPaymentStatusDetail());
     }
 
     /**
@@ -138,7 +130,6 @@ public class PaymentService implements PaymentRepository {
         groupsRepository.getGroups().enqueue(new Callback<PaymentMethodSearch>() {
             @Override
             public void success(final PaymentMethodSearch paymentMethodSearch) {
-
                 final String paymentTypeId = expressMetadata.getPaymentTypeId();
 
                 if (PaymentTypes.isCardPaymentType(paymentTypeId)) {
@@ -258,8 +249,7 @@ public class PaymentService implements PaymentRepository {
     }
 
     /**
-     * Payment data is a dynamic non-mutable object that represents
-     * the payment state of the checkout exp.
+     * Payment data is a dynamic non-mutable object that represents the payment state of the checkout exp.
      *
      * @return payment data at the moment is called.
      */
@@ -271,20 +261,24 @@ public class PaymentService implements PaymentRepository {
         paymentData.setPayerCost(userSelectionRepository.getPayerCost());
         paymentData.setIssuer(userSelectionRepository.getIssuer());
         paymentData.setToken(paymentSettingRepository.getToken());
-        paymentData.setCampaign(discountRepository.getCampaign());
-        paymentData.setDiscount(discountRepository.getDiscount());
-        paymentData
-            .setCouponCode(isEmpty(discountRepository.getDiscountCode()) ? null : discountRepository.getDiscountCode());
+        final DiscountConfigurationModel discountModel = discountRepository.getCurrentConfiguration();
+        paymentData.setCampaign(discountModel.getCampaign());
+        paymentData.setDiscount(discountModel.getDiscount());
         paymentData.setTransactionAmount(amountRepository.getAmountToPay());
         //se agrego payer info a la pref - BOLBRADESCO
         paymentData.setPayer(paymentSettingRepository.getCheckoutPreference().getPayer());
         return paymentData;
     }
 
+    /**
+     * Transforms IPayment into a {@link PaymentResult}
+     *
+     * @param payment The payment model
+     * @return The transformed {@link PaymentResult}
+     */
     @NonNull
     @Override
-    public PaymentResult createPaymentResult(
-        @NonNull final IPayment payment) {
+    public PaymentResult createPaymentResult(@NonNull final IPayment payment) {
         return new PaymentResult.Builder()
             .setPaymentData(getPaymentData())
             .setPaymentId(payment.getId())

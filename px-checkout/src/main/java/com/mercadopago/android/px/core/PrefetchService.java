@@ -2,21 +2,18 @@ package com.mercadopago.android.px.core;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
-import com.mercadopago.android.px.internal.core.Settings;
-import com.mercadopago.android.px.internal.datasource.PluginInitializationAsync;
 import com.mercadopago.android.px.internal.di.Session;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
-import com.mercadopago.android.px.internal.repository.PluginInitTask;
-import com.mercadopago.android.px.internal.repository.PluginRepository;
-import com.mercadopago.android.px.internal.services.CheckoutService;
+import com.mercadopago.android.px.internal.services.PreferenceService;
 import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.model.PaymentMethodSearch;
 import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.services.Callback;
 
-class PrefetchService {
+import static com.mercadopago.android.px.services.BuildConfig.API_ENVIRONMENT;
+
+/* default */ class PrefetchService {
 
     private final Handler mainHandler;
 
@@ -35,10 +32,10 @@ class PrefetchService {
     }
 
     public void prefetch() {
-
         final PaymentSettingRepository paymentSettings =
             session.getConfigurationModule().getPaymentSettings();
 
+        // TODO: use executor service
         currentFetch = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -48,7 +45,7 @@ class PrefetchService {
                 if (!TextUtil.isEmpty(checkoutPreferenceId)) {
                     fetchPreference();
                 } else {
-                    fetchDiscounts();
+                    fetchGroups();
                 }
             }
         });
@@ -60,15 +57,15 @@ class PrefetchService {
         final PaymentSettingRepository paymentSettings =
             session.getConfigurationModule().getPaymentSettings();
 
-        session.getRetrofitClient().create(CheckoutService.class)
-            .getPreference(Settings.servicesVersion, paymentSettings.getCheckoutPreferenceId(),
+        session.getRetrofitClient().create(PreferenceService.class)
+            .getPreference(API_ENVIRONMENT, paymentSettings.getCheckoutPreferenceId(),
                 paymentSettings.getPublicKey())
             .execute(
                 new Callback<CheckoutPreference>() {
                     @Override
                     public void success(final CheckoutPreference checkoutPreference) {
                         paymentSettings.configure(checkoutPreference);
-                        fetchDiscounts();
+                        fetchGroups();
                     }
 
                     @Override
@@ -77,41 +74,6 @@ class PrefetchService {
                         postError();
                     }
                 });
-    }
-
-    /* default */ void fetchDiscounts() {
-        session.getDiscountRepository()
-            .configureDiscountAutomatically(session.getAmountRepository().getAmountToPay()).execute(
-            new Callback<Boolean>() {
-                @Override
-                public void success(final Boolean automatic) {
-                    initPlugins();
-                }
-
-                @Override
-                public void failure(final ApiException apiException) {
-                    //TODO Track
-                    postError();
-                }
-            });
-    }
-
-    /* default */ void initPlugins() {
-        final PluginRepository pluginRepository = session.getPluginRepository();
-        final PluginInitTask initTask = pluginRepository.getInitTask(true);
-        initTask.init(new PluginInitializationAsync.DataInitializationCallbacks() {
-            @Override
-            public void onDataInitialized() {
-                pluginRepository.initialized();
-                fetchGroups();
-            }
-
-            @Override
-            public void onFailure(@NonNull final Exception e) {
-                pluginRepository.initialized();
-                fetchGroups();
-            }
-        });
     }
 
     /* default */ void fetchGroups() {

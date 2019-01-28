@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
@@ -39,7 +40,7 @@ import com.mercadopago.android.px.internal.controllers.PaymentMethodGuessingCont
 import com.mercadopago.android.px.internal.di.CardAssociationSession;
 import com.mercadopago.android.px.internal.di.Session;
 import com.mercadopago.android.px.internal.features.Constants;
-import com.mercadopago.android.px.internal.features.MercadoPagoBaseActivity;
+import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.features.ReviewPaymentMethodsActivity;
 import com.mercadopago.android.px.internal.features.card.CardExpiryDateTextWatcher;
 import com.mercadopago.android.px.internal.features.card.CardIdentificationNumberTextWatcher;
@@ -63,19 +64,21 @@ import com.mercadopago.android.px.internal.view.MPTextView;
 import com.mercadopago.android.px.model.CardInfo;
 import com.mercadopago.android.px.model.IdentificationType;
 import com.mercadopago.android.px.model.Issuer;
-import com.mercadopago.android.px.model.PayerCost;
 import com.mercadopago.android.px.model.PaymentMethod;
 import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.PaymentType;
 import com.mercadopago.android.px.model.PaymentTypes;
-import com.mercadopago.android.px.model.Token;
 import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.model.exceptions.CardTokenException;
 import com.mercadopago.android.px.model.exceptions.ExceptionHandler;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
+import com.mercadopago.android.px.tracking.internal.events.FrictionEventTracker;
+import com.mercadopago.android.px.tracking.internal.views.GuessingRootViewTracker;
 import java.util.List;
 
-public class GuessingCardActivity extends MercadoPagoBaseActivity implements GuessingCardActivityView,
+import static com.mercadopago.android.px.internal.features.Constants.RESULT_SILENT_ERROR;
+
+public class GuessingCardActivity extends PXActivity implements GuessingCardActivityView,
     CardExpiryDateEditTextCallback, View.OnTouchListener, View.OnClickListener {
 
     public static final int REVIEW_PAYMENT_METHODS_REQUEST_CODE = 21;
@@ -93,6 +96,7 @@ public class GuessingCardActivity extends MercadoPagoBaseActivity implements Gue
 
     public static final String ERROR_STATE = "textview_error";
     public static final String NORMAL_STATE = "textview_normal";
+    protected static final String EXTRA_ISSUERS = "issuers";
 
     protected GuessingCardPresenter mPresenter;
     protected MPEditText mCardNumberEditText;
@@ -254,6 +258,28 @@ public class GuessingCardActivity extends MercadoPagoBaseActivity implements Gue
     protected void onRestoreInstanceState(final Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mPresenter.onRestoreInstanceState(savedInstanceState);
+        validatePaymentConfiguration();
+    }
+
+    //TODO remove method after session is persisted
+    private void validatePaymentConfiguration() {
+        final Session session = Session.getSession(this);
+        try {
+            session.getConfigurationModule().getPaymentSettings().getPaymentConfiguration().getCharges();
+            session.getConfigurationModule().getPaymentSettings().getPaymentConfiguration().getPaymentProcessor();
+        } catch (Exception e) {
+            FrictionEventTracker.with(GuessingRootViewTracker.PATH,
+                FrictionEventTracker.Id.SILENT, FrictionEventTracker.Style.SCREEN, ErrorUtil.getStacktraceMessage(e))
+                .track();
+
+            exitCheckout(RESULT_SILENT_ERROR);
+        }
+    }
+
+    public void exitCheckout(final int resCode) {
+        overrideTransitionOut();
+        setResult(resCode);
+        finish();
     }
 
     private void analizeLowRes() {
@@ -1383,14 +1409,25 @@ public class GuessingCardActivity extends MercadoPagoBaseActivity implements Gue
         openKeyboard(mCardNumberEditText);
     }
 
+    /**
+     * When guessing card has non - automatic selected issuer then should show issuers screen.
+     *
+     * @param issuers all issuers
+     */
     @Override
-    public void finishCardFlow(final PaymentMethod paymentMethod, final Token token,
-        final List<Issuer> issuers) {
+    public void finishCardFlow(@NonNull final List<Issuer> issuers) {
+        overridePendingTransition(R.anim.px_slide_right_to_left_in, R.anim.px_slide_right_to_left_out);
         final Intent returnIntent = new Intent();
-        returnIntent.putExtra("issuers", JsonUtil.getInstance().toJson(issuers));
+        returnIntent.putExtra(EXTRA_ISSUERS, JsonUtil.getInstance().toJson(issuers));
         setResult(RESULT_OK, returnIntent);
         finish();
+    }
+
+    @Override
+    public void finishCardFlow() {
         overridePendingTransition(R.anim.px_slide_right_to_left_in, R.anim.px_slide_right_to_left_out);
+        setResult(Activity.RESULT_OK);
+        finish();
     }
 
     @Override
@@ -1401,16 +1438,6 @@ public class GuessingCardActivity extends MercadoPagoBaseActivity implements Gue
             .setCardInfo(cardInfo)
             .setPaymentMethod(paymentMethod)
             .startActivity();
-        overridePendingTransition(R.anim.px_slide_right_to_left_in, R.anim.px_slide_right_to_left_out);
-    }
-
-    @Override
-    public void finishCardFlow(final PaymentMethod paymentMethod, final Token token,
-        final Issuer issuer, final List<PayerCost> payerCosts) {
-        final Intent returnIntent = new Intent();
-        returnIntent.putExtra("payerCosts", JsonUtil.getInstance().toJson(payerCosts));
-        setResult(RESULT_OK, returnIntent);
-        finish();
         overridePendingTransition(R.anim.px_slide_right_to_left_in, R.anim.px_slide_right_to_left_out);
     }
 
@@ -1429,21 +1456,9 @@ public class GuessingCardActivity extends MercadoPagoBaseActivity implements Gue
     }
 
     @Override
-    public void finishCardFlow(final PaymentMethod paymentMethod, final Token token,
-        final Issuer issuer, final PayerCost payerCost) {
-        final Intent returnIntent = new Intent();
-        returnIntent.putExtra("payerCost", JsonUtil.getInstance().toJson(payerCost));
-        setResult(RESULT_OK, returnIntent);
-        finish();
-        overridePendingTransition(R.anim.px_slide_right_to_left_in, R.anim.px_slide_right_to_left_out);
-    }
-
-    @Override
     public void onBackPressed() {
         checkFlipCardToFront();
-        final Intent returnIntent = new Intent();
-        returnIntent.putExtra("backButtonPressed", true);
-        setResult(RESULT_CANCELED, returnIntent);
+        setResult(RESULT_CANCELED);
         finish();
     }
 

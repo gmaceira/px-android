@@ -9,7 +9,6 @@
     <string name="px_card_association_result_error_retry_button_text">Tentar novamente</string>
 
     <!-- one tap -->
-    <string name="px_payment_detail_title_modal">Detalhes</string>
     <string name="px_processing_payment_button">Processando o seu pagamento</string>
     <string name="px_summary_detail_item_description">Sua compra</string>
     <string name="px_pay">Pagar</string>
@@ -64,7 +63,6 @@
     <string name="px_lastname">Sobrenome</string>
     <string name="px_bank_deals_action">Ver promoções</string>
     <string name="px_security_code">Código de segurança</string>
-    <string name="px_continue_label">Continuar</string>
 
     <string name="px_invalid_card_bin">O número do cartão que você digitou não coincide com o tipo de cartão</string>
     <string name="px_invalid_card_luhn">O número do cartão que você digitou está incorreto</string>
@@ -144,11 +142,7 @@
     <string name="px_standard_error_message">Estamos trabalhando para solucionar o problema. Por favor, tente novamente mais tarde.</string>
     <string name="px_error_message_email_required">O e-mail é obrigatório</string>
     <string name="px_error_message_missing_public_key">A public key é obrigatória</string>
-    <string name="px_error_message_missing_amount">O valor é obrigatório</string>
-    <string name="px_error_message_missing_site">O site é obrigatório</string>
     <string name="px_error_message_missing_payer_cost">Nenhuma parcela encontrada</string>
-    <string name="px_error_message_missing_installment_for_issuer">Nenhum financiamento foi encontrado para esse banco</string>
-    <string name="px_error_message_multiple_installments_for_issuer">Parcelas múltiplas foram encontradas para este banco</string>
     <string name="px_error_message_missing_identification_types">Nenhum tipo de identificação encontrado</string>
     <string name="px_error_message_missing_setting_for_bin">Nenhuma configuração encontrada para esse bin</string>
 
@@ -231,24 +225,11 @@
     <string name="px_ryc_account_money_description">Com dinheiro em conta</string>
 
     <!-- Discount -->
-    <string name="px_invalid_code">Código inválido</string>
-    <string name="px_merchant_without_discount_available">Vendedor não tem desconto disponíveis</string>
-    <string name="px_ran_out_of_quantity_uses_quantity">O número de pedidos esgotados</string>
-    <string name="px_amount_doesnt_match">Montante fora do alcance</string>
-    <string name="px_campaign_expired">Campanha expirado</string>
-    <string name="px_something_went_wrong">Ops! Algo deu errado…</string>
     <string name="px_we_apply_the_best_available_discount">Os descontos não são acumulativos. Aplicamos o mais alto para este pagamento.</string>
     <string name="px_max_coupon_amount">Limite de descontos: %1$s</string>
     <string name="px_total_to_pay">Total a %1$s</string>
-    <string name="px_enter_coupon_code">Digite seu cupom de desconto</string>
-    <string name="px_enter_coupon_code_title">Adicione o seu cupom</string>
     <string name="px_with_max_coupon_amount">Com limite de desconto</string>
     <string name="px_interest_label">Não inclui juros bancários</string>
-    <string name="px_excellent">¡Excelente!</string>
-    <string name="px_get_your_discount_amount">Agora pague sua compra e ganhe\n %1$s de desconto</string>
-    <string name="px_get_your_discount_percent">Agora pague sua compra e ganhe %1$s%% de desconto</string>
-    <string name="px_discount_error_check_this_data">Verificar esses dados</string>
-    <string name="px_error_something_went_wrong_try_again">Algo saiu errado, tente novamente.</string>
     <string name="px_always_on_discount_detail">A cada pagamento para esta marca, você terá descontos até atingir o limite.</string>
     <string name="px_one_shot_discount_detail">Limite disponível para consumo em um único pagamento.</string>
     <string name="px_discount_detail_end_date">Válido até %s.</string>
@@ -261,9 +242,7 @@
     <string name="px_text_unlock_card_linked">desbloquear o seu cartã</string>
     <string name="px_text_unlock_card_end">o antes de confirmar o pagamento.</string>
 
-    <string name="px_error_message_detail_no_installments">Nenhuma parcela foi encontrada para um banco em InstallmentsActivity</string>
     <string name="px_error_message_detail_no_payer_cost_found">Nenhum payer cost encontrado em InstallmentsActivity</string>
-    <string name="px_error_message_detail_multiple_installments">Múltiplas parcelas foram encontradas para um banco em InstallmentsActivity</string>
     <string name="px_error_message_detail_issuers">Nenhum banco encontrado em IssuersActivity</string>
     <string name="px_error_message_detail_no_payment_method_list">A lista de métodos de pagamento não foi encontrada em ReviewPaymentMethodsActivity</string>
 

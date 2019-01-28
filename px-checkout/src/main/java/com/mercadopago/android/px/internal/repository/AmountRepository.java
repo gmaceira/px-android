@@ -38,13 +38,4 @@ public interface AmountRepository {
      */
     @NonNull
     BigDecimal getAppliedCharges();
-
-    /**
-     * Partial amount to pay - No charges or payer costs applied
-     * Only discounts are applied
-     *
-     * @return amount items minus discount
-     */
-    @NonNull
-    BigDecimal getAmountWithDiscount();
 }

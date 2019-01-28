@@ -4,51 +4,58 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
+import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 import com.mercadopago.android.px.configuration.PaymentConfiguration;
 import com.mercadopago.android.px.core.MercadoPagoCheckout;
 import com.mercadopago.android.px.core.PaymentProcessor;
 import com.mercadopago.android.px.internal.configuration.InternalConfiguration;
 import com.mercadopago.android.px.internal.datasource.AmountService;
-import com.mercadopago.android.px.internal.datasource.DiscountApiService;
 import com.mercadopago.android.px.internal.datasource.DiscountServiceImp;
-import com.mercadopago.android.px.internal.datasource.DiscountStorageService;
 import com.mercadopago.android.px.internal.datasource.EscManagerImp;
 import com.mercadopago.android.px.internal.datasource.GroupsService;
-import com.mercadopago.android.px.internal.datasource.InstallmentService;
 import com.mercadopago.android.px.internal.datasource.InstructionsService;
+import com.mercadopago.android.px.internal.datasource.IssuersService;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESCImpl;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoServicesAdapter;
+import com.mercadopago.android.px.internal.datasource.PayerCostRepositoryImpl;
 import com.mercadopago.android.px.internal.datasource.PaymentService;
 import com.mercadopago.android.px.internal.datasource.PluginService;
+import com.mercadopago.android.px.internal.datasource.SummaryAmountService;
 import com.mercadopago.android.px.internal.datasource.TokenizeService;
 import com.mercadopago.android.px.internal.datasource.cache.GroupsCache;
 import com.mercadopago.android.px.internal.datasource.cache.GroupsCacheCoordinator;
 import com.mercadopago.android.px.internal.datasource.cache.GroupsDiskCache;
 import com.mercadopago.android.px.internal.datasource.cache.GroupsMemCache;
+import com.mercadopago.android.px.internal.features.installments.PayerCostSolver;
 import com.mercadopago.android.px.internal.repository.AmountRepository;
 import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.InstructionsRepository;
+import com.mercadopago.android.px.internal.repository.IssuersRepository;
+import com.mercadopago.android.px.internal.repository.PayerCostRepository;
 import com.mercadopago.android.px.internal.repository.PaymentRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.repository.PluginRepository;
+import com.mercadopago.android.px.internal.repository.SummaryAmountRepository;
 import com.mercadopago.android.px.internal.repository.TokenRepository;
 import com.mercadopago.android.px.internal.repository.UserSelectionRepository;
 import com.mercadopago.android.px.internal.services.CheckoutService;
 import com.mercadopago.android.px.internal.services.GatewayService;
+import com.mercadopago.android.px.internal.services.InstallmentService;
 import com.mercadopago.android.px.internal.services.InstructionsClient;
 import com.mercadopago.android.px.internal.util.LocaleUtil;
+import com.mercadopago.android.px.internal.util.RetrofitUtil;
 import com.mercadopago.android.px.internal.util.TextUtil;
-import com.mercadopago.android.px.model.Device;
 import com.mercadopago.android.px.internal.viewmodel.mappers.BusinessModelMapper;
+import com.mercadopago.android.px.model.Device;
 
 public final class Session extends ApplicationModule
     implements AmountComponent {
 
     /**
-     * This singleton instance is safe because session will work with
-     * application context. Application context it's never leaking.
+     * This singleton instance is safe because session will work with application context. Application context it's
+     * never leaking.
      */
     @SuppressLint("StaticFieldLeak") private static Session instance;
 
@@ -58,10 +65,13 @@ public final class Session extends ApplicationModule
     private AmountRepository amountRepository;
     private GroupsRepository groupsRepository;
     private PaymentRepository paymentRepository;
+    private PayerCostRepository payerCostRepository;
     private GroupsCache groupsCache;
     private PluginService pluginRepository;
     private InternalConfiguration internalConfiguration;
     private InstructionsService instructionsRepository;
+    private SummaryAmountRepository summaryAmountRepository;
+    private IssuersRepository issuersRepository;
 
     private Session(@NonNull final Context context) {
         super(context.getApplicationContext());
@@ -85,7 +95,6 @@ public final class Session extends ApplicationModule
         clear();
         // Store persistent paymentSetting
         final ConfigurationModule configurationModule = getConfigurationModule();
-        final DiscountRepository discountRepository = getDiscountRepository();
 
         final PaymentConfiguration paymentConfiguration = mercadoPagoCheckout.getPaymentConfiguration();
         final PaymentSettingRepository paymentSetting = configurationModule.getPaymentSettings();
@@ -93,7 +102,6 @@ public final class Session extends ApplicationModule
         paymentSetting.configure(mercadoPagoCheckout.getAdvancedConfiguration());
         paymentSetting.configurePrivateKey(mercadoPagoCheckout.getPrivateKey());
         paymentSetting.configure(paymentConfiguration);
-        discountRepository.configureMerchantDiscountManually(paymentConfiguration);
         resolvePreference(mercadoPagoCheckout, paymentSetting);
         // end Store persistent paymentSetting
     }
@@ -111,7 +119,6 @@ public final class Session extends ApplicationModule
     }
 
     private void clear() {
-        getDiscountRepository().reset();
         getConfigurationModule().reset();
         getGroupsCache().evict();
         configurationModule = null;
@@ -123,19 +130,35 @@ public final class Session extends ApplicationModule
         pluginRepository = null;
         internalConfiguration = null;
         instructionsRepository = null;
+        summaryAmountRepository = null;
+        payerCostRepository = null;
+        issuersRepository = null;
     }
 
     public GroupsRepository getGroupsRepository() {
         if (groupsRepository == null) {
             final PaymentSettingRepository paymentSettings = getConfigurationModule().getPaymentSettings();
-            groupsRepository = new GroupsService(getAmountRepository(),
-                paymentSettings,
-                getMercadoPagoESC(),
-                getRetrofitClient().create(CheckoutService.class),
+            groupsRepository = new GroupsService(paymentSettings, getMercadoPagoESC(),
+                RetrofitUtil.getRetrofitClient(getContext()).create(CheckoutService.class),
                 LocaleUtil.getLanguage(getContext()),
                 getGroupsCache());
         }
         return groupsRepository;
+    }
+
+    public SummaryAmountRepository getSummaryAmountRepository() {
+        if (summaryAmountRepository == null) {
+            final PaymentSettingRepository paymentSettings = getConfigurationModule().getPaymentSettings();
+            final AdvancedConfiguration advancedConfiguration = paymentSettings.getAdvancedConfiguration();
+            final UserSelectionRepository userSelectionRepository =
+                getConfigurationModule().getUserSelectionRepository();
+            final InstallmentService paymentService =
+                RetrofitUtil.getRetrofitClient(getContext()).create(InstallmentService.class);
+
+            summaryAmountRepository = new SummaryAmountService(paymentService, paymentSettings,
+                advancedConfiguration, userSelectionRepository);
+        }
+        return summaryAmountRepository;
     }
 
     @NonNull
@@ -145,7 +168,7 @@ public final class Session extends ApplicationModule
     }
 
     @NonNull
-    public Device getDevice() {
+    private Device getDevice() {
         return new Device(getContext());
     }
 
@@ -164,8 +187,8 @@ public final class Session extends ApplicationModule
             final UserSelectionRepository userSelectionRepository = configurationModule.getUserSelectionRepository();
             amountRepository = new AmountService(configuration,
                 configurationModule.getChargeSolver(),
-                new InstallmentService(userSelectionRepository),
-                getDiscountRepository());
+                getDiscountRepository(),
+                userSelectionRepository);
         }
         return amountRepository;
     }
@@ -173,15 +196,20 @@ public final class Session extends ApplicationModule
     @NonNull
     public DiscountRepository getDiscountRepository() {
         if (discountRepository == null) {
-            final ConfigurationModule configurationModule = getConfigurationModule();
-            final PaymentSettingRepository paymentSettings = configurationModule.getPaymentSettings();
             discountRepository =
-                new DiscountServiceImp(new DiscountStorageService(getSharedPreferences(), getJsonUtil()),
-                    new DiscountApiService(getRetrofitClient(),
-                        paymentSettings),
-                    paymentSettings);
+                new DiscountServiceImp(getGroupsRepository(), getConfigurationModule().getUserSelectionRepository());
         }
         return discountRepository;
+    }
+
+    @NonNull
+    public PayerCostRepository getPayerCostRepository() {
+        if (payerCostRepository == null) {
+            payerCostRepository =
+                new PayerCostRepositoryImpl(getGroupsRepository(),
+                    getConfigurationModule().getUserSelectionRepository());
+        }
+        return payerCostRepository;
     }
 
     @StringRes
@@ -211,8 +239,7 @@ public final class Session extends ApplicationModule
     @NonNull
     public PluginRepository getPluginRepository() {
         if (pluginRepository == null) {
-            pluginRepository = new PluginService(getContext(), getConfigurationModule().getPaymentSettings(),
-                getDiscountRepository());
+            pluginRepository = new PluginService(getContext(), getConfigurationModule().getPaymentSettings());
         }
         return pluginRepository;
     }
@@ -277,5 +304,24 @@ public final class Session extends ApplicationModule
                     LocaleUtil.getLanguage(getContext()));
         }
         return instructionsRepository;
+    }
+
+    @NonNull
+    public PayerCostSolver providePayerCostSolver() {
+        final ConfigurationModule configurationModule = getConfigurationModule();
+        return new PayerCostSolver(
+            configurationModule.getPaymentSettings().getCheckoutPreference().getPaymentPreference(),
+            configurationModule.getUserSelectionRepository());
+    }
+
+    public IssuersRepository getIssuersRepository() {
+        if (issuersRepository == null) {
+            final com.mercadopago.android.px.internal.services.IssuersService issuersService =
+                RetrofitUtil.getRetrofitClient(getContext()).create(
+                    com.mercadopago.android.px.internal.services.IssuersService.class);
+
+            issuersRepository = new IssuersService(issuersService, getConfigurationModule().getPaymentSettings());
+        }
+        return issuersRepository;
     }
 }
