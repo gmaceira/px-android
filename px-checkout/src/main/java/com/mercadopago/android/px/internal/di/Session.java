@@ -218,6 +218,11 @@ public final class Session extends ApplicationModule
             .getCustomStringConfiguration().getMainVerbStringResourceId();
     }
 
+    public String getCustomTitle() {
+        return getConfigurationModule().getPaymentSettings().getAdvancedConfiguration()
+                .getCustomStringConfiguration().getCustomTitle();
+    }
+
     @NonNull
     public ConfigurationModule getConfigurationModule() {
         if (configurationModule == null) {

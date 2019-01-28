@@ -7,9 +7,11 @@ import com.mercadopago.android.px.R;
 public class CustomStringConfiguration {
 
     @StringRes private final int mainVerbStringResourceId;
+    private final String customTitle;
 
     /* default */ CustomStringConfiguration(@NonNull final Builder builder) {
         mainVerbStringResourceId = builder.mainVerbStringResourceId;
+        customTitle = builder.customTitle;
     }
 
     /**
@@ -22,8 +24,13 @@ public class CustomStringConfiguration {
         return mainVerbStringResourceId;
     }
 
+    public String getCustomTitle(){
+        return customTitle;
+    }
+
     public static class Builder {
         /* default */ int mainVerbStringResourceId;
+        String customTitle;
 
         public Builder() {
             mainVerbStringResourceId = R.string.px_main_verb;
@@ -38,6 +45,11 @@ public class CustomStringConfiguration {
         @SuppressWarnings("unused")
         public Builder setMainVerbStringResourceId(@StringRes final int mainVerbStringResId) {
             mainVerbStringResourceId = mainVerbStringResId;
+            return this;
+        }
+
+        public Builder setCustomTitle(final String customTitle){
+            this.customTitle = customTitle;
             return this;
         }
 

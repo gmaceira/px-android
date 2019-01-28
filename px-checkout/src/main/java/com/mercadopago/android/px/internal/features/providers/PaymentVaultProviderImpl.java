@@ -1,6 +1,8 @@
 package com.mercadopago.android.px.internal.features.providers;
 
 import android.content.Context;
+import android.text.TextUtils;
+
 import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.internal.di.Session;
 
@@ -15,7 +17,16 @@ public class PaymentVaultProviderImpl implements PaymentVaultProvider {
     @Override
     public String getTitle() {
         final String mainVerb = context.getString(Session.getSession(context).getMainVerb());
-        return context.getString(R.string.px_title_activity_payment_vault, mainVerb);
+        final String customTitle = Session.getSession(context).getCustomTitle();
+
+        String title;
+        if(TextUtils.isEmpty(customTitle)){
+            title = context.getString(R.string.px_title_activity_payment_vault, mainVerb);
+        } else {
+            title = customTitle;
+        }
+
+        return title;
     }
 
     @Override
