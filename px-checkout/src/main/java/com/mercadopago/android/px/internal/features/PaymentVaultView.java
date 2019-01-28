@@ -52,6 +52,8 @@ public interface PaymentVaultView extends MvpView {
         @NonNull final BigDecimal totalAmount,
         @NonNull final Site site);
 
+    void hideAmountRow();
+
     void collectPayerInformation();
 
     void cleanPaymentMethodOptions();

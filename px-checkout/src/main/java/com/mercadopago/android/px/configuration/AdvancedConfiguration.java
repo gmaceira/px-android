@@ -17,6 +17,7 @@ public class AdvancedConfiguration implements Serializable {
     private final boolean bankDealsEnabled;
     private final boolean escEnabled;
     private final boolean expressEnabled;
+    private final boolean amountRowEnabled;
     @NonNull private final PaymentResultScreenConfiguration paymentResultScreenConfiguration;
     @NonNull private final ReviewAndConfirmConfiguration reviewAndConfirmConfiguration;
     @NonNull private final DynamicFragmentConfiguration dynamicFragmentConfiguration;
@@ -27,6 +28,7 @@ public class AdvancedConfiguration implements Serializable {
         bankDealsEnabled = builder.bankDealsEnabled;
         escEnabled = builder.escEnabled;
         expressEnabled = builder.expressEnabled;
+        amountRowEnabled = builder.amountRowEnabled;
         paymentResultScreenConfiguration = builder.paymentResultScreenConfiguration;
         reviewAndConfirmConfiguration = builder.reviewAndConfirmConfiguration;
         dynamicFragmentConfiguration = builder.dynamicFragmentConfiguration;
@@ -40,6 +42,10 @@ public class AdvancedConfiguration implements Serializable {
 
     public boolean isEscEnabled() {
         return escEnabled;
+    }
+
+    public boolean isAmountRowEnabled() {
+        return amountRowEnabled;
     }
 
     @NonNull
@@ -76,6 +82,7 @@ public class AdvancedConfiguration implements Serializable {
         /* default */ boolean bankDealsEnabled = true;
         /* default */ boolean escEnabled = false;
         /* default */ boolean expressEnabled = false;
+        /* default */ boolean amountRowEnabled = true;
         /* default */ @NonNull PaymentResultScreenConfiguration paymentResultScreenConfiguration =
             new PaymentResultScreenConfiguration.Builder().build();
         /* default */ @NonNull ReviewAndConfirmConfiguration reviewAndConfirmConfiguration =
@@ -86,6 +93,7 @@ public class AdvancedConfiguration implements Serializable {
             new DynamicDialogConfiguration.Builder().build();
         /* default */ @NonNull CustomStringConfiguration customStringConfiguration =
             new CustomStringConfiguration.Builder().build();
+
 
 
         /**
@@ -111,6 +119,17 @@ public class AdvancedConfiguration implements Serializable {
          */
         public Builder setEscEnabled(final boolean escEnabled) {
             this.escEnabled = escEnabled;
+            return this;
+        }
+
+        /**
+         * TODO: Complete this
+         *
+         * @param
+         * @return builder to keep operating
+         */
+        public Builder setAmountRowEnabled(final boolean amountRowEnabled) {
+            this.amountRowEnabled = amountRowEnabled;
             return this;
         }
 

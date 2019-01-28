@@ -63,8 +63,12 @@ public class InstallmentsPresenter extends MvpPresenter<InstallmentsActivityView
 
     public void initializeAmountRow() {
         if (isViewAttached()) {
-            getView().showAmount(discountRepository,
-                amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
+            if(configuration.getAdvancedConfiguration().isAmountRowEnabled()){
+                getView().showAmount(discountRepository,
+                        amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
+            } else {
+                getView().hideAmountRow();
+            }
         }
     }
 

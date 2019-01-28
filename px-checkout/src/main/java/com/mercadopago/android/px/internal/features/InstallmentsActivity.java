@@ -383,6 +383,11 @@ public class InstallmentsActivity extends MercadoPagoBaseActivity
     }
 
     @Override
+    public void hideAmountRow() {
+        amountView.setVisibility(View.GONE);
+    }
+
+    @Override
     public void showDetailDialog() {
         DiscountDetailDialog.showDialog(getSupportFragmentManager());
     }

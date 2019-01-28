@@ -589,6 +589,11 @@ public class PaymentVaultActivity extends MercadoPagoBaseActivity
     }
 
     @Override
+    public void hideAmountRow() {
+        amountView.setVisibility(View.GONE);
+    }
+
+    @Override
     public void onDiscountRetrieved(final OnCodeDiscountCallback onCodeDiscountCallback) {
         this.onCodeDiscountCallback = onCodeDiscountCallback;
         cleanPaymentMethodOptions();
