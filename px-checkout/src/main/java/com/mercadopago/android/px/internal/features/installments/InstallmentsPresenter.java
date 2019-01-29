@@ -99,9 +99,13 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
                 payerCostSolver.solve(InstallmentsPresenter.this, amountConfiguration.getPayerCosts());
 
                 if (isViewAttached()) {
-                    getView().showAmount(discountRepository.getCurrentConfiguration(),
-                        amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
-                    getView().hideLoadingView();
+                    if(configuration.getAdvancedConfiguration().isAmountRowEnabled()) {
+                        getView().showAmount(discountRepository.getCurrentConfiguration(),
+                                amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
+                        getView().hideLoadingView();
+                    } else {
+                        getView().hideAmountRow();
+                    }
                 }
             }
 

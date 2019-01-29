@@ -29,4 +29,6 @@ public interface InstallmentsView extends MvpView {
 
     void showAmount(@NonNull final DiscountConfigurationModel discountModel, @NonNull final BigDecimal itemsPlusCharges,
         @NonNull final Site site);
+
+    void hideAmountRow();
 }

@@ -325,6 +325,11 @@ public class InstallmentsActivity extends PXActivity<InstallmentsPresenter> impl
     }
 
     @Override
+    public void hideAmountRow() {
+        amountView.setVisibility(View.GONE);
+    }
+
+    @Override
     public void showDetailDialog(@NonNull final DiscountConfigurationModel discountModel) {
         DiscountDetailDialog.showDialog(getSupportFragmentManager(), discountModel);
     }

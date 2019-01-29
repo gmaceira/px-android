@@ -607,4 +607,9 @@ public class PaymentVaultActivity extends PXActivity
         amountView.setOnClickListener(presenter);
         amountView.show(discountModel, totalAmount, site);
     }
+
+    @Override
+    public void hideAmountRow() {
+        amountView.setVisibility(View.GONE);
+    }
 }
