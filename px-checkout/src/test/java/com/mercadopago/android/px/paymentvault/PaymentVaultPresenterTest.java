@@ -1,6 +1,8 @@
 package com.mercadopago.android.px.paymentvault;
 
 import android.support.annotation.NonNull;
+
+import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
@@ -65,6 +67,7 @@ public class PaymentVaultPresenterTest {
     @Mock private GroupsRepository groupsRepository;
     @Mock private PaymentVaultView paymentVaultView;
     @Mock private PaymentVaultProvider paymentVaultProvider;
+    @Mock private AdvancedConfiguration advancedConfiguration;
 
     @Mock private Site mockSite;
 
@@ -77,6 +80,8 @@ public class PaymentVaultPresenterTest {
         when(paymentSettingRepository.getCheckoutPreference()).thenReturn(checkoutPreference);
         when(checkoutPreference.getPaymentPreference()).thenReturn(new PaymentPreference());
         when(checkoutPreference.getSite()).thenReturn(mockSite);
+        when(paymentSettingRepository.getAdvancedConfiguration()).thenReturn(advancedConfiguration);
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
         presenter = getBasePresenter(stubView, stubProvider);
     }
 
@@ -455,6 +460,20 @@ public class PaymentVaultPresenterTest {
         verify(paymentVaultView).finishPaymentMethodSelection(userSelectionRepository.getPaymentMethod());
     }
 
+    @Test
+    public void whenAmountRowIsNotEnabledItShouldBeHidden(){
+        final PaymentMethodSearch paymentMethodSearch = PaymentMethodSearchs.getCompletePaymentMethodSearchMLA();
+        when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
+
+        final PaymentVaultPresenter presenter = getPresenter();
+
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(false);
+
+        presenter.initialize();
+
+        verify(paymentVaultView).hideAmountRow();
+    }
+
     private static class MockedProvider implements PaymentVaultProvider {
 
         private static final String ALL_TYPES_EXCLUDED = "all types excluded";
@@ -613,6 +632,11 @@ public class PaymentVaultPresenterTest {
             @NonNull final BigDecimal totalAmount,
             @NonNull final Site site) {
             showedDiscountRow = true;
+        }
+
+        @Override
+        public void hideAmountRow() {
+
         }
 
         @Override

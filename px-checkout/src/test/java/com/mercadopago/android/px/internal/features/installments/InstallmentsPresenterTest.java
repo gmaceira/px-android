@@ -1,6 +1,8 @@
 package com.mercadopago.android.px.internal.features.installments;
 
 import android.support.annotation.NonNull;
+
+import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 import com.mercadopago.android.px.internal.repository.AmountRepository;
 import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.PayerCostRepository;
@@ -44,6 +46,7 @@ public class InstallmentsPresenterTest {
     @Mock private SummaryAmountRepository summaryAmountRepository;
     @Mock private PayerCostRepository payerCostRepository;
     @Mock private PayerCostSolver payerCostSolver;
+    @Mock private AdvancedConfiguration advancedConfiguration;
 
     @Mock private InstallmentsView view;
 
@@ -51,6 +54,8 @@ public class InstallmentsPresenterTest {
     public void setUp() {
         when(checkoutPreference.getSite()).thenReturn(Sites.ARGENTINA);
         when(configuration.getCheckoutPreference()).thenReturn(checkoutPreference);
+        when(configuration.getAdvancedConfiguration()).thenReturn(advancedConfiguration);
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
         presenter = new InstallmentsPresenter(amountRepository, configuration, userSelectionRepository,
             discountRepository, summaryAmountRepository, payerCostRepository, payerCostSolver);
         presenter.attachView(view);
@@ -165,6 +170,36 @@ public class InstallmentsPresenterTest {
         verify(view).showInstallments(payerCosts);
         verifyNoMoreInteractions(view);
 
+    }
+
+    @Test
+    public void whenAmountRowIsNotEnabledItShouldBeHidden(){
+        when(userSelectionRepository.hasCardSelected()).thenReturn(false);
+
+        final SummaryAmount response = StubSummaryAmount.getSummaryAmountTwoPayerCosts();
+        when(summaryAmountRepository.getSummaryAmount(anyString())).thenReturn(new StubSuccessMpCall<>(response));
+
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(false);
+
+        presenter.initialize();
+
+        verify(view).hideAmountRow();
+    }
+
+    @Test
+    public void whenAmountRowIsEnabledItShouldBeSetted(){
+        when(userSelectionRepository.hasCardSelected()).thenReturn(false);
+
+        final SummaryAmount response = StubSummaryAmount.getSummaryAmountTwoPayerCosts();
+        when(summaryAmountRepository.getSummaryAmount(anyString())).thenReturn(new StubSuccessMpCall<>(response));
+
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
+
+        presenter.initialize();
+
+        verify(view).showAmount(discountRepository.getCurrentConfiguration(),
+                checkoutPreference.getTotalAmount(), checkoutPreference.getSite());
+        verify(view).hideLoadingView();
     }
 
     @NonNull
