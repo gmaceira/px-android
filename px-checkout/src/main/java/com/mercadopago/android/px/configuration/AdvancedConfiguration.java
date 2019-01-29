@@ -131,9 +131,9 @@ public class AdvancedConfiguration implements Serializable {
         }
 
         /**
-         * TODO: Complete this
+         * Add the possibility to hide (false) or show (true - default) amount row
          *
-         * @param
+         * @param amountRowEnabled show or hide amount row
          * @return builder to keep operating
          */
         public Builder setAmountRowEnabled(final boolean amountRowEnabled) {
