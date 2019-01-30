@@ -102,10 +102,10 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
                     if(configuration.getAdvancedConfiguration().isAmountRowEnabled()) {
                         getView().showAmount(discountRepository.getCurrentConfiguration(),
                                 amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
-                        getView().hideLoadingView();
                     } else {
                         getView().hideAmountRow();
                     }
+                    getView().hideLoadingView();
                 }
             }
 
