@@ -76,8 +76,12 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
     private void resolvePayerCosts() {
         if (userSelectionRepository.hasCardSelected()) {
             resolvePayerCostsForSavedCard();
-            getView().showAmount(discountRepository.getCurrentConfiguration(),
-                amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
+            if(configuration.getAdvancedConfiguration().isAmountRowEnabled()) {
+                getView().showAmount(discountRepository.getCurrentConfiguration(),
+                        amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
+            } else {
+                getView().hideAmountRow();
+            }
         } else {
             resolvePayerCostsForGuessedCard();
         }
