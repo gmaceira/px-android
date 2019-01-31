@@ -19,6 +19,8 @@ import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.utils.StubFailMpCall;
 import com.mercadopago.android.px.utils.StubSuccessMpCall;
+
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -174,6 +176,34 @@ public class InstallmentsPresenterTest {
 
     @Test
     public void whenAmountRowIsNotEnabledItShouldBeHidden(){
+        when(userSelectionRepository.hasCardSelected()).thenReturn(true);
+        when(payerCostRepository.getCurrentConfiguration()).thenReturn(mock(AmountConfiguration.class));
+
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(false);
+
+        presenter.initialize();
+
+        verify(view).hideAmountRow();
+    }
+
+    @Test
+    public void whenAmountRowIsEnabledItShouldBeSetted(){
+        when(userSelectionRepository.hasCardSelected()).thenReturn(true);
+        when(payerCostRepository.getCurrentConfiguration()).thenReturn(mock(AmountConfiguration.class));
+
+        BigDecimal itemPlusCharges = new BigDecimal(100);
+        when(amountRepository.getItemsPlusCharges()).thenReturn(itemPlusCharges);
+
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
+
+        presenter.initialize();
+
+        verify(view).showAmount(discountRepository.getCurrentConfiguration(),
+                itemPlusCharges, checkoutPreference.getSite());
+    }
+
+    @Test
+    public void whenAmountRowIsNotEnabledItShouldBeHiddenWithGuessedCards(){
         when(userSelectionRepository.hasCardSelected()).thenReturn(false);
 
         final SummaryAmount response = StubSummaryAmount.getSummaryAmountTwoPayerCosts();
@@ -187,7 +217,7 @@ public class InstallmentsPresenterTest {
     }
 
     @Test
-    public void whenAmountRowIsEnabledItShouldBeSetted(){
+    public void whenAmountRowIsEnabledItShouldBeSettedWithGuessedCards(){
         when(userSelectionRepository.hasCardSelected()).thenReturn(false);
 
         final SummaryAmount response = StubSummaryAmount.getSummaryAmountTwoPayerCosts();
@@ -195,10 +225,13 @@ public class InstallmentsPresenterTest {
 
         when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
 
+        BigDecimal itemPlusCharges = new BigDecimal(100);
+        when(amountRepository.getItemsPlusCharges()).thenReturn(itemPlusCharges);
+
         presenter.initialize();
 
         verify(view).showAmount(discountRepository.getCurrentConfiguration(),
-                checkoutPreference.getTotalAmount(), checkoutPreference.getSite());
+                itemPlusCharges, checkoutPreference.getSite());
         verify(view).hideLoadingView();
     }
 
