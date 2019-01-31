@@ -74,5 +74,5 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/px_white"
-        android:visibility="invisible"/>
+        android:visibility="gone"/>
 </LinearLayout>

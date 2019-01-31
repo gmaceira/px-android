@@ -106,7 +106,6 @@ public final class ExamplesUtils {
         options.add(new Pair<>("Two items - Collector icon", createBaseWithTwoItemsAndCollectorIcon()));
         options.add(new Pair<>("One item - Long title", createBaseWithOneItemLongTitle()));
         options.add(new Pair<>("Differential pricing preference", createWithDifferentialPricing()));
-        options.add(new Pair<>("Hide amount view", createFlowWithoutAmountView()));
         return options;
     }
 
@@ -231,14 +230,5 @@ public final class ExamplesUtils {
 
     private static Builder createBaseWithOneItemLongTitle() {
         return new Builder(DUMMY_MERCHANT_PUBLIC_KEY, DUMMY_PREFERENCE_ID_WITH_ITEM_LONG_TITLE);
-    }
-
-    private static Builder createFlowWithoutAmountView() {
-
-        AdvancedConfiguration.Builder advancedConfigurationBuilder = new AdvancedConfiguration.Builder()
-                .setAmountRowEnabled(false);
-
-        return new Builder(DUMMY_MERCHANT_PUBLIC_KEY, DUMMY_PREFERENCE_ID)
-                .setAdvancedConfiguration(advancedConfigurationBuilder.build());
     }
 }
