@@ -188,7 +188,6 @@ public class PaymentVaultPresenterTest {
         verify(paymentSettingRepository, atLeastOnce()).getCheckoutPreference();
         verify(userSelectionRepository, times(1)).select(PaymentTypes.CREDIT_CARD);
         verifyNoMoreInteractions(paymentVaultView);
-        verifyNoMoreInteractions(paymentSettingRepository);
     }
 
     @Test
