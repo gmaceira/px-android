@@ -174,7 +174,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     protected void initialize() {
         showTimer();
         presenter.initialize();
-        setMainTitle();
     }
 
     private void showTimer() {
@@ -468,7 +467,7 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     }
 
     @Override
-    public void setMainTitle() {
+    public void setTitleWithMainVerb() {
         final String mainVerb = getString(Session.getSession(this).getMainVerb());
         final String title = getString(R.string.px_title_activity_payment_vault, mainVerb);
         setTitle(title);

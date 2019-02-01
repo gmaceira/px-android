@@ -33,7 +33,7 @@
                 app:collapsedTitleTextAppearance="@style/px_collapsing_toolbar_text_medium"
                 app:contentScrim="@color/px_background"
                 app:expandedTitleGravity="center_horizontal"
-                app:expandedTitleTextAppearance="@style/px_collapsing_toolbar_text_large"
+                app:expandedTitleTextAppearance="@style/px_collapsing_toolbar_text_medium"
                 app:layout_scrollFlags="scroll|exitUntilCollapsed"
                 app:toolbarId="@+id/mpsdkToolbar">
 

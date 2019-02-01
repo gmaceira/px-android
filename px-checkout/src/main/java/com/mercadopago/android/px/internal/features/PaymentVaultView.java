@@ -41,7 +41,7 @@ public interface PaymentVaultView extends MvpView {
 
     void setTitle(String title);
 
-    void setMainTitle();
+    void setTitleWithMainVerb();
 
     void startCardFlow(Boolean automaticallySelection);
 

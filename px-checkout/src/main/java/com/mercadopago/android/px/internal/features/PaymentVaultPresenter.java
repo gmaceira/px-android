@@ -74,6 +74,7 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
         try {
             validateParameters();
             initPaymentVaultFlow();
+            setMainTitle();
         } catch (final IllegalStateException exception) {
             getView().showError(MercadoPagoError.createNotRecoverable(exception.getMessage()), "");
         }
@@ -465,5 +466,13 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
 
     private boolean isDiscountAvailable() {
         return discountRepository.getCurrentConfiguration().getDiscount() != null;
+    }
+
+    public void setMainTitle() {
+        if(paymentSettingRepository.getAdvancedConfiguration().hasCustomPaymentVaultTitle()){
+            getView().setTitle(paymentSettingRepository.getAdvancedConfiguration().getCustomPaymentVaultTitle());
+        } else {
+            getView().setTitleWithMainVerb();
+        }
     }
 }

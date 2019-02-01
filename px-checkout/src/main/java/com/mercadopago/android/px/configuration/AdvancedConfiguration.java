@@ -1,6 +1,9 @@
 package com.mercadopago.android.px.configuration;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+
 import java.io.Serializable;
 
 /**
@@ -17,6 +20,7 @@ public class AdvancedConfiguration implements Serializable {
     private final boolean bankDealsEnabled;
     private final boolean escEnabled;
     private final boolean expressEnabled;
+    @Nullable private final String customPaymentVaultTitle;
     @NonNull private final PaymentResultScreenConfiguration paymentResultScreenConfiguration;
     @NonNull private final ReviewAndConfirmConfiguration reviewAndConfirmConfiguration;
     @NonNull private final DynamicFragmentConfiguration dynamicFragmentConfiguration;
@@ -34,6 +38,8 @@ public class AdvancedConfiguration implements Serializable {
         dynamicDialogConfiguration = builder.dynamicDialogConfiguration;
         customStringConfiguration = builder.customStringConfiguration;
         discountParamsConfiguration = builder.discountParamsConfiguration;
+        //customPaymentVaultTitle = builder.customPaymentVaultTitle;
+        customPaymentVaultTitle = "Elige una tarjeta para activar tu prueba";
     }
 
     public boolean isBankDealsEnabled() {
@@ -78,11 +84,20 @@ public class AdvancedConfiguration implements Serializable {
         return discountParamsConfiguration;
     }
 
+    public boolean hasCustomPaymentVaultTitle() {
+        return !TextUtils.isEmpty(customPaymentVaultTitle);
+    }
+
+    public String getCustomPaymentVaultTitle() {
+        return customPaymentVaultTitle;
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
         /* default */ boolean bankDealsEnabled = true;
         /* default */ boolean escEnabled = false;
         /* default */ boolean expressEnabled = false;
+        /* default */ String customPaymentVaultTitle;
         /* default */ @NonNull PaymentResultScreenConfiguration paymentResultScreenConfiguration =
             new PaymentResultScreenConfiguration.Builder().build();
         /* default */ @NonNull ReviewAndConfirmConfiguration reviewAndConfirmConfiguration =
@@ -119,6 +134,14 @@ public class AdvancedConfiguration implements Serializable {
          */
         public Builder setEscEnabled(final boolean escEnabled) {
             this.escEnabled = escEnabled;
+            return this;
+        }
+
+        /**
+         * TODO: LALAA
+         */
+        public Builder setCustomPaymentVaultTitle(String title){
+            this.customPaymentVaultTitle = title;
             return this;
         }
 
