@@ -1,6 +1,8 @@
 package com.mercadopago.android.px.paymentvault;
 
 import android.support.annotation.NonNull;
+
+import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
@@ -62,10 +64,12 @@ public class PaymentVaultPresenterTest {
     @Mock private PluginRepository pluginRepository;
     @Mock private DiscountRepository discountRepository;
     @Mock private GroupsRepository groupsRepository;
+    @Mock private AdvancedConfiguration advancedConfiguration;
     @Mock private PaymentVaultView view;
 
     @Mock private Site mockSite;
 
+    private static final String CUSTOM_PAYMENT_VAULT_TITLE = "CUSTOM_PAYMENT_VAULT_TITLE";
     private static final DiscountConfigurationModel WITHOUT_DISCOUNT =
         new DiscountConfigurationModel(null, null, false);
 
@@ -75,6 +79,9 @@ public class PaymentVaultPresenterTest {
         when(paymentSettingRepository.getCheckoutPreference()).thenReturn(checkoutPreference);
         when(checkoutPreference.getPaymentPreference()).thenReturn(new PaymentPreference());
         when(checkoutPreference.getSite()).thenReturn(mockSite);
+        when(paymentSettingRepository.getAdvancedConfiguration()).thenReturn(advancedConfiguration);
+        when(advancedConfiguration.hasCustomPaymentVaultTitle()).thenReturn(false);
+
         presenter = getPresenter();
     }
 
@@ -166,8 +173,8 @@ public class PaymentVaultPresenterTest {
         verify(view).startCardFlow(anyBoolean());
         verify(paymentSettingRepository, atLeastOnce()).getCheckoutPreference();
         verify(userSelectionRepository, times(1)).select(PaymentTypes.CREDIT_CARD);
+        verify(view).setTitleWithMainVerb();
         verifyNoMoreInteractions(view);
-        verifyNoMoreInteractions(paymentSettingRepository);
     }
 
     @Test
@@ -395,6 +402,31 @@ public class PaymentVaultPresenterTest {
         verify(view).finishPaymentMethodSelection(userSelectionRepository.getPaymentMethod());
     }
 
+    @Test
+    public void whenPaymentVaultIsInitializedAndAdvancedConfigurationHasNotCustomPaymentVaultTitleShouldBeSettedTitleWithMainVerb() {
+        final PaymentMethodSearch paymentMethodSearch = new PaymentMethodSearch();
+        when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
+
+        when(advancedConfiguration.hasCustomPaymentVaultTitle()).thenReturn(false);
+
+        presenter.initialize();
+
+        verify(view).setTitleWithMainVerb();
+    }
+
+    @Test
+    public void whenPaymentVaultIsInitializedAndAdvancedConfigurationHasCustomPaymentVaultTitleShouldBeSettedTitleWithCustomTitle() {
+        final PaymentMethodSearch paymentMethodSearch = new PaymentMethodSearch();
+        when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
+
+        when(advancedConfiguration.hasCustomPaymentVaultTitle()).thenReturn(true);
+        when(advancedConfiguration.getCustomPaymentVaultTitle()).thenReturn(CUSTOM_PAYMENT_VAULT_TITLE);
+
+        presenter.initialize();
+
+        verify(view).setTitle(CUSTOM_PAYMENT_VAULT_TITLE);
+    }
+
     // --------- Helper methods ----------- //
 
     private void verifyInitializeWithGroups() {
@@ -410,6 +442,7 @@ public class PaymentVaultPresenterTest {
         verifyInitializeWithGroups();
         verify(view).showCustomOptions(eq(paymentMethodSearch.getCustomSearchItems()), any(OnSelectedCallback.class));
         verify(view).showSearchItems(eq(paymentMethodSearch.getGroups()), any(OnSelectedCallback.class));
+        verify(view).setTitleWithMainVerb();
         verifyNoMoreInteractions(view);
     }
 
@@ -482,7 +515,7 @@ public class PaymentVaultPresenterTest {
         }
 
         @Override
-        public void setMainTitle() {
+        public void setTitleWithMainVerb() {
             //Not yet tested
         }
 
