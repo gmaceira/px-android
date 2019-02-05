@@ -1,8 +1,7 @@
 package com.mercadopago.android.px.internal.features.express;
 
 import android.support.annotation.NonNull;
-import com.mercadopago.android.px.internal.base.MvpPresenter;
-import com.mercadopago.android.px.internal.base.ResourcesProvider;
+import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.features.explode.ExplodeDecoratorMapper;
 import com.mercadopago.android.px.internal.features.express.slider.PaymentMethodAdapter;
 import com.mercadopago.android.px.internal.repository.AmountRepository;
@@ -37,7 +36,6 @@ import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.services.Callback;
-import com.mercadopago.android.px.tracking.internal.events.AbortOneTapEventTracker;
 import com.mercadopago.android.px.tracking.internal.events.ConfirmEvent;
 import com.mercadopago.android.px.tracking.internal.events.FrictionEventTracker;
 import com.mercadopago.android.px.tracking.internal.events.InstallmentsEventTrack;
@@ -48,7 +46,7 @@ import java.util.List;
 
 import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorView.Model.SELECTED_PAYER_COST_NONE;
 
-/* default */ class ExpressPaymentPresenter extends MvpPresenter<ExpressPayment.View, ResourcesProvider>
+/* default */ class ExpressPaymentPresenter extends BasePresenter<ExpressPayment.View>
     implements ExpressPayment.Actions, AmountDescriptorView.OnClickListenerWithDiscount {
 
     @NonNull private final PaymentRepository paymentRepository;
@@ -96,10 +94,10 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
 
     @Override
     public void trackExpressView() {
-        new OneTapViewTracker(expressMetadataList,
+        final OneTapViewTracker oneTapViewTracker = new OneTapViewTracker(expressMetadataList,
             paymentConfiguration.getCheckoutPreference(),
-            discountRepository.getCurrentConfiguration())
-            .track();
+            discountRepository.getCurrentConfiguration());
+        setCurrentViewTracker(oneTapViewTracker);
     }
 
     @Override
@@ -128,7 +126,7 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
 
     @Override
     public void cancel() {
-        new AbortOneTapEventTracker().track();
+        tracker.trackAbort();
         getView().cancel();
     }
 
@@ -249,7 +247,8 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
         final ExpressMetadata expressMetadata = expressMetadataList.get(currentItem);
         final CardMetadata cardMetadata = expressMetadata.getCard();
         if (currentItem <= expressMetadataList.size() && cardMetadata != null) {
-            final AmountConfiguration amountConfiguration = payerCostRepository.getConfigurationFor(cardMetadata.getId());
+            final AmountConfiguration amountConfiguration =
+                payerCostRepository.getConfigurationFor(cardMetadata.getId());
             final List<PayerCost> payerCostList = amountConfiguration.getPayerCosts();
             if (payerCostList != null && payerCostList.size() > 1) {
                 int selectedPayerCostIndex = payerCostSelection.get(currentItem);

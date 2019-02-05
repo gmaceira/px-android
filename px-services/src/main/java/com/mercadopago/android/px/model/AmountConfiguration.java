@@ -14,15 +14,19 @@ public class AmountConfiguration implements Serializable, Parcelable {
 
     public final int selectedPayerCostIndex;
     public final List<PayerCost> payerCosts;
+    public final String discountToken;
 
-    public AmountConfiguration(final int selectedPayerCostIndex, @Nullable final List<PayerCost> payerCosts) {
+    public AmountConfiguration(final int selectedPayerCostIndex, @Nullable final List<PayerCost> payerCosts,
+        @Nullable final String discountToken) {
         this.selectedPayerCostIndex = selectedPayerCostIndex;
         this.payerCosts = payerCosts;
+        this.discountToken = discountToken;
     }
 
     protected AmountConfiguration(final Parcel in) {
         selectedPayerCostIndex = in.readInt();
         payerCosts = in.createTypedArrayList(PayerCost.CREATOR);
+        discountToken = in.readString();
     }
 
     @NonNull
@@ -32,6 +36,11 @@ public class AmountConfiguration implements Serializable, Parcelable {
 
     public int getDefaultPayerCostIndex() {
         return selectedPayerCostIndex;
+    }
+
+    @Nullable
+    public String getDiscountToken() {
+        return discountToken;
     }
 
     public PayerCost getPayerCost(final int userSelectedPayerCost) {
@@ -63,5 +72,6 @@ public class AmountConfiguration implements Serializable, Parcelable {
     public void writeToParcel(final Parcel dest, final int flags) {
         dest.writeInt(selectedPayerCostIndex);
         dest.writeTypedList(payerCosts);
+        dest.writeString(discountToken);
     }
 }

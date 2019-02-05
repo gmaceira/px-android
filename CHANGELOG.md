@@ -1,3 +1,12 @@
+## VERSION 4.6.1
+_04_02_2019_
+* FIX - Added correct discount id in PaymentData.
+* FIX - Attached view when exploding animation finished.
+
+## VERSION 4.5.2
+_31_01_2019_
+* FIX - NPE tracking events.
+
 ## VERSION 4.6.0
 _24_01_2019_
 * FEATURE - Support to payment method discount.

@@ -20,7 +20,18 @@ public class CardToken {
     private Integer expirationYear;
     private String securityCode;
 
-    public CardToken(final String cardNumber, @Nullable final Integer expirationMonth, @Nullable final Integer expirationYear,
+    public static CardToken createEmpty() {
+        return new CardToken();
+    }
+
+    private CardToken() {
+        this("", null, null,
+            "", "", "", "");
+    }
+
+    @Deprecated
+    public CardToken(final String cardNumber, @Nullable final Integer expirationMonth,
+        @Nullable final Integer expirationYear,
         final String securityCode, final String cardholderName, final String identificationType,
         final String identificationNumber) {
         this.cardNumber = normalizeCardNumber(cardNumber);
@@ -131,8 +142,17 @@ public class CardToken {
         return device;
     }
 
+    /**
+     * @deprecated use {@link CardToken#setDevice(Device)} instead.
+     * @param context
+     */
+    @Deprecated
     public void setDevice(final Context context) {
         device = new Device(context);
+    }
+
+    public void setDevice(final Device device) {
+        this.device = device;
     }
 
     public Integer getExpirationMonth() {

@@ -11,6 +11,7 @@ import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.EscManager;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.InstructionsRepository;
+import com.mercadopago.android.px.internal.repository.PayerCostRepository;
 import com.mercadopago.android.px.internal.repository.PaymentRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.repository.PluginRepository;
@@ -19,6 +20,7 @@ import com.mercadopago.android.px.internal.repository.UserSelectionRepository;
 import com.mercadopago.android.px.internal.viewmodel.mappers.AccountMoneyMapper;
 import com.mercadopago.android.px.internal.viewmodel.mappers.CardMapper;
 import com.mercadopago.android.px.model.Card;
+import com.mercadopago.android.px.model.Discount;
 import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.model.ExpressMetadata;
 import com.mercadopago.android.px.model.IPayment;
@@ -36,6 +38,8 @@ import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.services.Callback;
 
+import static com.mercadopago.android.px.internal.util.TextUtil.isEmpty;
+
 public class PaymentService implements PaymentRepository {
 
     @NonNull /* default */ final UserSelectionRepository userSelectionRepository;
@@ -47,6 +51,7 @@ public class PaymentService implements PaymentRepository {
     @NonNull private final Context context;
     @NonNull private final TokenRepository tokenRepository;
     @NonNull private final GroupsRepository groupsRepository;
+    @NonNull private final PayerCostRepository payerCostRepository;
     @NonNull private final EscManager escManager;
 
     @NonNull /* default */ final PaymentServiceHandlerWrapper handlerWrapper;
@@ -63,7 +68,8 @@ public class PaymentService implements PaymentRepository {
         @NonNull final EscManager escManager,
         @NonNull final TokenRepository tokenRepository,
         @NonNull final InstructionsRepository instructionsRepository,
-        @NonNull final GroupsRepository groupsRepository) {
+        @NonNull final GroupsRepository groupsRepository,
+        @NonNull final PayerCostRepository payerCostRepository) {
 
         this.escManager = escManager;
         this.userSelectionRepository = userSelectionRepository;
@@ -75,6 +81,7 @@ public class PaymentService implements PaymentRepository {
         this.context = context;
         this.tokenRepository = tokenRepository;
         this.groupsRepository = groupsRepository;
+        this.payerCostRepository = payerCostRepository;
 
         handlerWrapper = new PaymentServiceHandlerWrapper(this, escManager, instructionsRepository);
     }
@@ -263,7 +270,13 @@ public class PaymentService implements PaymentRepository {
         paymentData.setToken(paymentSettingRepository.getToken());
         final DiscountConfigurationModel discountModel = discountRepository.getCurrentConfiguration();
         paymentData.setCampaign(discountModel.getCampaign());
-        paymentData.setDiscount(discountModel.getDiscount());
+
+        //TODO remove when merge with split payment feature
+        final Discount discount = userSelectionRepository.getCard() == null ? discountModel.getDiscount()
+            : Discount.replaceWith(discountModel.getDiscount(),
+                payerCostRepository.getCurrentConfiguration().getDiscountToken());
+        paymentData.setDiscount(discount);
+
         paymentData.setTransactionAmount(amountRepository.getAmountToPay());
         //se agrego payer info a la pref - BOLBRADESCO
         paymentData.setPayer(paymentSettingRepository.getCheckoutPreference().getPayer());
