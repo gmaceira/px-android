@@ -38,8 +38,7 @@ public class AdvancedConfiguration implements Serializable {
         dynamicDialogConfiguration = builder.dynamicDialogConfiguration;
         customStringConfiguration = builder.customStringConfiguration;
         discountParamsConfiguration = builder.discountParamsConfiguration;
-        //customPaymentVaultTitle = builder.customPaymentVaultTitle;
-        customPaymentVaultTitle = "Elige una tarjeta para activar tu prueba";
+        customPaymentVaultTitle = builder.customPaymentVaultTitle;
     }
 
     public boolean isBankDealsEnabled() {

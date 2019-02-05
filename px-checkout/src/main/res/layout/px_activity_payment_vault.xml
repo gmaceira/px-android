@@ -30,10 +30,10 @@
                 android:layout_height="match_parent"
                 android:background="@color/px_background"
                 android:fitsSystemWindows="true"
-                app:collapsedTitleTextAppearance="@style/px_collapsing_toolbar_text_large"
+                app:collapsedTitleTextAppearance="@style/px_collapsing_toolbar_text_medium"
                 app:contentScrim="@color/px_background"
                 app:expandedTitleGravity="center_horizontal"
-                app:expandedTitleTextAppearance="@style/px_collapsing_toolbar_text_medium"
+                app:expandedTitleTextAppearance="@style/px_collapsing_toolbar_text_large"
                 app:layout_scrollFlags="scroll|exitUntilCollapsed"
                 app:toolbarId="@+id/mpsdkToolbar">
 
