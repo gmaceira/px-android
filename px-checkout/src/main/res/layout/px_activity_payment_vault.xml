@@ -30,7 +30,7 @@
                 android:layout_height="match_parent"
                 android:background="@color/px_background"
                 android:fitsSystemWindows="true"
-                app:collapsedTitleTextAppearance="@style/px_collapsing_toolbar_text_medium"
+                app:collapsedTitleTextAppearance="@style/px_collapsing_toolbar_text_large"
                 app:contentScrim="@color/px_background"
                 app:expandedTitleGravity="center_horizontal"
                 app:expandedTitleTextAppearance="@style/px_collapsing_toolbar_text_medium"
