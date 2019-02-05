@@ -25,6 +25,7 @@ public class PaymentSettingService implements PaymentSettingRepository {
     private static final String PREF_TOKEN = "PREF_TOKEN";
     private static final String PREF_PRODUCT_ID = "PREF_PRODUCT_ID";
     private static final String PREF_LABELS = "PREF_LABELS";
+    private static final String PREF_AMOUNT_ROW_ENABLED = "PREF_AMOUNT_ROW_ENABLED";
 
     @NonNull private final SharedPreferences sharedPreferences;
     @NonNull private final JsonUtil jsonUtil;
@@ -66,6 +67,7 @@ public class PaymentSettingService implements PaymentSettingRepository {
         final SharedPreferences.Editor edit = sharedPreferences.edit();
         edit.putString(PREF_PRODUCT_ID, advancedConfiguration.getDiscountParamsConfiguration().getProductId()).apply();
         edit.putStringSet(PREF_LABELS, advancedConfiguration.getDiscountParamsConfiguration().getLabels());
+        edit.putBoolean(PREF_AMOUNT_ROW_ENABLED, advancedConfiguration.isAmountRowEnabled());
 
         this.advancedConfiguration = advancedConfiguration;
     }
@@ -157,7 +159,8 @@ public class PaymentSettingService implements PaymentSettingRepository {
     public AdvancedConfiguration getAdvancedConfiguration() {
         if (advancedConfiguration == null) {
             return new AdvancedConfiguration.Builder()
-                .setDiscountParamsConfiguration(new DiscountParamsConfiguration.Builder()
+                    .setAmountRowEnabled(sharedPreferences.getBoolean(PREF_AMOUNT_ROW_ENABLED, true))
+                    .setDiscountParamsConfiguration(new DiscountParamsConfiguration.Builder()
                     .setProductId(sharedPreferences.getString(PREF_PRODUCT_ID, ""))
                     .setLabels(sharedPreferences.getStringSet(PREF_LABELS, Collections.<String>emptySet())).build())
                 .build();

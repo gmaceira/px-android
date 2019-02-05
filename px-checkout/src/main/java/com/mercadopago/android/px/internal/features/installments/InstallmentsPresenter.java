@@ -76,12 +76,7 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
     private void resolvePayerCosts() {
         if (userSelectionRepository.hasCardSelected()) {
             resolvePayerCostsForSavedCard();
-            if(configuration.getAdvancedConfiguration().isAmountRowEnabled()) {
-                getView().showAmount(discountRepository.getCurrentConfiguration(),
-                        amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
-            } else {
-                getView().hideAmountRow();
-            }
+            setAmountRow();
         } else {
             resolvePayerCostsForGuessedCard();
         }
@@ -103,12 +98,7 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
                 payerCostSolver.solve(InstallmentsPresenter.this, amountConfiguration.getPayerCosts());
 
                 if (isViewAttached()) {
-                    if(configuration.getAdvancedConfiguration().isAmountRowEnabled()) {
-                        getView().showAmount(discountRepository.getCurrentConfiguration(),
-                                amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
-                    } else {
-                        getView().hideAmountRow();
-                    }
+                    setAmountRow();
                     getView().hideLoadingView();
                 }
             }
@@ -127,6 +117,15 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
                 }
             }
         });
+    }
+
+    private void setAmountRow() {
+        if(configuration.getAdvancedConfiguration().isAmountRowEnabled()) {
+            getView().showAmount(discountRepository.getCurrentConfiguration(),
+                    amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
+        } else {
+            getView().hideAmountRow();
+        }
     }
 
     public void setCardInfo(@Nullable final CardInfo cardInfo) {
