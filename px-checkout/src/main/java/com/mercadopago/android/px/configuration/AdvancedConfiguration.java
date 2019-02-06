@@ -137,7 +137,10 @@ public class AdvancedConfiguration implements Serializable {
         }
 
         /**
-         * TODO: LALAA
+         * Add the possibility to add a custom Title in payment vault screen.
+         *
+         * @param title Custom title to be setted
+         * @return builder to keep operating
          */
         public Builder setCustomPaymentVaultTitle(String title){
             this.customPaymentVaultTitle = title;
