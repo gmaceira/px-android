@@ -3,6 +3,7 @@ package com.mercadopago.android.px.paymentvault;
 import android.support.annotation.NonNull;
 
 import com.mercadopago.android.px.configuration.AdvancedConfiguration;
+import com.mercadopago.android.px.configuration.CustomStringConfiguration;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
@@ -65,6 +66,7 @@ public class PaymentVaultPresenterTest {
     @Mock private DiscountRepository discountRepository;
     @Mock private GroupsRepository groupsRepository;
     @Mock private AdvancedConfiguration advancedConfiguration;
+    @Mock private CustomStringConfiguration customStringConfiguration;
     @Mock private PaymentVaultView view;
 
     @Mock private Site mockSite;
@@ -80,7 +82,8 @@ public class PaymentVaultPresenterTest {
         when(checkoutPreference.getPaymentPreference()).thenReturn(new PaymentPreference());
         when(checkoutPreference.getSite()).thenReturn(mockSite);
         when(paymentSettingRepository.getAdvancedConfiguration()).thenReturn(advancedConfiguration);
-        when(advancedConfiguration.hasCustomPaymentVaultTitle()).thenReturn(false);
+        when(advancedConfiguration.getCustomStringConfiguration()).thenReturn(customStringConfiguration);
+        when(customStringConfiguration.hasCustomPaymentVaultTitle()).thenReturn(false);
 
         presenter = getPresenter();
     }
@@ -407,7 +410,7 @@ public class PaymentVaultPresenterTest {
         final PaymentMethodSearch paymentMethodSearch = new PaymentMethodSearch();
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
 
-        when(advancedConfiguration.hasCustomPaymentVaultTitle()).thenReturn(false);
+        when(customStringConfiguration.hasCustomPaymentVaultTitle()).thenReturn(false);
 
         presenter.initialize();
 
@@ -419,8 +422,8 @@ public class PaymentVaultPresenterTest {
         final PaymentMethodSearch paymentMethodSearch = new PaymentMethodSearch();
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
 
-        when(advancedConfiguration.hasCustomPaymentVaultTitle()).thenReturn(true);
-        when(advancedConfiguration.getCustomPaymentVaultTitle()).thenReturn(CUSTOM_PAYMENT_VAULT_TITLE);
+        when(customStringConfiguration.hasCustomPaymentVaultTitle()).thenReturn(true);
+        when(customStringConfiguration.getCustomPaymentVaultTitle()).thenReturn(CUSTOM_PAYMENT_VAULT_TITLE);
 
         presenter.initialize();
 

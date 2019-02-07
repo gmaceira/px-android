@@ -20,7 +20,6 @@ public class AdvancedConfiguration implements Serializable {
     private final boolean bankDealsEnabled;
     private final boolean escEnabled;
     private final boolean expressEnabled;
-    @Nullable private final String customPaymentVaultTitle;
     @NonNull private final PaymentResultScreenConfiguration paymentResultScreenConfiguration;
     @NonNull private final ReviewAndConfirmConfiguration reviewAndConfirmConfiguration;
     @NonNull private final DynamicFragmentConfiguration dynamicFragmentConfiguration;
@@ -38,7 +37,6 @@ public class AdvancedConfiguration implements Serializable {
         dynamicDialogConfiguration = builder.dynamicDialogConfiguration;
         customStringConfiguration = builder.customStringConfiguration;
         discountParamsConfiguration = builder.discountParamsConfiguration;
-        customPaymentVaultTitle = builder.customPaymentVaultTitle;
     }
 
     public boolean isBankDealsEnabled() {
@@ -83,20 +81,11 @@ public class AdvancedConfiguration implements Serializable {
         return discountParamsConfiguration;
     }
 
-    public boolean hasCustomPaymentVaultTitle() {
-        return !TextUtils.isEmpty(customPaymentVaultTitle);
-    }
-
-    public String getCustomPaymentVaultTitle() {
-        return customPaymentVaultTitle;
-    }
-
     @SuppressWarnings("unused")
     public static class Builder {
         /* default */ boolean bankDealsEnabled = true;
         /* default */ boolean escEnabled = false;
         /* default */ boolean expressEnabled = false;
-        /* default */ String customPaymentVaultTitle;
         /* default */ @NonNull PaymentResultScreenConfiguration paymentResultScreenConfiguration =
             new PaymentResultScreenConfiguration.Builder().build();
         /* default */ @NonNull ReviewAndConfirmConfiguration reviewAndConfirmConfiguration =
@@ -133,17 +122,6 @@ public class AdvancedConfiguration implements Serializable {
          */
         public Builder setEscEnabled(final boolean escEnabled) {
             this.escEnabled = escEnabled;
-            return this;
-        }
-
-        /**
-         * Add the possibility to add a custom Title in payment vault screen.
-         *
-         * @param title Custom title to be setted
-         * @return builder to keep operating
-         */
-        public Builder setCustomPaymentVaultTitle(String title){
-            this.customPaymentVaultTitle = title;
             return this;
         }
 

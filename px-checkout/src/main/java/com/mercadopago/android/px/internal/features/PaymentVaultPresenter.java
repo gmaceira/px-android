@@ -469,8 +469,8 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     }
 
     public void setMainTitle() {
-        if(paymentSettingRepository.getAdvancedConfiguration().hasCustomPaymentVaultTitle()){
-            getView().setTitle(paymentSettingRepository.getAdvancedConfiguration().getCustomPaymentVaultTitle());
+        if(paymentSettingRepository.getAdvancedConfiguration().getCustomStringConfiguration().hasCustomPaymentVaultTitle()){
+            getView().setTitle(paymentSettingRepository.getAdvancedConfiguration().getCustomStringConfiguration().getCustomPaymentVaultTitle());
         } else {
             getView().setTitleWithMainVerb();
         }
