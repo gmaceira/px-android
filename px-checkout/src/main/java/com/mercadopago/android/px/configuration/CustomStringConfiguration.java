@@ -28,7 +28,8 @@ public class CustomStringConfiguration {
     }
 
     /**
-     * Check if has
+     * Check if a custom payment vault title is setted
+     * 
      * @return true/false if customPaymentVaultTitle is (or not) empty
      */
     public boolean hasCustomPaymentVaultTitle() {
@@ -36,9 +37,11 @@ public class CustomStringConfiguration {
     }
 
     /**
+     * Obtain customized payment vault title
      *
      * @return Custom Payment Vault Title
      */
+    @Nullable
     public String getCustomPaymentVaultTitle() {
         return customPaymentVaultTitle;
     }
@@ -69,7 +72,7 @@ public class CustomStringConfiguration {
          * @param title Custom title to be setted
          * @return builder to keep operating
          */
-        public Builder setCustomPaymentVaultTitle(String title){
+        public Builder setCustomPaymentVaultTitle(@NonNull final String title){
             this.customPaymentVaultTitle = title;
             return this;
         }
