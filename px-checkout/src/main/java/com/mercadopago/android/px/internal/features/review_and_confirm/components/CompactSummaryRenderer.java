@@ -25,8 +25,8 @@ public class CompactSummaryRenderer extends Renderer<CompactSummary> {
         final MPTextView itemTitleTextView = summaryView.findViewById(R.id.mpsdkItemTitle);
         final LinearLayout disclaimerLinearLayout = summaryView.findViewById(R.id.disclaimer);
 
-        setText(totalAmountTextView, CurrenciesUtil
-            .getSpannedAmountWithCurrencySymbol(component.props.getAmountToPay(), component.props.currencyId));
+        setText(totalAmountTextView, CurrenciesUtil.getSpannedAmountWithCurrencySymbol(
+            component.props.getAmountToPay(), component.props.getSite().getCurrencyId()));
         setText(itemTitleTextView, getItemTitle(component.props.title, context));
 
         if (shouldShowCftDisclaimer(component.props)) {
@@ -46,15 +46,15 @@ public class CompactSummaryRenderer extends Renderer<CompactSummary> {
             && !TextUtil.isEmpty(props.getCftPercent());
     }
 
-    private String getItemTitle(String itemTitle, Context context) {
+    private String getItemTitle(final String itemTitle, final Context context) {
         return TextUtil.isEmpty(itemTitle) ? getDefaultTitle(context) : itemTitle;
     }
 
-    private String getDefaultTitle(Context context) {
+    private String getDefaultTitle(final Context context) {
         return context.getString(R.string.px_review_summary_product);
     }
 
-    private String getDisclaimer(CompactSummary component, Context context) {
+    private String getDisclaimer(final CompactSummary component, final Context context) {
         return context.getString(R.string.px_installments_cft, component.props.getCftPercent());
     }
 }

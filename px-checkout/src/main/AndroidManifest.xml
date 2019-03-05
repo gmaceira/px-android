@@ -19,7 +19,7 @@
             android:label="@string/px_title_activity_payment_methods"
             android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
         <activity
-            android:name=".internal.features.BankDealsActivity"
+            android:name=".internal.features.bank_deals.BankDealsActivity"
             android:label="@string/px_title_activity_bank_deals"
             android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
         <activity
@@ -51,7 +51,7 @@
             android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
         <activity
             android:name=".internal.features.paymentresult.PaymentResultActivity"
-            android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
+            android:theme="@style/ToolbarTransparentTheme"/>
         <activity
             android:name=".internal.features.SecurityCodeActivity"
             android:screenOrientation="portrait"
@@ -64,7 +64,7 @@
             android:name=".internal.features.ReviewPaymentMethodsActivity"
             android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
         <activity
-            android:name=".internal.features.PayerInformationActivity"
+            android:name=".internal.features.payer_information.PayerInformationActivity"
             android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
         <activity
             android:name=".internal.features.hooks.HookActivity"
@@ -82,14 +82,14 @@
             android:name=".internal.features.review_and_confirm.ReviewAndConfirmActivity"
             android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
         <activity
-            android:name=".internal.features.BankDealDetailActivity"
+            android:name=".internal.features.bank_deal_detail.BankDealDetailActivity"
             android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
         <activity
             android:name=".internal.features.guessing_card.card_association_result.CardAssociationResultSuccessActivity"
-            android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
+            android:theme="@style/ToolbarTransparentTheme"/>
         <activity
             android:name=".internal.features.guessing_card.card_association_result.CardAssociationResultErrorActivity"
-            android:theme="@style/Theme.MercadoPagoTheme.NoActionBar"/>
+            android:theme="@style/ToolbarTransparentTheme"/>
     </application>
 
 </manifest>

@@ -13,30 +13,37 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.core.PaymentProcessor;
+import com.mercadopago.android.px.core.SplitPaymentProcessor;
 import com.mercadopago.android.px.internal.callbacks.PaymentServiceHandler;
 import com.mercadopago.android.px.internal.callbacks.PaymentServiceHandlerWrapper;
 import com.mercadopago.android.px.internal.datasource.EscManagerImp;
 import com.mercadopago.android.px.internal.di.ConfigurationModule;
 import com.mercadopago.android.px.internal.di.Session;
+import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.util.ErrorUtil;
 import com.mercadopago.android.px.model.BusinessPayment;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.GenericPayment;
+import com.mercadopago.android.px.model.IPaymentDescriptor;
+import com.mercadopago.android.px.model.IPaymentDescriptorHandler;
 import com.mercadopago.android.px.model.Payment;
+import com.mercadopago.android.px.model.PaymentData;
 import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
+import com.mercadopago.android.px.model.internal.IParcelablePaymentDescriptor;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
+import java.util.List;
 
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_FAIL_ESC;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_PAYMENT;
 import static com.mercadopago.android.px.internal.util.ErrorUtil.ERROR_REQUEST_CODE;
 
 public final class PaymentProcessorActivity extends AppCompatActivity
-    implements PaymentProcessor.OnPaymentListener {
+    implements SplitPaymentProcessor.OnPaymentListener,
+    PaymentProcessor.OnPaymentListener {
 
     private static final String TAG_PROCESSOR_FRAGMENT = "TAG_PROCESSOR_FRAGMENT";
     private static final String EXTRA_BUSINESS_PAYMENT = "extra_business_payment";
-    private static final String EXTRA_GENERIC_PAYMENT = "extra_generic_payment";
     private static final String EXTRA_PAYMENT = "extra_payment";
     private static final String EXTRA_RECOVERY = "extra_recovery";
 
@@ -51,23 +58,14 @@ public final class PaymentProcessorActivity extends AppCompatActivity
         return intent != null && intent.getExtras() != null && intent.getExtras().containsKey(EXTRA_BUSINESS_PAYMENT);
     }
 
-    public static boolean isGeneric(@Nullable final Intent intent) {
-        return intent != null && intent.getExtras() != null && intent.getExtras().containsKey(EXTRA_GENERIC_PAYMENT);
-    }
-
     @Nullable
-    public static Payment getPayment(final Intent intent) {
-        return (Payment) intent.getExtras().get(EXTRA_PAYMENT);
+    public static IParcelablePaymentDescriptor getPayment(final Intent intent) {
+        return (IParcelablePaymentDescriptor) intent.getExtras().get(EXTRA_PAYMENT);
     }
 
     @Nullable
     public static BusinessPayment getBusinessPayment(final Intent intent) {
         return (BusinessPayment) intent.getExtras().get(EXTRA_BUSINESS_PAYMENT);
-    }
-
-    @Nullable
-    public static GenericPayment getGenericPayment(final Intent intent) {
-        return (GenericPayment) intent.getExtras().get(EXTRA_GENERIC_PAYMENT);
     }
 
     @Nullable
@@ -78,41 +76,50 @@ public final class PaymentProcessorActivity extends AppCompatActivity
     @Override
     public void onCreate(@Nullable final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         final FrameLayout frameLayout = new FrameLayout(this);
         frameLayout.setId(R.id.px_main_container);
-        setContentView(frameLayout,
-            new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        final Session session = Session.getSession(getApplicationContext());
-        final ConfigurationModule configurationModule = session.getConfigurationModule();
-        final PaymentProcessor paymentProcessor =
-            configurationModule.getPaymentSettings()
-                .getPaymentConfiguration()
-                .getPaymentProcessor();
-
-        paymentServiceHandlerWrapper = new PaymentServiceHandlerWrapper(session.getPaymentRepository(),
-            new EscManagerImp(session.getMercadoPagoESC()), session.getInstructionsRepository());
-
-        final CheckoutPreference checkoutPreference = configurationModule.getPaymentSettings().getCheckoutPreference();
-        final PaymentProcessor.CheckoutData checkoutData =
-            new PaymentProcessor.CheckoutData(session.getPaymentRepository().getPaymentData(), checkoutPreference);
+        setContentView(frameLayout, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT));
 
         final FragmentManager supportFragmentManager = getSupportFragmentManager();
         final Fragment fragmentByTag = supportFragmentManager.findFragmentByTag(TAG_PROCESSOR_FRAGMENT);
 
+        final Session session = Session.getSession(getApplicationContext());
+
+        paymentServiceHandlerWrapper = new PaymentServiceHandlerWrapper(session.getPaymentRepository(),
+            new EscManagerImp(session.getMercadoPagoESC()), session.getInstructionsRepository());
+
         if (fragmentByTag == null) { // if fragment is not added, then create it.
-            final Fragment fragment = paymentProcessor.getFragment(checkoutData, this);
-            final Bundle fragmentBundle = paymentProcessor.getFragmentBundle(checkoutData, this);
-            if (fragment != null) {
+            addPaymentProcessorFragment(supportFragmentManager, session);
+        }
+    }
 
-                if (fragmentBundle != null) {
-                    fragment.setArguments(fragmentBundle);
-                }
+    private void addPaymentProcessorFragment(@NonNull final FragmentManager supportFragmentManager,
+        @NonNull final Session session) {
 
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.px_main_container, fragment, TAG_PROCESSOR_FRAGMENT)
-                    .commit();
-            }
+        final ConfigurationModule configurationModule = session.getConfigurationModule();
+        final PaymentSettingRepository paymentSettings = configurationModule.getPaymentSettings();
+
+        final SplitPaymentProcessor paymentProcessor = paymentSettings
+            .getPaymentConfiguration()
+            .getPaymentProcessor();
+
+        final List<PaymentData> paymentData = session
+            .getPaymentRepository()
+            .getPaymentDataList();
+
+        final CheckoutPreference checkoutPreference = paymentSettings.getCheckoutPreference();
+
+        final SplitPaymentProcessor.CheckoutData checkoutData =
+            new SplitPaymentProcessor.CheckoutData(paymentData, checkoutPreference);
+
+        final Fragment fragment = paymentProcessor.getFragment(checkoutData, this);
+
+        if (fragment != null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.px_main_container, fragment, TAG_PROCESSOR_FRAGMENT)
+                .commit();
         }
     }
 
@@ -152,27 +159,25 @@ public final class PaymentProcessorActivity extends AppCompatActivity
             }
 
             @Override
-            public void onPaymentFinished(@NonNull final Payment payment) {
-                final Intent intent = new Intent();
-                intent.putExtra(EXTRA_PAYMENT, payment);
-                setResult(RESULT_PAYMENT, intent);
-                finish();
-            }
+            public void onPaymentFinished(@NonNull final IPaymentDescriptor payment) {
 
-            @Override
-            public void onPaymentFinished(@NonNull final GenericPayment genericPayment) {
-                final Intent intent = new Intent();
-                intent.putExtra(EXTRA_GENERIC_PAYMENT, (Parcelable) genericPayment);
-                setResult(RESULT_PAYMENT, intent);
-                finish();
-            }
+                payment.process(new IPaymentDescriptorHandler() {
+                    @Override
+                    public void visit(@NonNull final BusinessPayment businessPayment) {
+                        final Intent intent = new Intent();
+                        intent.putExtra(EXTRA_BUSINESS_PAYMENT, (Parcelable) businessPayment);
+                        setResult(RESULT_PAYMENT, intent);
+                        finish();
+                    }
 
-            @Override
-            public void onPaymentFinished(@NonNull final BusinessPayment businessPayment) {
-                final Intent intent = new Intent();
-                intent.putExtra(EXTRA_BUSINESS_PAYMENT, (Parcelable) businessPayment);
-                setResult(RESULT_PAYMENT, intent);
-                finish();
+                    @Override
+                    public void visit(@NonNull final IPaymentDescriptor payment) {
+                        final Intent intent = new Intent();
+                        intent.putExtra(EXTRA_PAYMENT, (Parcelable) IParcelablePaymentDescriptor.with(payment));
+                        setResult(RESULT_PAYMENT, intent);
+                        finish();
+                    }
+                });
             }
 
             @Override
@@ -193,13 +198,18 @@ public final class PaymentProcessorActivity extends AppCompatActivity
     }
 
     @Override
+    public void onPaymentFinished(@NonNull final IPaymentDescriptor payment) {
+        paymentServiceHandlerWrapper.onPaymentFinished(payment);
+    }
+
+    @Override
     public void onPaymentFinished(@NonNull final Payment payment) {
         paymentServiceHandlerWrapper.onPaymentFinished(payment);
     }
 
     @Override
     public void onPaymentFinished(@NonNull final GenericPayment genericPayment) {
-        paymentServiceHandlerWrapper.onPaymentFinished(genericPayment);
+        paymentServiceHandlerWrapper.onPaymentFinished(IParcelablePaymentDescriptor.with(genericPayment));
     }
 
     @Override

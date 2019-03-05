@@ -10,7 +10,12 @@ import java.util.List;
 
 public class IdentificationTypes {
 
-    private static String doNotFindIdentificationTypesException =
+    private static final String TYPE = "number";
+    private static final String CPF_ID = "CPF";
+    private static final String CPF_NAME = "CPF";
+    private static final int CPF_INVALID_LENGTH = 10;
+    private static final int CPF_VALID_LENGTH = 11;
+    private static final String doNotFindIdentificationTypesException =
         "{\"message\":\"doesn't find identification types\",\"error\":\"identification types not found error\",\"cause\":[]}";
 
     public static IdentificationType getById(String id) {
@@ -54,5 +59,41 @@ public class IdentificationTypes {
             identificationTypesList = null;
         }
         return identificationTypesList;
+    }
+
+    public static List<IdentificationType> getEnabledMLBIdentificationTypes() {
+        List<IdentificationType> identificationTypesList;
+        String json = ResourcesUtil.getStringResource("identification_types_MLB.json");
+
+        try {
+            Type listType = new TypeToken<List<IdentificationType>>() {
+            }.getType();
+            identificationTypesList = JsonUtil.getInstance().getGson().fromJson(json, listType);
+        } catch (Exception ex) {
+            identificationTypesList = null;
+        }
+        return identificationTypesList;
+    }
+
+    public static IdentificationType getIdentificationTypeCPF() {
+        IdentificationType identificationType = new IdentificationType();
+        identificationType.setType(TYPE);
+        identificationType.setId(CPF_ID);
+        identificationType.setMaxLength(CPF_VALID_LENGTH);
+        identificationType.setMinLength(CPF_VALID_LENGTH);
+        identificationType.setName(CPF_NAME);
+
+        return identificationType;
+    }
+
+    public static IdentificationType getIdentificationTypeWithInvalidLengthCPF() {
+        IdentificationType identificationType = new IdentificationType();
+        identificationType.setType(TYPE);
+        identificationType.setId(CPF_ID);
+        identificationType.setMaxLength(CPF_INVALID_LENGTH);
+        identificationType.setMinLength(CPF_INVALID_LENGTH);
+        identificationType.setName(CPF_NAME);
+
+        return identificationType;
     }
 }

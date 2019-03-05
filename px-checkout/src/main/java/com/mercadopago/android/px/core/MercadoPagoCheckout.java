@@ -17,13 +17,13 @@ import com.mercadopago.android.px.internal.features.uicontrollers.FontCache;
 import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.model.PaymentResult;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
+import com.mercadopago.android.px.tracking.internal.events.InitEvent;
 
 /**
- * Main class of this project.
- * It provides access to most of the checkout experience.
+ * Main class of this project. It provides access to most of the checkout experience.
  */
 @SuppressWarnings("unused")
-public class MercadoPagoCheckout {
+public final class MercadoPagoCheckout {
 
     public static final int PAYMENT_RESULT_CODE = 7;
     public static final String EXTRA_PAYMENT_RESULT = "EXTRA_PAYMENT_RESULT";
@@ -60,16 +60,14 @@ public class MercadoPagoCheckout {
     }
 
     /**
-     * Starts checkout experience.
-     * When the flows ends it returns a {@link PaymentResult} object that
-     * will be returned on {@link Activity#onActivityResult(int, int, Intent)} if success or
-     * {@link com.mercadopago.android.px.model.exceptions.MercadoPagoError}
+     * Starts checkout experience. When the flows ends it returns a {@link PaymentResult} object that will be returned
+     * on {@link Activity#onActivityResult(int, int, Intent)} if success or {@link com.mercadopago.android.px.model.exceptions.MercadoPagoError}
      * <p>
      * will return on {@link Activity#onActivityResult(int, int, Intent)}
      *
      * @param context context needed to start checkout.
-     * @param requestCode it's the number that identifies the checkout flow request for
-     * {@link Activity#onActivityResult(int, int, Intent)}
+     * @param requestCode it's the number that identifies the checkout flow request for {@link
+     * Activity#onActivityResult(int, int, Intent)}
      */
     public void startPayment(@NonNull final Context context, final int requestCode) {
         startIntent(context, CheckoutActivity.getIntent(context), requestCode);
@@ -84,9 +82,14 @@ public class MercadoPagoCheckout {
             Session.getSession(context).init(this);
         }
 
+        new InitEvent(Session.getSession(context).getConfigurationModule().getPaymentSettings()).track();
+
         if (context instanceof Activity) {
             ((Activity) context).startActivityForResult(checkoutIntent, requestCode);
         } else {
+            // Since android 9, we are forced to startActivities from an Activity context or use NEW_TASK flag.
+            //https://developer.android.com/about/versions/pie/android-9.0-changes-all#fant-required
+            checkoutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(checkoutIntent);
         }
     }
@@ -111,7 +114,6 @@ public class MercadoPagoCheckout {
             FontCache.setTypeface(fontType, typeFace);
         }
     }
-
 
     @NonNull
     public AdvancedConfiguration getAdvancedConfiguration() {
@@ -155,14 +157,13 @@ public class MercadoPagoCheckout {
         /* default */ @NonNull AdvancedConfiguration advancedConfiguration =
             new AdvancedConfiguration.Builder().build();
 
-        /* default */ @NonNull PaymentConfiguration paymentConfiguration = new MercadoPagoPaymentConfiguration();
-
+        /* default */ @NonNull PaymentConfiguration paymentConfiguration = MercadoPagoPaymentConfiguration.create();
 
         /* default */ @Nullable String privateKey;
 
         /**
-         * Checkout builder allow you to create a {@link MercadoPagoCheckout}
-         * {@see  <a href="http://developers.mercadopago.com/">our developers site</a>}
+         * Checkout builder allow you to create a {@link MercadoPagoCheckout} {@see  <a
+         * href="http://developers.mercadopago.com/">our developers site</a>}
          *
          * @param publicKey merchant public key / collector public key {@see <a href="https://www.mercadopago.com/mla/account/credentials">credentials</a>}
          * @param paymentConfiguration the payment configuration for this checkout.
@@ -178,8 +179,8 @@ public class MercadoPagoCheckout {
         }
 
         /**
-         * Checkout builder allow you to create a {@link MercadoPagoCheckout}
-         * {@see  <a href="http://developers.mercadopago.com/">our developers site</a>}
+         * Checkout builder allow you to create a {@link MercadoPagoCheckout} {@see  <a
+         * href="http://developers.mercadopago.com/">our developers site</a>}
          *
          * @param publicKey merchant public key / collector public key {@see <a href="https://www.mercadopago.com/mla/account/credentials">credentials</a>}
          * @param paymentConfiguration the payment configuration for this checkout.
@@ -195,10 +196,11 @@ public class MercadoPagoCheckout {
         }
 
         /**
-         * Checkout builder allow you to create a {@link MercadoPagoCheckout}
-         * For more information check the following links
-         * {@see <a href="https://www.mercadopago.com/mla/account/credentials">credentials</a>}
-         * {@see <a href="https://www.mercadopago.com.ar/developers/es/reference/preferences/_preferences/post/">create preference</a>}
+         * Checkout builder allow you to create a {@link MercadoPagoCheckout} For more information check the following
+         * links {@see <a href="https://www.mercadopago.com/mla/account/credentials">credentials</a>} {@see <a
+         * href="https://www.mercadopago.com.ar/developers/es/reference/preferences/_checkout_preferences/post/">create
+         * preference</a>}
+         *
          * @param publicKey merchant public key / collector public key
          * @param preferenceId the preference id that represents the payment information.
          */
@@ -220,8 +222,8 @@ public class MercadoPagoCheckout {
         }
 
         /**
-         * It provides support for custom checkout functionality/ configure special behaviour
-         * You can enable/disable several functionality.
+         * It provides support for custom checkout functionality/ configure special behaviour You can enable/disable
+         * several functionality.
          *
          * @param advancedConfiguration your configuration.
          * @return builder to keep operating

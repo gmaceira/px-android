@@ -3,8 +3,11 @@ package com.mercadopago;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import com.mercadopago.android.px.core.CheckoutLazyInit;
+import com.mercadopago.android.px.core.MercadoPagoCheckout;
 import com.mercadopago.android.px.internal.view.MPButton;
 import com.mercadopago.android.px.utils.ExamplesUtils;
 import com.mercadopago.example.R;
@@ -17,7 +20,6 @@ public class CheckoutExampleActivity extends AppCompatActivity {
     private View mRegularLayout;
     private MPButton continueSimpleCheckout;
     private static final int REQ_CODE_CHECKOUT = 1;
-    private static final int REQ_CODE_JSON = 2;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -30,12 +32,27 @@ public class CheckoutExampleActivity extends AppCompatActivity {
 
         mRegularLayout = findViewById(R.id.regularLayout);
 
-        final View jsonConfigurationButton = findViewById(R.id.jsonConfigButton);
+        final View lazy = findViewById(R.id.lazy_init);
+        final View progress = findViewById(R.id.progress_bar);
+        lazy.setOnClickListener(v ->  {
+            progress.setVisibility(View.VISIBLE);
+            new CheckoutLazyInit(ExamplesUtils.createBase()) {
+                @Override
+                public void fail(@NonNull final MercadoPagoCheckout mercadoPagoCheckout) {
+                    progress.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void success(@NonNull final MercadoPagoCheckout mercadoPagoCheckout) {
+                    progress.setVisibility(View.GONE);
+                    mercadoPagoCheckout.startPayment(v.getContext(), REQUEST_CODE);
+                }
+            }.fetch(v.getContext());
+        });
+
         continueSimpleCheckout = findViewById(R.id.continueButton);
 
         final View selectCheckoutButton = findViewById(R.id.select_checkout);
-
-        jsonConfigurationButton.setOnClickListener(v -> startJsonInput());
 
         selectCheckoutButton.setOnClickListener(
             v -> startActivity(new Intent(CheckoutExampleActivity.this, SelectCheckoutActivity.class)));
@@ -54,16 +71,9 @@ public class CheckoutExampleActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         showRegularLayout();
-        continueSimpleCheckout.setEnabled(true);
     }
 
     private void showRegularLayout() {
-
         mRegularLayout.setVisibility(View.VISIBLE);
-    }
-
-    private void startJsonInput() {
-        final Intent intent = new Intent(this, JsonSetupActivity.class);
-        startActivityForResult(intent, REQ_CODE_JSON);
     }
 }

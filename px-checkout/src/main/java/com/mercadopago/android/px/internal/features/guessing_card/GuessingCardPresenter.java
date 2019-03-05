@@ -353,8 +353,8 @@ public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardAc
     public boolean validateExpiryDate() {
         final String monthString = getExpiryMonth();
         final String yearString = getExpiryYear();
-        final Integer month = (monthString == null || monthString.isEmpty()) ? null : Integer.valueOf(monthString);
-        final Integer year = (yearString == null || yearString.isEmpty()) ? null : Integer.valueOf(yearString);
+        final Integer month = TextUtil.isDigitsOnly(monthString) ? Integer.valueOf(monthString) : null;
+        final Integer year = TextUtil.isDigitsOnly(yearString) ? Integer.valueOf(yearString) : null;
         cardToken.setExpirationMonth(month);
         cardToken.setExpirationYear(year);
         if (cardToken.validateExpiryDate()) {
@@ -491,10 +491,12 @@ public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardAc
             return;
         }
         identificationNumberRequired = paymentMethod.isIdentificationNumberRequired();
-        if (identificationNumberRequired) {
-            getIdentificationTypesAsync();
-        } else {
+        if (!identificationNumberRequired) {
             getView().hideIdentificationInput();
+        } else if (identificationTypes != null) {
+            getView().initializeIdentificationTypes(identificationTypes, identificationType);
+        } else {
+            getIdentificationTypesAsync();
         }
     }
 
@@ -503,7 +505,7 @@ public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardAc
             getView().showMissingIdentificationTypesError(false, ApiUtil.RequestOrigin.GET_IDENTIFICATION_TYPES);
         } else {
             identificationType = identificationTypes.get(0);
-            getView().initializeIdentificationTypes(identificationTypes);
+            getView().initializeIdentificationTypes(identificationTypes, identificationType);
             this.identificationTypes = identificationTypes;
         }
     }
@@ -798,16 +800,14 @@ public abstract class GuessingCardPresenter extends BasePresenter<GuessingCardAc
             final PaymentMethod pm = JsonUtil.getInstance()
                 .fromJson(paymentMethodBundleJson, PaymentMethod.class);
             if (pm != null) {
-                List<IdentificationType> identificationTypesList;
                 try {
                     final Type listType = new TypeToken<List<IdentificationType>>() {
                     }.getType();
-                    identificationTypesList = JsonUtil.getInstance().getGson().fromJson(
+                    identificationTypes = JsonUtil.getInstance().getGson().fromJson(
                         savedInstanceState.getString(IDENTIFICATION_TYPES_LIST_BUNDLE), listType);
                 } catch (final Exception ex) {
-                    identificationTypesList = null;
+                    identificationTypes = null;
                 }
-                resolveIdentificationTypes(identificationTypesList);
                 saveBin(savedInstanceState.getString(CARD_INFO_BIN_BUNDLE));
                 setIdentificationNumberRequired(savedInstanceState.getBoolean(ID_REQUIRED_BUNDLE));
                 setSecurityCodeRequired(savedInstanceState.getBoolean(SEC_CODE_REQUIRED_BUNDLE));

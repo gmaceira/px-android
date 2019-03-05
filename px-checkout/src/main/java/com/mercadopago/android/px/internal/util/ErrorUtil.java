@@ -40,7 +40,8 @@ public final class ErrorUtil {
         startErrorActivity(launcherActivity, mercadoPagoError);
     }
 
-    public static void startErrorActivity(final Activity launcherActivity, @Nullable final MercadoPagoError mercadoPagoError) {
+    public static void startErrorActivity(final Activity launcherActivity,
+        @Nullable final MercadoPagoError mercadoPagoError) {
         final String publicKey =
             Session.getSession(launcherActivity)
                 .getConfigurationModule()
@@ -69,10 +70,9 @@ public final class ErrorUtil {
         ErrorUtil.startErrorActivity(activity, mercadoPagoError);
     }
 
-    public static String getStacktraceMessage(Exception e){
+    public static String getStacktraceMessage(Exception e) {
         StringWriter errors = new StringWriter();
         e.printStackTrace(new PrintWriter(errors));
         return errors.toString();
     }
-
 }

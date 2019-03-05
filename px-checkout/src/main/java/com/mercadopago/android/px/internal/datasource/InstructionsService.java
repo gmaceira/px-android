@@ -35,7 +35,11 @@ public class InstructionsService implements InstructionsRepository {
 
     @Override
     public MPCall<List<Instruction>> getInstructions(@NonNull final PaymentResult paymentResult) {
-        final String paymentTypeId = paymentResult.getPaymentData().getPaymentMethod().getPaymentTypeId();
+        // Off payment method returns always 1 payment data.
+        final String paymentTypeId = paymentResult.getPaymentData()
+            .getPaymentMethod()
+            .getPaymentTypeId();
+
         final Long paymentId = paymentResult.getPaymentId();
         if (instructionsMap.containsKey(paymentId)) {
             return new MPCall<List<Instruction>>() {
@@ -85,8 +89,8 @@ public class InstructionsService implements InstructionsRepository {
     /* default */
     @NonNull
     List<Instruction> resolveInstruction(final Instructions instructions) {
-        return instructions == null ? new ArrayList<Instruction>()
-            : (instructions.getInstructions() == null ? new ArrayList<Instruction>()
+        return instructions == null ? new ArrayList<>()
+            : (instructions.getInstructions() == null ? new ArrayList<>()
                 : instructions.getInstructions());
     }
 

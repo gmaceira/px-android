@@ -22,6 +22,10 @@ public class ExitAction extends Action implements Parcelable, Serializable {
         return name;
     }
 
+    public int getResCode() {
+        return resCode;
+    }
+
     protected ExitAction(final Parcel in) {
         name = in.readString();
         resCode = in.readInt();
@@ -51,7 +55,7 @@ public class ExitAction extends Action implements Parcelable, Serializable {
     }
 
     public Intent toIntent() {
-        Intent intent = new Intent();
+        final Intent intent = new Intent();
         intent.putExtra(EXTRA_CLIENT_RES_CODE, resCode);
         return intent;
     }

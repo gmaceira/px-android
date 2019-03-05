@@ -18,6 +18,7 @@ import com.mercadopago.android.px.internal.util.LocaleUtil;
 import com.mercadopago.android.px.internal.util.RetrofitUtil;
 import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.model.BankDeal;
+import com.mercadopago.android.px.model.CardToken;
 import com.mercadopago.android.px.model.Discount;
 import com.mercadopago.android.px.model.IdentificationType;
 import com.mercadopago.android.px.model.Installment;
@@ -108,6 +109,12 @@ public class MercadoPagoServices {
             differentialPricing, null, false,
             privateKey).
             enqueue(callback);
+    }
+
+    public void createToken(final CardToken cardToken, final Callback<Token> callback) {
+        cardToken.setDevice(context);
+        final GatewayService service = RetrofitUtil.getRetrofitClient(context).create(GatewayService.class);
+        service.createToken(publicKey, privateKey, cardToken).enqueue(callback);
     }
 
     public void createToken(final SavedCardToken savedCardToken, final Callback<Token> callback) {
@@ -237,3 +244,4 @@ public class MercadoPagoServices {
         preferenceService.createPreference(preferenceBuilder.build(), privateKey).enqueue(callback);
     }
 }
+

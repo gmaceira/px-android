@@ -143,8 +143,8 @@ public class CardToken {
     }
 
     /**
-     * @deprecated use {@link CardToken#setDevice(Device)} instead.
      * @param context
+     * @deprecated use {@link CardToken#setDevice(Device)} instead.
      */
     @Deprecated
     public void setDevice(final Context context) {

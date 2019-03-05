@@ -15,6 +15,7 @@ import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.repository.PluginRepository;
 import com.mercadopago.android.px.internal.repository.UserSelectionRepository;
+import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.internal.view.AmountView;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.CustomSearchItem;
@@ -75,7 +76,7 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
             validateParameters();
             initPaymentVaultFlow();
         } catch (final IllegalStateException exception) {
-            getView().showError(MercadoPagoError.createNotRecoverable(exception.getMessage()), "");
+            getView().showError(MercadoPagoError.createNotRecoverable(exception.getMessage()), TextUtil.EMPTY);
         }
     }
 
@@ -193,7 +194,7 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     }
 
     private void selectItem(final PaymentMethodSearchItem item, final Boolean automaticSelection) {
-        userSelectionRepository.select((Card) null);
+        userSelectionRepository.select((Card) null, null);
 
         if (item.hasChildren()) {
             getView().showSelectedItem(item);
@@ -246,12 +247,11 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     private void selectCustomOption(final CustomSearchItem item) {
         if (PaymentTypes.isCardPaymentType(item.getType())) {
             final Card card = getCardWithPaymentMethod(item);
-            userSelectionRepository.select(card);
-            //TODO ver que pasa si selectedCard es null
+            userSelectionRepository.select(card, null);
             getView().startSavedCardFlow(card);
         } else if (PaymentTypes.isAccountMoney(item.getType())) {
             final PaymentMethod paymentMethod = paymentMethodSearch.getPaymentMethodById(item.getPaymentMethodId());
-            userSelectionRepository.select(paymentMethod);
+            userSelectionRepository.select(paymentMethod, null);
             getView().finishPaymentMethodSelection(paymentMethod);
         }
     }
@@ -300,7 +300,7 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     private void resolvePaymentMethodSelection(final PaymentMethodSearchItem item) {
 
         final PaymentMethod selectedPaymentMethod = paymentMethodSearch.getPaymentMethodBySearchItem(item);
-        userSelectionRepository.select(selectedPaymentMethod);
+        userSelectionRepository.select(selectedPaymentMethod, null);
 
         if (skipHook || (!hook1Displayed && !showHook1(selectedPaymentMethod.getPaymentTypeId()))) {
             skipHook = false;
@@ -436,7 +436,8 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     }
 
     public void selectPluginPaymentMethod(final PaymentMethodPlugin plugin) {
-        userSelectionRepository.select(pluginRepository.getPluginAsPaymentMethod(plugin.getId(), PaymentTypes.PLUGIN));
+        userSelectionRepository
+            .select(pluginRepository.getPluginAsPaymentMethod(plugin.getId(), PaymentTypes.PLUGIN), null);
         if (!showHook1(PaymentTypes.PLUGIN, Constants.Activities.HOOK_1_PLUGIN)) {
 
             if (plugin.isEnabled() && plugin.shouldShowFragmentOnSelection()) {

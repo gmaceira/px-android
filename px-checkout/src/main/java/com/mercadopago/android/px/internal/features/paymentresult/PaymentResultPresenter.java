@@ -1,8 +1,9 @@
 package com.mercadopago.android.px.internal.features.paymentresult;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import com.mercadopago.android.px.core.MercadoPagoCheckout;
-import com.mercadopago.android.px.internal.base.MvpPresenter;
+import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.callbacks.FailureRecovery;
 import com.mercadopago.android.px.internal.constants.ProcessingModes;
 import com.mercadopago.android.px.internal.features.review_and_confirm.components.actions.ChangePaymentMethodAction;
@@ -20,95 +21,66 @@ import com.mercadopago.android.px.model.Action;
 import com.mercadopago.android.px.model.Instruction;
 import com.mercadopago.android.px.model.PaymentResult;
 import com.mercadopago.android.px.model.exceptions.ApiException;
-import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.services.Callback;
+import com.mercadopago.android.px.tracking.internal.events.AbortEvent;
+import com.mercadopago.android.px.tracking.internal.events.ChangePaymentMethodEvent;
+import com.mercadopago.android.px.tracking.internal.events.ContinueEvent;
 import com.mercadopago.android.px.tracking.internal.views.ResultViewTrack;
 import java.util.List;
 
-/* default */ class PaymentResultPresenter extends MvpPresenter<PaymentResultPropsView, PaymentResultProvider>
-    implements ActionsListener {
-    private PaymentResult paymentResult;
+/* default */ class PaymentResultPresenter extends BasePresenter<PaymentResultContract.PaymentResultView>
+    implements ActionsListener, PaymentResultContract.Actions {
 
-    /* default */ final PaymentResultNavigator navigator;
+    private final PaymentResult paymentResult;
     private final PaymentSettingRepository paymentSettings;
     private final InstructionsRepository instructionsRepository;
+    @Nullable private final PostPaymentAction.OriginAction originAction;
+    @NonNull private final ResultViewTrack resultViewTrack;
 
     private FailureRecovery failureRecovery;
-    private boolean initialized = false;
-    private PostPaymentAction.OriginAction originAction;
 
-    /* default */ PaymentResultPresenter(@NonNull final PaymentResultNavigator navigator,
-        final PaymentSettingRepository paymentSettings,
-        final InstructionsRepository instructionsRepository) {
-        this.navigator = navigator;
+    /* default */ PaymentResultPresenter(@NonNull final PaymentSettingRepository paymentSettings,
+        @NonNull final InstructionsRepository instructionsRepository,
+        @NonNull final PaymentResult paymentResult,
+        @Nullable final PostPaymentAction.OriginAction originAction) {
         this.paymentSettings = paymentSettings;
         this.instructionsRepository = instructionsRepository;
+        this.paymentResult = paymentResult;
+        this.originAction = originAction;
+        resultViewTrack = new ResultViewTrack(ResultViewTrack.Style.GENERIC, paymentResult);
     }
 
-    public void initialize() {
-        if (!initialized) {
-            try {
-                validateParameters();
-                onValidStart();
-                initialized = true;
-            } catch (final IllegalStateException exception) {
-                navigator.showError(new MercadoPagoError(exception.getMessage(), false), "");
-            }
-        }
-    }
+    @Override
+    public void attachView(final PaymentResultContract.PaymentResultView view) {
+        super.attachView(view);
 
-    private void validateParameters() {
-        if (!isPaymentResultValid()) {
-            throw new IllegalStateException("payment result is invalid");
-        } else if (!isPaymentMethodValid()) {
-            throw new IllegalStateException("payment data is invalid");
-        }
-    }
-
-    protected void onValidStart() {
-        new ResultViewTrack(ResultViewTrack.Style.GENERIC, paymentResult).track();
         getView().setPropPaymentResult(paymentSettings.getCheckoutPreference().getSite().getCurrencyId(), paymentResult,
             paymentResult.isOffPayment());
-        checkGetInstructions();
-    }
 
-    private boolean isPaymentResultValid() {
-        return paymentResult != null && paymentResult.getPaymentStatus() != null &&
-            paymentResult.getPaymentStatusDetail() != null;
-    }
+        getView().notifyPropsChanged();
 
-    private boolean isPaymentMethodValid() {
-        return paymentResult != null && paymentResult.getPaymentData() != null &&
-            paymentResult.getPaymentData().getPaymentMethod() != null &&
-            paymentResult.getPaymentData().getPaymentMethod().getId() != null &&
-            !paymentResult.getPaymentData().getPaymentMethod().getId().isEmpty() &&
-            paymentResult.getPaymentData().getPaymentMethod().getPaymentTypeId() != null &&
-            !paymentResult.getPaymentData().getPaymentMethod().getPaymentTypeId().isEmpty() &&
-            paymentResult.getPaymentData().getPaymentMethod().getName() != null &&
-            !paymentResult.getPaymentData().getPaymentMethod().getName().isEmpty();
-    }
-
-    public void setPaymentResult(final PaymentResult paymentResult) {
-        this.paymentResult = paymentResult;
-    }
-
-    private void checkGetInstructions() {
         if (paymentResult.isOffPayment()) {
             getInstructionsAsync();
-        } else {
-            getView().notifyPropsChanged();
         }
     }
 
-    /* default */ void getInstructionsAsync() {
+    @Override
+    public void freshStart() {
+        setCurrentViewTracker(resultViewTrack);
+    }
+
+    @Override
+    public void onAbort() {
+        new AbortEvent(resultViewTrack).track();
+    }
+
+    private void getInstructionsAsync() {
         instructionsRepository.getInstructions(paymentResult).enqueue(new Callback<List<Instruction>>() {
             @Override
             public void success(final List<Instruction> instructions) {
                 if (isViewAttached()) {
                     if (instructions.isEmpty()) {
-                        navigator
-                            .showError(new MercadoPagoError(getResourcesProvider().getStandardErrorMessage(), false),
-                                ApiUtil.RequestOrigin.GET_INSTRUCTIONS);
+                        getView().showInstructionsError();
                     } else {
                         resolveInstructions(instructions);
                     }
@@ -118,14 +90,8 @@ import java.util.List;
             @Override
             public void failure(final ApiException apiException) {
                 if (isViewAttached()) {
-                    navigator.showError(new MercadoPagoError(apiException, ApiUtil.RequestOrigin.GET_INSTRUCTIONS),
-                        ApiUtil.RequestOrigin.GET_INSTRUCTIONS);
-                    setFailureRecovery(new FailureRecovery() {
-                        @Override
-                        public void recover() {
-                            getInstructionsAsync();
-                        }
-                    });
+                    getView().showApiExceptionError(apiException, ApiUtil.RequestOrigin.GET_INSTRUCTIONS);
+                    setFailureRecovery(() -> getInstructionsAsync());
                 }
             }
         });
@@ -144,8 +110,7 @@ import java.util.List;
     /* default */ void resolveInstructions(final List<Instruction> instructionsList) {
         final Instruction instruction = getInstruction(instructionsList);
         if (instruction == null) {
-            navigator.showError(new MercadoPagoError(getResourcesProvider().getStandardErrorMessage(), false),
-                ApiUtil.RequestOrigin.GET_INSTRUCTIONS);
+            getView().showInstructionsError();
         } else {
             getView().setPropInstruction(instruction, ProcessingModes.AGGREGATOR, false);
             getView().notifyPropsChanged();
@@ -176,26 +141,24 @@ import java.util.List;
 
     @Override
     public void onAction(@NonNull final Action action) {
-        if (action instanceof NextAction) {
-            navigator.finishWithResult(MercadoPagoCheckout.PAYMENT_RESULT_CODE);
-        } else if (action instanceof ResultCodeAction) {
-            navigator.finishWithResult(((ResultCodeAction) action).resultCode);
-        } else if (action instanceof ChangePaymentMethodAction) {
-            navigator.changePaymentMethod();
-        } else if (action instanceof RecoverPaymentAction) {
-            navigator.recoverPayment(originAction);
-        } else if (action instanceof LinkAction) {
-            navigator.openLink(((LinkAction) action).url);
-        } else if (action instanceof CopyAction) {
-            navigator.copyToClipboard(((CopyAction) action).content);
+        if (!isViewAttached()) {
+            return;
         }
-    }
 
-    public PaymentResult getPaymentResult() {
-        return paymentResult;
-    }
-
-    public void setOriginAction(@NonNull final PostPaymentAction.OriginAction originAction) {
-        this.originAction = originAction;
+        if (action instanceof NextAction) {
+            new ContinueEvent(resultViewTrack).track();
+            getView().finishWithResult(MercadoPagoCheckout.PAYMENT_RESULT_CODE);
+        } else if (action instanceof ResultCodeAction) {
+            getView().finishWithResult(((ResultCodeAction) action).resultCode);
+        } else if (action instanceof ChangePaymentMethodAction) {
+            ChangePaymentMethodEvent.with(resultViewTrack).track();
+            getView().changePaymentMethod();
+        } else if (action instanceof RecoverPaymentAction) {
+            getView().recoverPayment(originAction);
+        } else if (action instanceof LinkAction) {
+            getView().openLink(((LinkAction) action).url);
+        } else if (action instanceof CopyAction) {
+            getView().copyToClipboard(((CopyAction) action).content);
+        }
     }
 }

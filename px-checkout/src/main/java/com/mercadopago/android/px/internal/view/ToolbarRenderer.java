@@ -2,6 +2,7 @@ package com.mercadopago.android.px.internal.view;
 
 import android.content.Context;
 import android.support.annotation.CallSuper;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -13,7 +14,7 @@ public class ToolbarRenderer extends Renderer<ToolbarComponent> {
 
     @Override
     @CallSuper
-    public View render(final ToolbarComponent component, final Context context, final ViewGroup parent) {
+    public View render(@NonNull final ToolbarComponent component, @NonNull final Context context, final ViewGroup parent) {
         final View view = inflate(R.layout.px_toolbar_renderer, parent);
         renderToolbar(view, component, context);
         return view;

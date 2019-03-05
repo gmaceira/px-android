@@ -4,16 +4,40 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.mercadopago.android.px.model.internal.IParcelablePaymentDescriptor;
 
-public class GenericPayment implements IPayment, Parcelable {
+@SuppressWarnings("unused")
+@Deprecated
+public final class GenericPayment implements IPayment, Parcelable {
 
-    public final Long id;
-    public final String status;
-    public final String statusDetail;
+    @Nullable public final Long id;
+    @NonNull public final String status;
+    @NonNull public final String statusDetail;
     @Nullable public final String statementDescription;
 
-    public GenericPayment(final Long paymentId,
-        @NonNull final String status,
+    private GenericPayment(final Builder builder) {
+        id = builder.paymentId;
+        status = builder.status;
+        statusDetail = builder.statusDetail;
+        statementDescription = builder.statementDescription;
+    }
+
+    private GenericPayment(final Parcel in) {
+        if (in.readByte() == 0) {
+            id = null;
+        } else {
+            id = in.readLong();
+        }
+        status = in.readString();
+        statusDetail = in.readString();
+        statementDescription = in.readString();
+    }
+
+    /**
+     * Constructor for non-splited payment ; where is not neccessary to say which payment method have failed.
+     */
+    @Deprecated
+    public GenericPayment(@NonNull final Long paymentId, @NonNull final String status,
         @NonNull final String statusDetail) {
         id = paymentId;
         this.status = status;
@@ -21,10 +45,20 @@ public class GenericPayment implements IPayment, Parcelable {
         statementDescription = null;
     }
 
+    @Deprecated
+    public GenericPayment(@Nullable final Long paymentId,
+        @NonNull final String status,
+        @NonNull final String statusDetail,
+        @NonNull final String statementDescription) {
+        id = paymentId;
+        this.status = status;
+        this.statusDetail = processStatusDetail(status, statusDetail);
+        this.statementDescription = statementDescription;
+    }
+
     /**
-     * Resolve the status type, it transforms a generic status and detail
-     * into a known status detail
-     * {@link Payment.StatusDetail }
+     * Resolve the status type, it transforms a generic status and detail into a known status detail {@link
+     * Payment.StatusDetail }
      *
      * @param status the payment status type
      * @param statusDetail the payment detail type
@@ -37,7 +71,6 @@ public class GenericPayment implements IPayment, Parcelable {
         }
 
         if (Payment.StatusCodes.STATUS_REJECTED.equals(status)) {
-
             if (Payment.StatusDetail.isKnownErrorDetail(statusDetail)) {
                 return statusDetail;
             } else {
@@ -72,13 +105,6 @@ public class GenericPayment implements IPayment, Parcelable {
         return statusDetail;
     }
 
-    public static GenericPayment from(final IPayment payment) {
-        return new GenericPayment(payment.getId(),
-            payment.getPaymentStatus(),
-            payment.getPaymentStatusDetail(),
-            payment.getStatementDescription());
-    }
-
     public static final Creator<GenericPayment> CREATOR = new Creator<GenericPayment>() {
         @Override
         public GenericPayment createFromParcel(final Parcel in) {
@@ -109,24 +135,30 @@ public class GenericPayment implements IPayment, Parcelable {
         dest.writeString(statementDescription);
     }
 
-    protected GenericPayment(final Parcel in) {
-        if (in.readByte() == 0) {
-            id = null;
-        } else {
-            id = in.readLong();
-        }
-        status = in.readString();
-        statusDetail = in.readString();
-        statementDescription = in.readString();
-    }
+    public static class Builder {
 
-    public GenericPayment(final Long paymentId,
-        @NonNull final String status,
-        @NonNull final String statusDetail,
-        @NonNull final String statementDescription) {
-        id = paymentId;
-        this.status = status;
-        this.statusDetail = processStatusDetail(status, statusDetail);
-        this.statementDescription = statementDescription;
+        @Nullable /* default */ Long paymentId;
+        @NonNull /* default */ final String status;
+        @NonNull /* default */ final String statusDetail;
+        @Nullable /* default */ String statementDescription;
+
+        public Builder(@NonNull final String status, @NonNull final String statusDetail) {
+            this.status = status;
+            this.statusDetail = statusDetail;
+        }
+
+        public Builder setStatementDescription(@Nullable final String statementDescription) {
+            this.statementDescription = statementDescription;
+            return this;
+        }
+
+        public Builder setPaymentId(@Nullable final Long paymentId) {
+            this.paymentId = paymentId;
+            return this;
+        }
+
+        public GenericPayment createGenericPayment() {
+            return new GenericPayment(this);
+        }
     }
 }

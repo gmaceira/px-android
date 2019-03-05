@@ -106,7 +106,6 @@
 
     <!-- Rejection -->
     <string name="px_text_pay_with_other_method">Alterar o meio de pagamento</string>
-    <string name="px_text_enter_again">Digite novamente</string>
     <string name="px_title_other_reason_rejection">%1$s não processou o pagamento</string>
     <string name="px_title_bad_filled_other">Ops! Não foi possível processar o seu pagamento</string>
     <string name="px_text_some_card_data_is_incorrect">Qualquer dado de seu %1$s é incorreto</string>
@@ -128,20 +127,18 @@
     <string name="px_error_description_max_attempts">Como você chegou no limite de tentativas com este cartão, use outro meio de pagamento.</string>
     <string name="px_error_description_high_risk">Use um meio de pagamento diferente de cartão.</string>
     <string name="px_error_secondary_title_call">Não conseguiu autorizá-lo?</string>
+    <string name="px_error_description_rejected_by_regulations">Você possui dados pendentes para atualizar. Para pagar com dinheiro em conta, você deve preencher os dados faltantes.</string>
     <string name="px_text_card_enabled">Eu já habilitei meu cartão</string>
 
     <!-- Error messages -->
     <string name="px_error_message_invalid_item">Item inválido</string>
     <string name="px_error_message_expired_preference">Preferência expirada</string>
     <string name="px_error_message_inactive_preference">Preferência inativa</string>
-    <string name="px_error_message_invalid_default_installments">Número de parcelas padrão inválido</string>
-    <string name="px_error_message_invalid_max_installments">Número máximo do parcelas inválido</string>
     <string name="px_error_message_excluded_all_payment_type">Todos os tipos de pagamentos foram excluídos</string>
     <string name="px_error_message_invalid_installments">Número do parcelas inválido</string>
     <string name="px_error_title">Ops! Algo deu errado</string>
     <string name="px_standard_error_message">Estamos trabalhando para solucionar o problema. Por favor, tente novamente mais tarde.</string>
     <string name="px_error_message_email_required">O e-mail é obrigatório</string>
-    <string name="px_error_message_missing_public_key">A public key é obrigatória</string>
     <string name="px_error_message_missing_payer_cost">Nenhuma parcela encontrada</string>
     <string name="px_error_message_missing_identification_types">Nenhum tipo de identificação encontrado</string>
     <string name="px_error_message_missing_setting_for_bin">Nenhuma configuração encontrada para esse bin</string>
@@ -172,7 +169,6 @@
     <string name="px_continue_shopping">Continuar</string>
     <string name="px_zero_rate">Sem juros</string>
     <string name="px_exit_label">Sair</string>
-    <string name="px_cancel_payment">Cancelar pagamento</string>
     <string name="px_input_button_back">Anterior</string>
     <string name="px_input_button_next">Continuar</string>
     <string name="px_hour">hora</string>
@@ -249,6 +245,4 @@
     <!-- Boleto -->
     <string name="px_fill_your_data">Digite seus dados…</string>
     <string name="px_bolbradesco_rejection">Não foi possível processar o seu pagamento, desculpe-nos</string>
-
-    <string name="px_empty_string"></string>
 </resources>

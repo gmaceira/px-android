@@ -7,10 +7,10 @@ import com.mercadopago.android.px.internal.constants.ProcessingModes;
 import com.mercadopago.android.px.internal.datasource.cache.GroupsCache;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
-import com.mercadopago.android.px.model.PaymentMethodSearchBody;
 import com.mercadopago.android.px.internal.services.CheckoutService;
 import com.mercadopago.android.px.internal.util.JsonUtil;
 import com.mercadopago.android.px.model.PaymentMethodSearch;
+import com.mercadopago.android.px.model.internal.PaymentMethodSearchBody;
 import com.mercadopago.android.px.model.PaymentTypes;
 import com.mercadopago.android.px.model.Site;
 import com.mercadopago.android.px.model.Sites;
@@ -89,9 +89,15 @@ public class GroupsService implements GroupsRepository {
 
     @NonNull /* default */ MPCall<PaymentMethodSearch> newRequest() {
         //TODO add preference service.
+
+        final CheckoutPreference checkoutPreference = paymentSettingRepository.getCheckoutPreference();
         final boolean expressPaymentEnabled =
             paymentSettingRepository.getAdvancedConfiguration().isExpressPaymentEnabled();
-        final CheckoutPreference checkoutPreference = paymentSettingRepository.getCheckoutPreference();
+
+        final boolean hasSplitPaymentProcessor =
+            paymentSettingRepository.getPaymentConfiguration().getPaymentProcessor()
+                .supportsSplitPayment(checkoutPreference);
+
         final Integer defaultInstallments = checkoutPreference.getPaymentPreference().getDefaultInstallments();
 
         final Collection<String> excludedPaymentTypesSet = new HashSet<>(checkoutPreference.getExcludedPaymentTypes());
@@ -117,7 +123,8 @@ public class GroupsService implements GroupsRepository {
             .setMarketplace(checkoutPreference.getMarketplace())
             .setProductId(discountParamsConfiguration.getProductId())
             .setLabels(discountParamsConfiguration.getLabels())
-            .setCharges(paymentSettingRepository.getPaymentConfiguration().getCharges()).build();
+            .setCharges(paymentSettingRepository.getPaymentConfiguration().getCharges())
+            .build();
 
         final Map<String, Object> body = JsonUtil.getInstance().getMapFromObject(paymentMethodSearchBody);
 
@@ -126,7 +133,7 @@ public class GroupsService implements GroupsRepository {
                 language, paymentSettingRepository.getPublicKey(),
                 checkoutPreference.getTotalAmount(), excludedPaymentTypesAppended, excludedPaymentMethodsAppended,
                 checkoutPreference.getSite().getId(), ProcessingModes.AGGREGATOR, cardsWithEscAppended,
-                differentialPricingId, defaultInstallments, expressPaymentEnabled, body);
+                differentialPricingId, defaultInstallments, expressPaymentEnabled, hasSplitPaymentProcessor, body);
     }
 
     private Collection<String> getUnsupportedPaymentTypes(@NonNull final Site site) {

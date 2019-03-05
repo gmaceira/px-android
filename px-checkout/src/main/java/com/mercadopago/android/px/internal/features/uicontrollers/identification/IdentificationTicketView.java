@@ -11,10 +11,6 @@ import com.mercadopago.android.px.internal.util.MPCardMaskUtil;
 import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.internal.view.MPTextView;
 
-/**
- * Created by mromar on 9/27/17.
- */
-
 public class IdentificationTicketView extends IdentificationView {
 
     private String mName;
@@ -70,12 +66,13 @@ public class IdentificationTicketView extends IdentificationView {
         if (TextUtil.isEmpty(mName)) {
             if (TextUtil.isEmpty(mLastName)) {
                 mNameTextView.setText(mContext.getText(R.string.px_name_and_lastname_identification_label));
+                configureAlphaColorNameText();
             } else {
                 mNameTextView.setText("");
             }
         } else {
             mNameTextView.setText(mName);
-            setNormalColorNameText();
+            configureNormalColorNameText();
             mLastNameContainer.setVisibility(View.VISIBLE);
         }
     }
@@ -84,6 +81,7 @@ public class IdentificationTicketView extends IdentificationView {
         if (TextUtil.isEmpty(mLastName)) {
             mLastNameTextView.setText("");
         } else {
+            configureNormalColorLastNameText();
             mLastNameTextView.setText(mLastName);
         }
     }
@@ -102,19 +100,19 @@ public class IdentificationTicketView extends IdentificationView {
         mLastName = lastName;
     }
 
-    public void setNormalColorNameText() {
+    public void configureNormalColorNameText() {
         mNameTextView.setTextColor(ContextCompat.getColor(mContext, NORMAL_TEXT_VIEW_COLOR));
     }
 
-    public void setNormalColorLastNameText() {
+    public void configureNormalColorLastNameText() {
         mLastNameTextView.setTextColor(ContextCompat.getColor(mContext, NORMAL_TEXT_VIEW_COLOR));
     }
 
-    public void setAlphaColorNameText() {
+    public void configureAlphaColorNameText() {
         setAlphaColorText(mNameTextView);
     }
 
-    public void setAlphaColorLastNameText() {
+    public void configureAlphaColorLastNameText() {
         setAlphaColorText(mLastNameTextView);
     }
 

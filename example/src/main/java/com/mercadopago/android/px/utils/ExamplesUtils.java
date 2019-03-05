@@ -19,7 +19,7 @@ import com.mercadopago.android.px.core.DynamicDialogCreator;
 import com.mercadopago.android.px.core.DynamicFragmentCreator;
 import com.mercadopago.android.px.core.MercadoPagoCheckout;
 import com.mercadopago.android.px.core.MercadoPagoCheckout.Builder;
-import com.mercadopago.android.px.internal.features.plugins.SampleDialog;
+import com.mercadopago.SampleDialog;
 import com.mercadopago.android.px.internal.util.ViewUtils;
 import com.mercadopago.android.px.model.Item;
 import com.mercadopago.android.px.model.Payment;
@@ -50,6 +50,9 @@ public final class ExamplesUtils {
         "243962506-4ddac80d-af86-4a4f-80e3-c4e4735ba200";
     private static final String DUMMY_PREFERENCE_ID_WITH_DECIMALS = "243962506-ad5df092-f5a2-4b99-bcc4-7578d6e71849";
     private static final String DUMMY_MERCHANT_PUBLIC_KEY = "TEST-c6d9b1f9-71ff-4e05-9327-3c62468a23ee";
+    public static final String MLB_PUBLIC_KEY = "APP_USR-f3f035a2-d343-4a6f-bd3b-fc3c3cb72416";
+    public static final String MLB_PREFERENCE_ID = "245099733-8771f469-d68e-4863-b8cb-9402e22c6bb2";
+
 
     public static void resolveCheckoutResult(final Activity context, final int requestCode, final int resultCode,
         final Intent data, final int reqCodeCheckout) {
@@ -106,6 +109,7 @@ public final class ExamplesUtils {
         options.add(new Pair<>("Two items - Collector icon", createBaseWithTwoItemsAndCollectorIcon()));
         options.add(new Pair<>("One item - Long title", createBaseWithOneItemLongTitle()));
         options.add(new Pair<>("Differential pricing preference", createWithDifferentialPricing()));
+        options.add(new Pair<>("MLB Checkout", createMLBBase()));
         return options;
     }
 
@@ -143,6 +147,10 @@ public final class ExamplesUtils {
 
     private static Builder startBaseFlowWithTrackListener() {
         return createBase();
+    }
+
+    public static Builder createMLBBase() {
+        return new Builder(MLB_PUBLIC_KEY, MLB_PREFERENCE_ID);
     }
 
     private static Builder createWithDifferentialPricing() {

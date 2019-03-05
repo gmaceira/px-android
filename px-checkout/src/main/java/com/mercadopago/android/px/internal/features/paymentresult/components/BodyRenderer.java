@@ -4,16 +4,16 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.internal.util.FragmentUtil;
+import com.mercadopago.android.px.internal.util.ViewUtils;
+import com.mercadopago.android.px.internal.view.CompactComponent;
 import com.mercadopago.android.px.internal.view.Renderer;
 import com.mercadopago.android.px.internal.view.RendererFactory;
 
-/**
- * Created by vaserber on 10/23/17.
- */
-
 public class BodyRenderer extends Renderer<Body> {
+
     @Override
     public View render(@NonNull final Body component, @NonNull final Context context, final ViewGroup parent) {
         final View bodyView = inflate(R.layout.px_payment_result_body, parent);
@@ -35,8 +35,13 @@ public class BodyRenderer extends Renderer<Body> {
                     component.topFragment());
             }
 
-            if (component.hasPaymentMethodDescription()) {
-                RendererFactory.create(context, component.getPaymentMethodComponent()).render(bodyViewGroup);
+            if (component.isStatusApproved()) {
+                final LinearLayout pmContainer = ViewUtils.createLinearContainer(context);
+                for (final CompactComponent pmComponent : component.getPaymentMethodComponents()) {
+                    pmContainer.addView(pmComponent.render(bodyViewGroup));
+                }
+                ViewUtils.stretchHeight(pmContainer);
+                bodyViewGroup.addView(pmContainer);
             }
 
             if (component.hasBottomCustomComponent()) {
@@ -46,7 +51,7 @@ public class BodyRenderer extends Renderer<Body> {
             }
         }
 
-        stretchHeight(bodyViewGroup);
+        ViewUtils.stretchHeight(bodyViewGroup);
 
         return bodyView;
     }

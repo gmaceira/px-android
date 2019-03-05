@@ -1,5 +1,6 @@
 package com.mercadopago.android.px.internal.features.review_and_confirm;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -24,7 +25,7 @@ import com.mercadopago.android.px.internal.di.ConfigurationModule;
 import com.mercadopago.android.px.internal.di.Session;
 import com.mercadopago.android.px.internal.features.Constants;
 import com.mercadopago.android.px.internal.base.PXActivity;
-import com.mercadopago.android.px.internal.features.PayerInformationActivity;
+import com.mercadopago.android.px.internal.features.payer_information.PayerInformationActivity;
 import com.mercadopago.android.px.internal.features.business_result.BusinessPaymentResultActivity;
 import com.mercadopago.android.px.internal.features.explode.ExplodeDecorator;
 import com.mercadopago.android.px.internal.features.explode.ExplodeParams;
@@ -600,6 +601,7 @@ public final class ReviewAndConfirmActivity extends PXActivity<ReviewAndConfirmP
         confirmButton.setVisibility(View.VISIBLE);
     }
 
+    @SuppressLint("Range")
     @Override
     public void showErrorSnackBar(@NonNull final MercadoPagoError error) {
         MeliSnackbar.make(floatingConfirmLayout, error.getMessage(), Snackbar.LENGTH_LONG,

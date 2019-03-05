@@ -9,22 +9,22 @@ import java.util.Arrays;
 public final class Sites {
 
     public static final Site ARGENTINA =
-        new Site("MLA", "ARS", "https://www.mercadopago.com.ar/ayuda/terminos-y-condiciones_299");
+         Site.createWith("MLA", "ARS", "https://www.mercadopago.com.ar/ayuda/terminos-y-condiciones_299", false);
     public static final Site BRASIL =
-        new Site("MLB", "BRL", "https://www.mercadopago.com.br/ajuda/termos-e-condicoes_300");
+        Site.createWith("MLB", "BRL", "https://www.mercadopago.com.br/ajuda/termos-e-condicoes_300",false);
     public static final Site CHILE =
-        new Site("MLC", "CLP", "https://www.mercadopago.cl/ayuda/terminos-y-condiciones_299");
+        Site.createWith("MLC", "CLP", "https://www.mercadopago.cl/ayuda/terminos-y-condiciones_299", false);
     public static final Site MEXICO =
-        new Site("MLM", "MXN", "https://www.mercadopago.com.mx/ayuda/terminos-y-condiciones_715");
+        Site.createWith("MLM", "MXN", "https://www.mercadopago.com.mx/ayuda/terminos-y-condiciones_715", false);
     public static final Site COLOMBIA =
-        new Site("MCO", "COP", "https://www.mercadopago.com.co/ayuda/terminos-y-condiciones_299");
+        Site.createWith("MCO", "COP", "https://www.mercadopago.com.co/ayuda/terminos-y-condiciones_299",true);
     public static final Site VENEZUELA =
-        new Site("MLV", "VES", "https://www.mercadopago.com.ve/ayuda/terminos-y-condiciones_299");
-    public static final Site USA = new Site("USA", "USD", "");
+        Site.createWith("MLV", "VES", "https://www.mercadopago.com.ve/ayuda/terminos-y-condiciones_299", false);
+    public static final Site USA = Site.createWith("USA", "USD", "", false);
     public static final Site PERU =
-        new Site("MPE", "PEN", "https://www.mercadopago.com.pe/ayuda/terminos-condiciones-uso_2483");
+        Site.createWith("MPE", "PEN", "https://www.mercadopago.com.pe/ayuda/terminos-condiciones-uso_2483", false);
     public static final Site URUGUAY =
-        new Site("MLU", "UYU", "https://www.mercadopago.com.uy/ayuda/terminos-y-condiciones-uy_2834");
+        Site.createWith("MLU", "UYU", "https://www.mercadopago.com.uy/ayuda/terminos-y-condiciones-uy_2834", false);
 
 
     private static final Iterable<Site> SITES = Arrays.asList(

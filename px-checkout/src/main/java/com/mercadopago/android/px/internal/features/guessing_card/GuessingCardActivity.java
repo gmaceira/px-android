@@ -889,8 +889,10 @@ public class GuessingCardActivity extends PXActivity<GuessingCardPresenter> impl
     }
 
     @Override
-    public void initializeIdentificationTypes(final List<IdentificationType> identificationTypes) {
+    public void initializeIdentificationTypes(final List<IdentificationType> identificationTypes,
+        final IdentificationType selectedIdentificationType) {
         mIdentificationTypeSpinner.setAdapter(new IdentificationTypesAdapter(identificationTypes));
+        mIdentificationTypeSpinner.setSelection(identificationTypes.indexOf(selectedIdentificationType), false);
         mIdentificationTypeContainer.setVisibility(View.VISIBLE);
         if (cardViewsActive()) {
             mIdentificationCardView.setIdentificationType(identificationTypes.get(0));

@@ -1,13 +1,15 @@
 package com.mercadopago.android.px.internal.features.express;
 
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.features.explode.ExplodeDecoratorMapper;
-import com.mercadopago.android.px.internal.features.express.slider.PaymentMethodAdapter;
+import com.mercadopago.android.px.internal.features.express.slider.HubAdapter;
+import com.mercadopago.android.px.internal.features.express.slider.SplitPaymentHeaderAdapter;
+import com.mercadopago.android.px.internal.repository.AmountConfigurationRepository;
 import com.mercadopago.android.px.internal.repository.AmountRepository;
 import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
-import com.mercadopago.android.px.internal.repository.PayerCostRepository;
 import com.mercadopago.android.px.internal.repository.PaymentRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.util.ApiUtil;
@@ -20,17 +22,15 @@ import com.mercadopago.android.px.internal.viewmodel.PayerCostSelection;
 import com.mercadopago.android.px.internal.viewmodel.mappers.ElementDescriptorMapper;
 import com.mercadopago.android.px.internal.viewmodel.mappers.PaymentMethodDescriptorMapper;
 import com.mercadopago.android.px.internal.viewmodel.mappers.PaymentMethodDrawableItemMapper;
+import com.mercadopago.android.px.internal.viewmodel.mappers.SplitHeaderMapper;
 import com.mercadopago.android.px.internal.viewmodel.mappers.SummaryViewModelMapper;
-import com.mercadopago.android.px.model.BusinessPayment;
+import com.mercadopago.android.px.model.AmountConfiguration;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.CardMetadata;
 import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.model.ExpressMetadata;
-import com.mercadopago.android.px.model.GenericPayment;
-import com.mercadopago.android.px.model.IPayment;
+import com.mercadopago.android.px.model.IPaymentDescriptor;
 import com.mercadopago.android.px.model.PayerCost;
-import com.mercadopago.android.px.model.AmountConfiguration;
-import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentMethodSearch;
 import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.exceptions.ApiException;
@@ -43,37 +43,45 @@ import com.mercadopago.android.px.tracking.internal.events.SwipeOneTapEventTrack
 import com.mercadopago.android.px.tracking.internal.views.OneTapViewTracker;
 import java.util.Collections;
 import java.util.List;
-
-import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorView.Model.SELECTED_PAYER_COST_NONE;
+import java.util.Set;
 
 /* default */ class ExpressPaymentPresenter extends BasePresenter<ExpressPayment.View>
-    implements ExpressPayment.Actions, AmountDescriptorView.OnClickListenerWithDiscount {
+    implements ExpressPayment.Actions,
+    AmountDescriptorView.OnClickListenerWithDiscount {
+
+    private static final String BUNDLE_STATE_PAYER_COST =
+        "com.mercadopago.android.px.internal.features.express.PAYER_COST";
+    /* default */ PayerCostSelection payerCostSelection;
+
+    private static final String BUNDLE_STATE_SPLIT_PREF =
+        "com.mercadopago.android.px.internal.features.express.SPLIT_PREF";
+    /* default */ boolean isSplitUserPreference = false;
 
     @NonNull private final PaymentRepository paymentRepository;
     @NonNull private final AmountRepository amountRepository;
     @NonNull private final DiscountRepository discountRepository;
     @NonNull private final PaymentSettingRepository paymentConfiguration;
-    @NonNull private final PayerCostRepository payerCostRepository;
+    @NonNull private final AmountConfigurationRepository amountConfigurationRepository;
     @NonNull private final ExplodeDecoratorMapper explodeDecoratorMapper;
-
-    /* default */ PayerCostSelection payerCostSelection;
 
     //TODO remove.
     /* default */ List<ExpressMetadata> expressMetadataList;
+
     private final PaymentMethodDrawableItemMapper paymentMethodDrawableItemMapper;
+    private Set<String> cardsWithSplit;
 
     /* default */ ExpressPaymentPresenter(@NonNull final PaymentRepository paymentRepository,
         @NonNull final PaymentSettingRepository paymentConfiguration,
         @NonNull final DiscountRepository discountRepository,
         @NonNull final AmountRepository amountRepository,
         @NonNull final GroupsRepository groupsRepository,
-        @NonNull final PayerCostRepository payerCostRepository
-    ) {
+        @NonNull final AmountConfigurationRepository amountConfigurationRepository) {
+
         this.paymentRepository = paymentRepository;
         this.paymentConfiguration = paymentConfiguration;
         this.amountRepository = amountRepository;
         this.discountRepository = discountRepository;
-        this.payerCostRepository = payerCostRepository;
+        this.amountConfigurationRepository = amountConfigurationRepository;
         explodeDecoratorMapper = new ExplodeDecoratorMapper();
         paymentMethodDrawableItemMapper = new PaymentMethodDrawableItemMapper();
 
@@ -82,7 +90,8 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
             public void success(final PaymentMethodSearch paymentMethodSearch) {
                 expressMetadataList = paymentMethodSearch.getExpress();
                 //Plus one to compensate for add new payment method
-                payerCostSelection = new PayerCostSelection(expressMetadataList.size() + 1);
+                payerCostSelection = createNewPayerCostSelected();
+                cardsWithSplit = paymentMethodSearch.getIdsWithSplitAllowed();
             }
 
             @Override
@@ -93,35 +102,105 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
     }
 
     @Override
+    public void attachView(final ExpressPayment.View view) {
+        super.attachView(view);
+
+        final ElementDescriptorView.Model elementDescriptorModel =
+            new ElementDescriptorMapper().map(paymentConfiguration.getCheckoutPreference());
+
+        final List<SummaryView.Model> summaryModels =
+            new SummaryViewModelMapper(paymentConfiguration.getCheckoutPreference(), discountRepository,
+                amountRepository, elementDescriptorModel, this).map(expressMetadataList);
+
+        final List<PaymentMethodDescriptorView.Model> paymentModels =
+            new PaymentMethodDescriptorMapper(paymentConfiguration, amountConfigurationRepository)
+                .map(expressMetadataList);
+
+        final List<SplitPaymentHeaderAdapter.Model> splitHeaderModels =
+            new SplitHeaderMapper(paymentConfiguration.getCheckoutPreference().getSite().getCurrencyId(),
+                amountConfigurationRepository)
+                .map(expressMetadataList);
+
+        final HubAdapter.Model model = new HubAdapter.Model(paymentModels, summaryModels, splitHeaderModels);
+
+        getView().showToolbarElementDescriptor(elementDescriptorModel);
+
+        getView().configureAdapters(paymentMethodDrawableItemMapper.map(expressMetadataList),
+            paymentConfiguration.getCheckoutPreference().getSite(), model);
+    }
+
+    @Override
+    public void onViewResumed() {
+        // If a payment was attempted, the exploding fragment is still visible when we go back to one tap fragment.
+        // Example: call for authorize, after asking for cvv and pressing back, we go back to one tap and need to
+        // remove the exploding fragment we had before.
+        if (paymentRepository.hasPayment()) {
+            cancelLoading();
+        }
+        paymentRepository.attach(this);
+    }
+
+    @Override
+    public void detachView() {
+        onViewPaused();
+        super.detachView();
+    }
+
+    @Override
+    public void recoverFromBundle(@NonNull final Bundle bundle) {
+        payerCostSelection = bundle.getParcelable(BUNDLE_STATE_PAYER_COST);
+        isSplitUserPreference = bundle.getBoolean(BUNDLE_STATE_SPLIT_PREF, false);
+    }
+
+    @NonNull
+    @Override
+    public Bundle storeInBundle(@NonNull final Bundle bundle) {
+        bundle.putParcelable(BUNDLE_STATE_PAYER_COST, payerCostSelection);
+        bundle.putBoolean(BUNDLE_STATE_SPLIT_PREF, isSplitUserPreference);
+        return bundle;
+    }
+
+    @Override
     public void trackExpressView() {
         final OneTapViewTracker oneTapViewTracker = new OneTapViewTracker(expressMetadataList,
             paymentConfiguration.getCheckoutPreference(),
-            discountRepository.getCurrentConfiguration());
+            discountRepository.getCurrentConfiguration(),
+            Collections.emptySet(),
+            cardsWithSplit);
         setCurrentViewTracker(oneTapViewTracker);
     }
 
     @Override
     public void confirmPayment(final int paymentMethodSelectedIndex) {
+        refreshExplodingState();
+
+        // TODO improve: This was added because onetap can detach this listener on its onDestroy
+        paymentRepository.attach(this);
+
+        final ExpressMetadata expressMetadata = expressMetadataList.get(paymentMethodSelectedIndex);
+
+        PayerCost payerCost = null;
+        boolean splitPayment = false;
+
+        if (expressMetadata.isCard()) {
+            final AmountConfiguration amountConfiguration =
+                amountConfigurationRepository.getConfigurationFor(expressMetadata.getCard().getId());
+            splitPayment = isSplitUserPreference && amountConfiguration.allowSplit();
+            payerCost = amountConfiguration
+                .getCurrentPayerCost(isSplitUserPreference, payerCostSelection.get(paymentMethodSelectedIndex));
+        }
+
+        //TODO fill cards with esc
+        ConfirmEvent.from(Collections.emptySet(), expressMetadata, payerCost, splitPayment).track();
+
+        paymentRepository.startExpressPayment(expressMetadata, payerCost, splitPayment);
+    }
+
+    private void refreshExplodingState() {
         if (paymentRepository.isExplodingAnimationCompatible()) {
             getView().startLoadingButton(paymentRepository.getPaymentTimeout());
             getView().disableToolbarBack();
         }
-
-        // TODO improve: This was added because onetap can detach this listener on its OnDestroy
-        paymentRepository.attach(this);
-
-        final ExpressMetadata expressMetadata = expressMetadataList.get(paymentMethodSelectedIndex);
-        PayerCost payerCost = null;
-        if (expressMetadata.isCard()) {
-            final AmountConfiguration amountConfiguration =
-                payerCostRepository.getConfigurationFor(expressMetadata.getCard().getId());
-            payerCost = amountConfiguration.getPayerCost(payerCostSelection.get(paymentMethodSelectedIndex));
-        }
-
-        //TODO fill cards with esc
-        ConfirmEvent.from(Collections.<String>emptySet(), expressMetadata, payerCost).track();
-
-        paymentRepository.startExpressPayment(expressMetadata, payerCost);
     }
 
     @Override
@@ -137,35 +216,19 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
         confirmPayment(paymentMethodSelectedIndex);
     }
 
+    /**
+     * When there is no visual interaction needed this callback is called.
+     *
+     * @param payment plugin payment.
+     */
     @Override
-    public void onPaymentFinished(@NonNull final Payment payment) {
+    public void onPaymentFinished(@NonNull final IPaymentDescriptor payment) {
         getView().finishLoading(explodeDecoratorMapper.map(payment));
-    }
-
-    /**
-     * When there is no visual interaction needed this callback is called.
-     *
-     * @param genericPayment plugin payment.
-     */
-    @Override
-    public void onPaymentFinished(@NonNull final GenericPayment genericPayment) {
-        getView().finishLoading(explodeDecoratorMapper.map(genericPayment));
-    }
-
-    /**
-     * When there is no visual interaction needed this callback is called.
-     *
-     * @param businessPayment plugin payment.
-     */
-    @Override
-    public void onPaymentFinished(@NonNull final BusinessPayment businessPayment) {
-        getView().finishLoading(explodeDecoratorMapper.map(businessPayment));
     }
 
     @Override
     public void onPaymentError(@NonNull final MercadoPagoError error) {
         cancelLoading();
-
         if (error.isInternalServerError() || error.isNoConnectivityError()) {
             FrictionEventTracker.with(OneTapViewTracker.PATH_REVIEW_ONE_TAP_VIEW,
                 FrictionEventTracker.Id.GENERIC, FrictionEventTracker.Style.CUSTOM_COMPONENT,
@@ -193,48 +256,9 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
         getView().onRecoverPaymentEscInvalid(recovery);
     }
 
-    @Override
-    public void onViewResumed() {
-        // If a payment was attempted, the exploding fragment is still visible when we go back to one tap fragment.
-        // Example: call for authorize, after asking for cvv and pressing back, we go back to one tap and need to
-        // remove the exploding fragment we had before.
-
-        if (paymentRepository.hasPayment()) {
-            cancelLoading();
-        }
-        paymentRepository.attach(this);
-    }
-
-    @Override
-    public void updateElementPosition(final int paymentMethodIndex) {
-        getView().hideInstallmentsSelection();
-        getView().showInstallmentsDescriptionRow(paymentMethodIndex, payerCostSelection.get(paymentMethodIndex));
-    }
-
     private void updateElementPosition(final int paymentMethodIndex, final int selectedPayerCost) {
         payerCostSelection.save(paymentMethodIndex, selectedPayerCost);
         updateElementPosition(paymentMethodIndex);
-    }
-
-    @Override
-    public void attachView(final ExpressPayment.View view) {
-        super.attachView(view);
-
-        final ElementDescriptorView.Model elementDescriptorModel =
-            new ElementDescriptorMapper().map(paymentConfiguration.getCheckoutPreference());
-
-        final List<SummaryView.Model> summaryModels =
-            new SummaryViewModelMapper(paymentConfiguration.getCheckoutPreference(), discountRepository,
-                amountRepository, elementDescriptorModel, this).map(expressMetadataList);
-
-        final List<PaymentMethodDescriptorView.Model> paymentModels =
-            new PaymentMethodDescriptorMapper(paymentConfiguration, payerCostRepository).map(expressMetadataList);
-
-        getView().showToolbarElementDescriptor(elementDescriptorModel);
-
-        getView().configureAdapters(paymentMethodDrawableItemMapper.map(expressMetadataList),
-            paymentConfiguration.getCheckoutPreference().getSite(), SELECTED_PAYER_COST_NONE,
-            new PaymentMethodAdapter.Model(paymentModels, summaryModels));
     }
 
     @Override
@@ -244,20 +268,18 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
 
     @Override
     public void onInstallmentsRowPressed(final int currentItem) {
+
         final ExpressMetadata expressMetadata = expressMetadataList.get(currentItem);
         final CardMetadata cardMetadata = expressMetadata.getCard();
+
         if (currentItem <= expressMetadataList.size() && cardMetadata != null) {
             final AmountConfiguration amountConfiguration =
-                payerCostRepository.getConfigurationFor(cardMetadata.getId());
-            final List<PayerCost> payerCostList = amountConfiguration.getPayerCosts();
-            if (payerCostList != null && payerCostList.size() > 1) {
-                int selectedPayerCostIndex = payerCostSelection.get(currentItem);
-                if (selectedPayerCostIndex == SELECTED_PAYER_COST_NONE) {
-                    selectedPayerCostIndex = amountConfiguration.getDefaultPayerCostIndex();
-                }
-                getView().showInstallmentsList(payerCostList, selectedPayerCostIndex);
-                new InstallmentsEventTrack(expressMetadata, amountConfiguration).track();
-            }
+                amountConfigurationRepository.getConfigurationFor(cardMetadata.getId());
+            final List<PayerCost> payerCostList = amountConfiguration.getAppliedPayerCost(isSplitUserPreference);
+            final int index = payerCostList.indexOf(
+                amountConfiguration.getCurrentPayerCost(isSplitUserPreference, payerCostSelection.get(currentItem)));
+            getView().showInstallmentsList(payerCostList, index);
+            new InstallmentsEventTrack(expressMetadata, amountConfiguration).track();
         }
     }
 
@@ -283,6 +305,12 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
         updateElementPosition(paymentMethodIndex, payerCostSelection.get(paymentMethodIndex));
     }
 
+    @Override
+    public void updateElementPosition(final int paymentMethodIndex) {
+        getView().updateViewForPosition(paymentMethodIndex, payerCostSelection.get(paymentMethodIndex),
+            isSplitUserPreference);
+    }
+
     /**
      * When user selects a new payer cost for certain payment method this method will be called.
      *
@@ -292,31 +320,17 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
     @Override
     public void onPayerCostSelected(final int paymentMethodIndex, final PayerCost payerCostSelected) {
         final CardMetadata cardMetadata = expressMetadataList.get(paymentMethodIndex).getCard();
-        final int selected =
-            payerCostRepository.getConfigurationFor(cardMetadata.getId()).getPayerCosts().indexOf(payerCostSelected);
+        final int selected = amountConfigurationRepository.getConfigurationFor(cardMetadata.getId())
+            .getAppliedPayerCost(isSplitUserPreference)
+            .indexOf(payerCostSelected);
+
         updateElementPosition(paymentMethodIndex, selected);
         getView().collapseInstallmentsSelection();
     }
 
     @Override
-    public void detachView() {
-        onViewPaused();
-        super.detachView();
-    }
-
-    // Keep - Save state
-    public PayerCostSelection getPayerCostSelection() {
-        return payerCostSelection;
-    }
-
-    // Keep - Restored state
-    public void setPayerCostSelection(final PayerCostSelection payerCostSelection) {
-        this.payerCostSelection = payerCostSelection;
-    }
-
-    @Override
     public void hasFinishPaymentAnimation() {
-        final IPayment payment = paymentRepository.getPayment();
+        final IPaymentDescriptor payment = paymentRepository.getPayment();
         if (payment != null) {
             getView().showPaymentResult(payment);
         }
@@ -342,5 +356,19 @@ import static com.mercadopago.android.px.internal.view.PaymentMethodDescriptorVi
     @Override
     public void onAmountDescriptorClicked(@NonNull final DiscountConfigurationModel discountModel) {
         getView().showDiscountDetailDialog(discountModel);
+    }
+
+    @Override
+    public void onSplitChanged(final boolean isChecked, final int currentItem) {
+        payerCostSelection = createNewPayerCostSelected();
+        isSplitUserPreference = isChecked;
+        // cancel also update the position.
+        // it is used because the installment selection can be expanded by the user.
+        onInstallmentSelectionCanceled(currentItem);
+    }
+
+    @NonNull
+    private PayerCostSelection createNewPayerCostSelected() {
+        return new PayerCostSelection(expressMetadataList.size() + 1);
     }
 }

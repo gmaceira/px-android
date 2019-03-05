@@ -33,6 +33,18 @@
         app:font_style="light"
         tools:text="Tope disponible para consumir en un único pago. Válido hasta el 1 de agosto de 2019."/>
 
+    <com.mercadopago.android.px.internal.view.MPTextView
+        android:id="@+id/linkText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:layout_marginTop="@dimen/px_xxs_margin"
+        android:text="@string/px_terms_and_conditions"
+        android:textAppearance="@style/MLFont.Regular"
+        android:textColor="@color/ui_components_primary_color"
+        android:textSize="@dimen/ui_fontsize_xxsmall"
+        tools:text="Términos y condiciones"/>
+
     <View
         android:id="@+id/px_discount_detail_line"
         android:layout_width="match_parent"

@@ -13,7 +13,7 @@ import com.mercadopago.android.px.internal.repository.IdentificationRepository;
 import com.mercadopago.android.px.internal.repository.IssuersRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.repository.UserSelectionRepository;
-import com.mercadopago.android.px.mocks.BankDeals;
+import com.mercadopago.android.px.mocks.BankDealsUtils;
 import com.mercadopago.android.px.mocks.Cards;
 import com.mercadopago.android.px.mocks.DummyCard;
 import com.mercadopago.android.px.mocks.IdentificationTypes;
@@ -170,12 +170,11 @@ public class GuessingCardPaymentPresenterTest {
 
     @Test
     public void whenPaymentMethodListSetIsEmptyThenShowError() {
-
         presenter.initialize();
 
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
 
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         verify(view).setCardNumberInputMaxLength(anyInt());
         verify(view).setInvalidCardMultipleErrorView();
@@ -183,17 +182,17 @@ public class GuessingCardPaymentPresenterTest {
 
     @Test
     public void whenPaymentMethodListSetWithTwoOptionsAndCheckFinishWithCardTokenThenAskForPaymentType() {
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnDebit());
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
+        stubGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
+        stubGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnDebit());
         when(paymentPreference.getSupportedPaymentMethods(paymentMethodSearch.getPaymentMethods()))
-            .thenReturn(mockedGuessedPaymentMethods);
+            .thenReturn(stubGuessedPaymentMethods);
 
         presenter.initialize();
 
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, anyString());
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.FAKE_BIN);
 
-        assertTrue(presenter.shouldAskPaymentType(mockedGuessedPaymentMethods));
+        assertTrue(presenter.shouldAskPaymentType(stubGuessedPaymentMethods));
     }
 
     @Test
@@ -201,17 +200,17 @@ public class GuessingCardPaymentPresenterTest {
 
         presenter.initialize();
 
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
         final PaymentMethod paymentMethodOnVisa = PaymentMethods.getPaymentMethodOnVisa();
-        mockedGuessedPaymentMethods.add(paymentMethodOnVisa);
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnDebit());
+        stubGuessedPaymentMethods.add(paymentMethodOnVisa);
+        stubGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnDebit());
 
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         when(userSelectionRepository.getPaymentMethod()).thenReturn(paymentMethodOnVisa);
 
         assertNotNull(presenter.getPaymentMethod());
-        assertEquals(presenter.getPaymentMethod().getId(), mockedGuessedPaymentMethods.get(0).getId());
+        assertEquals(presenter.getPaymentMethod().getId(), stubGuessedPaymentMethods.get(0).getId());
     }
 
     @Test
@@ -219,10 +218,10 @@ public class GuessingCardPaymentPresenterTest {
 
         presenter.initialize();
 
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
+        stubGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
 
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         presenter.setPaymentMethod(null);
 
@@ -234,13 +233,13 @@ public class GuessingCardPaymentPresenterTest {
 
     @Test
     public void whenPaymentMethodSetAndDeletedThenClearViews() {
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
-        final PaymentMethod paymentMethod = mockedGuessedPaymentMethods.get(0);
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
+        stubGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
+        final PaymentMethod paymentMethod = stubGuessedPaymentMethods.get(0);
 
         presenter.initialize();
 
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         verify(view).setPaymentMethod(paymentMethod);
         verify(view).resolvePaymentMethodSet(paymentMethod);
@@ -257,25 +256,24 @@ public class GuessingCardPaymentPresenterTest {
 
     @Test
     public void whenPaymentMethodSetHasIdentificationTypeRequiredThenShowIdentificationView() {
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
+        stubGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodOnVisa());
 
         presenter.initialize();
 
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
-        verify(view).initializeIdentificationTypes(identificationTypes);
+        verify(view).initializeIdentificationTypes(identificationTypes, identificationTypes.get(0));
     }
 
     @Test
     public void whenPaymentMethodSetDoNotHaveIdentificationTypeRequiredThenHideIdentificationView() {
-
         presenter.initialize();
 
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodWithIdNotRequired());
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
+        stubGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodWithIdNotRequired());
 
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_CORDIAL);
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.MOCKED_BIN_CORDIAL);
 
         verify(view).hideIdentificationInput();
     }
@@ -348,12 +346,12 @@ public class GuessingCardPaymentPresenterTest {
 
     @Test
     public void whenSecurityCodeSettingsAreWrongThenHideSecurityCodeView() {
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
-        mockedGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodWithWrongSecurityCodeSettings());
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
+        stubGuessedPaymentMethods.add(PaymentMethods.getPaymentMethodWithWrongSecurityCodeSettings());
         when(userSelectionRepository.getPaymentMethod()).thenReturn(null);
 
         presenter.initialize();
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         verify(view).hideSecurityCodeInput();
     }
@@ -362,12 +360,12 @@ public class GuessingCardPaymentPresenterTest {
     public void whenPaymentMethodSettingsAreEmptyThenShowErrorMessage() {
         presenter.initialize();
 
-        final List<PaymentMethod> mockedGuessedPaymentMethods = new ArrayList<>();
+        final List<PaymentMethod> stubGuessedPaymentMethods = new ArrayList<>();
         final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnVisa();
         mockedPaymentMethod.setSettings(null);
-        mockedGuessedPaymentMethods.add(mockedPaymentMethod);
+        stubGuessedPaymentMethods.add(mockedPaymentMethod);
 
-        presenter.resolvePaymentMethodListSet(mockedGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
+        presenter.resolvePaymentMethodListSet(stubGuessedPaymentMethods, Cards.MOCKED_BIN_VISA);
 
         verify(view).showSettingNotFoundForBinError();
     }
@@ -431,7 +429,6 @@ public class GuessingCardPaymentPresenterTest {
 
     @Test
     public void whenCardExpiryDateSetThenValidateItAndSaveItInCardToken() {
-
         final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
 
         presenter.initialize();
@@ -441,13 +438,33 @@ public class GuessingCardPaymentPresenterTest {
         presenter.saveCardNumber(card.getCardNumber());
         presenter.setPaymentMethod(mockedPaymentMethod);
         presenter.saveCardholderName(CardTestUtils.DUMMY_CARDHOLDER_NAME);
-        presenter.saveExpiryMonth(CardTestUtils.DUMMY_EXPIRY_MONTH);
-        presenter.saveExpiryYear(CardTestUtils.DUMMY_EXPIRY_YEAR_SHORT);
+        presenter.saveExpiryMonth(CardTestUtils.VALID_EXPIRY_MONTH);
+        presenter.saveExpiryYear(CardTestUtils.VALID_EXPIRY_YEAR_SHORT);
 
         assertTrue(presenter.validateExpiryDate());
-        assertEquals(presenter.getCardToken().getExpirationMonth(), Integer.valueOf(CardTestUtils.DUMMY_EXPIRY_MONTH));
+        assertEquals(presenter.getCardToken().getExpirationMonth(), Integer.valueOf(CardTestUtils.VALID_EXPIRY_MONTH));
         assertEquals(presenter.getCardToken().getExpirationYear(),
-            Integer.valueOf(CardTestUtils.DUMMY_EXPIRY_YEAR_LONG));
+            Integer.valueOf(CardTestUtils.VALID_EXPIRY_YEAR_LONG));
+    }
+
+    @Test
+    public void whenInvalidCardExpiryDateSetThenValidate() {
+        final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
+        presenter.initialize();
+        when(userSelectionRepository.getPaymentMethod()).thenReturn(mockedPaymentMethod);
+        presenter.saveExpiryMonth(CardTestUtils.VALID_EXPIRY_MONTH);
+        presenter.saveExpiryYear(CardTestUtils.INVALID_EXPIRY_YEAR_SHORT);
+        assertFalse(presenter.validateExpiryDate());
+    }
+
+    @Test
+    public void whenInvalidCharacterCardExpiryDateSetThenValidate() {
+        final PaymentMethod mockedPaymentMethod = PaymentMethods.getPaymentMethodOnMaster();
+        presenter.initialize();
+        when(userSelectionRepository.getPaymentMethod()).thenReturn(mockedPaymentMethod);
+        presenter.saveExpiryMonth(CardTestUtils.VALID_EXPIRY_MONTH);
+        presenter.saveExpiryYear(CardTestUtils.INVALID_CHARACTER_EXPIRY_YEAR);
+        assertFalse(presenter.validateExpiryDate());
     }
 
     @Test
@@ -464,8 +481,8 @@ public class GuessingCardPaymentPresenterTest {
         presenter.saveCardNumber(card.getCardNumber());
         presenter.setPaymentMethod(mockedPaymentMethod);
         presenter.saveCardholderName(CardTestUtils.DUMMY_CARDHOLDER_NAME);
-        presenter.saveExpiryMonth(CardTestUtils.DUMMY_EXPIRY_MONTH);
-        presenter.saveExpiryYear(CardTestUtils.DUMMY_EXPIRY_YEAR_SHORT);
+        presenter.saveExpiryMonth(CardTestUtils.VALID_EXPIRY_MONTH);
+        presenter.saveExpiryYear(CardTestUtils.VALID_EXPIRY_YEAR_SHORT);
         presenter.saveSecurityCode(card.getSecurityCode());
         final boolean validCardNumber = presenter.validateCardNumber();
         final boolean validSecurityCode = presenter.validateSecurityCode();
@@ -489,8 +506,8 @@ public class GuessingCardPaymentPresenterTest {
         presenter.saveCardNumber(card.getCardNumber());
         presenter.setPaymentMethod(mockedPaymentMethod);
         presenter.saveCardholderName(CardTestUtils.DUMMY_CARDHOLDER_NAME);
-        presenter.saveExpiryMonth(CardTestUtils.DUMMY_EXPIRY_MONTH);
-        presenter.saveExpiryYear(CardTestUtils.DUMMY_EXPIRY_YEAR_SHORT);
+        presenter.saveExpiryMonth(CardTestUtils.VALID_EXPIRY_MONTH);
+        presenter.saveExpiryYear(CardTestUtils.VALID_EXPIRY_YEAR_SHORT);
         presenter.saveSecurityCode(card.getSecurityCode());
         presenter.saveIdentificationNumber(CardTestUtils.DUMMY_IDENTIFICATION_NUMBER_DNI);
         presenter.saveIdentificationType(IdentificationTypes.getIdentificationType());
@@ -519,8 +536,8 @@ public class GuessingCardPaymentPresenterTest {
         presenter.saveCardNumber(card.getCardNumber());
         presenter.setPaymentMethod(mockedPaymentMethod);
         presenter.saveCardholderName(CardTestUtils.DUMMY_CARDHOLDER_NAME);
-        presenter.saveExpiryMonth(CardTestUtils.DUMMY_EXPIRY_MONTH);
-        presenter.saveExpiryYear(CardTestUtils.DUMMY_EXPIRY_YEAR_SHORT);
+        presenter.saveExpiryMonth(CardTestUtils.VALID_EXPIRY_MONTH);
+        presenter.saveExpiryYear(CardTestUtils.VALID_EXPIRY_YEAR_SHORT);
         presenter.saveSecurityCode(card.getSecurityCode());
         presenter.saveIdentificationNumber(CardTestUtils.DUMMY_IDENTIFICATION_NUMBER_DNI);
         presenter.saveIdentificationType(IdentificationTypes.getIdentificationType());
@@ -618,7 +635,7 @@ public class GuessingCardPaymentPresenterTest {
     // --------- Helper methods ----------- //
 
     private void whenGetBankDealsAsync() {
-        final List<BankDeal> bankDeals = BankDeals.getBankDealsListMLA();
+        final List<BankDeal> bankDeals = BankDealsUtils.getBankDealsListMLA();
         when(bankDealsRepository.getBankDealsAsync()).thenReturn(new StubSuccessMpCall<>(bankDeals));
     }
 

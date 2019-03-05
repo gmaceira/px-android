@@ -5,25 +5,7 @@ import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import java.io.Serializable;
 
-public class Site implements Serializable, Parcelable {
-
-    private final String id;
-    private final String currencyId;
-    private final String termsAndConditionsUrl;
-
-    /* default */ Site(@NonNull final String id,
-        @NonNull final String currencyId,
-        @NonNull final String termsAndConditionsUrl) {
-        this.id = id;
-        this.currencyId = currencyId;
-        this.termsAndConditionsUrl = termsAndConditionsUrl;
-    }
-
-    protected Site(final Parcel in) {
-        id = in.readString();
-        currencyId = in.readString();
-        termsAndConditionsUrl = in.readString();
-    }
+public final class Site implements Serializable, Parcelable {
 
     public static final Creator<Site> CREATOR = new Creator<Site>() {
         @Override
@@ -37,12 +19,43 @@ public class Site implements Serializable, Parcelable {
         }
     };
 
+    /* default */ static Site createWith(@NonNull final String id,
+        @NonNull final String currencyId,
+        @NonNull final String termsAndConditionsUrl, final boolean shouldWarnAboutBankInterests){
+        return new Site(id, currencyId, termsAndConditionsUrl, shouldWarnAboutBankInterests);
+    }
+
+    private final String id;
+    private final String currencyId;
+    private final String termsAndConditionsUrl;
+    private final boolean shouldWarnAboutBankInterests;
+
+    private Site(@NonNull final String id,
+        @NonNull final String currencyId,
+        @NonNull final String termsAndConditionsUrl, final boolean shouldWarnAboutBankInterests) {
+        this.id = id;
+        this.currencyId = currencyId;
+        this.termsAndConditionsUrl = termsAndConditionsUrl;
+        this.shouldWarnAboutBankInterests = shouldWarnAboutBankInterests;
+    }
+
+    private Site(final Parcel in) {
+        id = in.readString();
+        currencyId = in.readString();
+        termsAndConditionsUrl = in.readString();
+        shouldWarnAboutBankInterests = in.readByte() == 1;
+    }
+
     public String getId() {
         return id;
     }
 
     public String getCurrencyId() {
         return currencyId;
+    }
+
+    public boolean shouldWarnAboutBankInterests() {
+        return shouldWarnAboutBankInterests;
     }
 
     @Override
@@ -55,6 +68,7 @@ public class Site implements Serializable, Parcelable {
         dest.writeString(id);
         dest.writeString(currencyId);
         dest.writeString(termsAndConditionsUrl);
+        dest.writeByte((byte) (shouldWarnAboutBankInterests ? 1 : 0));
     }
 
     public String getTermsAndConditionsUrl() {

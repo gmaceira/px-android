@@ -1,5 +1,6 @@
 package com.mercadopago.android.px.internal.features.paymentresult;
 
+import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -8,11 +9,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
 import com.mercadolibre.android.ui.widgets.MeliSnackbar;
 import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.configuration.PaymentResultScreenConfiguration;
 import com.mercadopago.android.px.core.MercadoPagoCheckout;
+import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.di.Session;
 import com.mercadopago.android.px.internal.features.Constants;
 import com.mercadopago.android.px.internal.features.paymentresult.components.AccreditationComment;
@@ -48,8 +49,8 @@ import com.mercadopago.android.px.internal.features.paymentresult.components.Ins
 import com.mercadopago.android.px.internal.features.paymentresult.components.InstructionsTertiaryInfo;
 import com.mercadopago.android.px.internal.features.paymentresult.components.InstructionsTertiaryInfoRenderer;
 import com.mercadopago.android.px.internal.features.paymentresult.components.PaymentResultContainer;
+import com.mercadopago.android.px.internal.features.paymentresult.props.HeaderProps;
 import com.mercadopago.android.px.internal.features.paymentresult.props.PaymentResultProps;
-import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.util.ErrorUtil;
 import com.mercadopago.android.px.internal.util.JsonUtil;
@@ -61,6 +62,7 @@ import com.mercadopago.android.px.internal.view.RendererFactory;
 import com.mercadopago.android.px.internal.viewmodel.ChangePaymentMethodPostPaymentAction;
 import com.mercadopago.android.px.internal.viewmodel.PostPaymentAction;
 import com.mercadopago.android.px.internal.viewmodel.RecoverPaymentPostPaymentAction;
+import com.mercadopago.android.px.model.Instruction;
 import com.mercadopago.android.px.model.PaymentResult;
 import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
@@ -68,20 +70,15 @@ import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_ACTION;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_CUSTOM_EXIT;
 
-public class PaymentResultActivity extends AppCompatActivity implements PaymentResultNavigator {
-
-    public static final String CONGRATS_DISPLAY_BUNDLE = "congrats_display";
-    public static final String PAYMENT_RESULT_BUNDLE = "payment_result";
+public class PaymentResultActivity extends PXActivity<PaymentResultPresenter> implements
+    PaymentResultContract.PaymentResultView {
 
     private static final String EXTRA_CONFIRM_PAYMENT_ORIGIN = "extra_confirm_payment_origin";
     private static final String EXTRA_PAYMENT_RESULT = "extra_payment_result";
-
     public static final String EXTRA_RESULT_CODE = "extra_result_code";
 
-    private PaymentResultPresenter presenter;
-    private Integer congratsDisplay;
-
-    private PaymentResultPropsMutator mutator;
+    private PaymentResultProps props;
+    private ComponentManager componentManager;
 
     public static Intent getIntent(@NonNull final Context context, @NonNull final PaymentResult result,
         @NonNull final PostPaymentAction.OriginAction confirmPaymentOrigin) {
@@ -96,24 +93,6 @@ public class PaymentResultActivity extends AppCompatActivity implements PaymentR
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        final PaymentSettingRepository paymentSettings =
-            Session.getSession(this).getConfigurationModule().getPaymentSettings();
-        final PaymentResultScreenConfiguration paymentResultScreenConfiguration =
-            paymentSettings.getAdvancedConfiguration().getPaymentResultScreenConfiguration();
-        presenter = new PaymentResultPresenter(this,
-            paymentSettings, Session.getSession(this).getInstructionsRepository());
-
-        mutator = new PaymentResultPropsMutator(new PaymentResultProps.Builder(
-            paymentResultScreenConfiguration).build());
-
-        getActivityParameters();
-
-        final PaymentResultProvider paymentResultProvider = new PaymentResultProviderImpl(this);
-
-        presenter.attachResourcesProvider(paymentResultProvider);
-
-        final ComponentManager componentManager = new ComponentManager(this);
 
         RendererFactory.register(Body.class, BodyRenderer.class);
         RendererFactory.register(LoadingComponent.class, LoadingRenderer.class);
@@ -133,21 +112,46 @@ public class PaymentResultActivity extends AppCompatActivity implements PaymentR
         RendererFactory.register(InstructionsAction.class, InstructionsActionRenderer.class);
         RendererFactory.register(BodyError.class, BodyErrorRenderer.class);
 
-        final Component root = new PaymentResultContainer(componentManager,
-            new PaymentResultProps.Builder(
-                paymentResultScreenConfiguration).build(),
-            paymentResultProvider);
-        componentManager.setActionsListener(presenter);
+        final PaymentSettingRepository paymentSettings =
+            Session.getSession(this).getConfigurationModule().getPaymentSettings();
+
+        final PaymentResultScreenConfiguration paymentResultScreenConfiguration =
+            paymentSettings.getAdvancedConfiguration().getPaymentResultScreenConfiguration();
+
+        props = new PaymentResultProps.Builder(paymentResultScreenConfiguration).build();
+
+        final PaymentResultProvider paymentResultProvider = new PaymentResultProviderImpl(this);
+
+        presenter = createPresenter(paymentSettings);
+
+        componentManager = new ComponentManager(this);
+        final Component root = new PaymentResultContainer(componentManager, props, paymentResultProvider);
         componentManager.setComponent(root);
-        mutator.setPropsListener(componentManager);
-        mutator.renderDefaultProps();
+        componentManager.setActionsListener(presenter);
+
+        presenter.attachView(this);
+
+        if (savedInstanceState == null) {
+            presenter.freshStart();
+        }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        presenter.attachView(mutator);
-        presenter.initialize();
+    private PaymentResultPresenter createPresenter(final PaymentSettingRepository paymentSettings) {
+        final Intent intent = getIntent();
+        final PostPaymentAction.OriginAction postPaymentAction;
+        final PaymentResult paymentResult =
+            JsonUtil.getInstance().fromJson(intent.getExtras().getString(EXTRA_PAYMENT_RESULT), PaymentResult.class);
+
+        final int originIndex = intent.getIntExtra(EXTRA_CONFIRM_PAYMENT_ORIGIN, -1);
+
+        if (originIndex != -1) {
+            postPaymentAction = PostPaymentAction.OriginAction.values()[originIndex];
+        } else {
+            postPaymentAction = null;
+        }
+
+        return new PaymentResultPresenter(paymentSettings, Session.getSession(this).getInstructionsRepository(),
+            paymentResult, postPaymentAction);
     }
 
     @Override
@@ -162,57 +166,8 @@ public class PaymentResultActivity extends AppCompatActivity implements PaymentR
     }
 
     @Override
-    public void showError(final MercadoPagoError error, final String requestOrigin) {
-        if (error != null && error.isApiException()) {
-            showApiExceptionError(error.getApiException(), requestOrigin);
-        } else {
-            ErrorUtil.startErrorActivity(this, error);
-        }
-    }
-
-    @Override
-    protected void onSaveInstanceState(final Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (presenter != null) {
-            outState.putString(PAYMENT_RESULT_BUNDLE, JsonUtil.getInstance().toJson(presenter.getPaymentResult()));
-        }
-
-        outState.putInt(CONGRATS_DISPLAY_BUNDLE, congratsDisplay);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(final Bundle savedInstanceState) {
-        final PaymentResult paymentResult =
-            JsonUtil.getInstance().fromJson(savedInstanceState.getString(PAYMENT_RESULT_BUNDLE), PaymentResult.class);
-
-        congratsDisplay = savedInstanceState.getInt(CONGRATS_DISPLAY_BUNDLE, -1);
-
-        final Session session = Session.getSession(this);
-        presenter = new PaymentResultPresenter(this,
-            session.getConfigurationModule().getPaymentSettings(),
-            session.getInstructionsRepository());
-        presenter.setPaymentResult(paymentResult);
-
-        final PaymentResultProvider provider = new PaymentResultProviderImpl(this);
-        presenter.attachResourcesProvider(provider);
-
-        super.onRestoreInstanceState(savedInstanceState);
-    }
-
-    protected void getActivityParameters() {
-
-        final Intent intent = getIntent();
-        final PaymentResult paymentResult =
-            JsonUtil.getInstance().fromJson(intent.getExtras().getString(EXTRA_PAYMENT_RESULT), PaymentResult.class);
-
-        presenter.setPaymentResult(paymentResult);
-
-        final int originIndex = intent.getIntExtra(EXTRA_CONFIRM_PAYMENT_ORIGIN, -1);
-        if (originIndex != -1) {
-            presenter.setOriginAction(PostPaymentAction.OriginAction.values()[originIndex]);
-        }
-
-        congratsDisplay = intent.getIntExtra(CONGRATS_DISPLAY_BUNDLE, -1);
+    public void showInstructionsError() {
+        ErrorUtil.startErrorActivity(this, new MercadoPagoError(getString(R.string.px_standard_error_message), false));
     }
 
     @Override
@@ -234,6 +189,7 @@ public class PaymentResultActivity extends AppCompatActivity implements PaymentR
 
     @Override
     public void onBackPressed() {
+        presenter.onAbort();
         finishWithResult(MercadoPagoCheckout.PAYMENT_RESULT_CODE);
     }
 
@@ -286,6 +242,7 @@ public class PaymentResultActivity extends AppCompatActivity implements PaymentR
         finish();
     }
 
+    @SuppressLint("Range")
     @Override
     public void copyToClipboard(@NonNull final String content) {
         final ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
@@ -295,6 +252,43 @@ public class PaymentResultActivity extends AppCompatActivity implements PaymentR
             MeliSnackbar.make(findViewById(R.id.mpsdkPaymentResultContainer),
                 getString(R.string.px_copied_to_clipboard_ack),
                 Snackbar.LENGTH_SHORT, MeliSnackbar.SnackbarType.SUCCESS).show();
+        }
+    }
+
+    @Override
+    public void setPropPaymentResult(@NonNull final String currencyId, @NonNull final PaymentResult paymentResult,
+        final boolean showLoading) {
+
+        props = props.toBuilder()
+            .setPaymentResult(paymentResult)
+            .setCurrencyId(currencyId)
+            .setHeaderMode(HeaderProps.HEADER_MODE_WRAP)
+            .setLoading(showLoading)
+            .build();
+    }
+
+    @Override
+    public void setPropInstruction(@NonNull final Instruction instruction,
+        @NonNull final String processingModeString,
+        final boolean showLoading) {
+
+        props = props.toBuilder()
+            .setInstruction(instruction)
+            .setLoading(showLoading)
+            .setProcessingMode(processingModeString)
+            .build();
+    }
+
+    /**
+     * @deprecated Este método tiene que ser privado, se hizo publico para poder hacer notificaciones condicionales.
+     * Esta no es la forma adecuada de hacerlo hay que definir algún mecanismo de transacciones para eso. Mejor no tener
+     * el feature a tener algo mal implementado.
+     */
+    @Override
+    @Deprecated
+    public void notifyPropsChanged() {
+        if (componentManager != null && props != null) {
+            componentManager.onProps(props);
         }
     }
 }

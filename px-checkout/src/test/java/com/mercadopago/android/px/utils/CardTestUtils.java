@@ -2,6 +2,8 @@ package com.mercadopago.android.px.utils;
 
 import android.support.annotation.Nullable;
 import com.mercadopago.android.px.mocks.DummyCard;
+
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,10 +12,12 @@ public class CardTestUtils {
     public final static String DUMMY_SECURITY_CODE = "123";
     public final static String DUMMY_SECURITY_CODE_LONG = "1234";
     public final static String DUMMY_CARDHOLDER_NAME = "APRO";
-    public final static String DUMMY_EXPIRY_MONTH = "11";
-    public final static String DUMMY_EXPIRY_YEAR_SHORT = "19";
-    public final static String DUMMY_EXPIRY_YEAR_LONG = "2019";
     public final static String DUMMY_IDENTIFICATION_NUMBER_DNI = "12312312";
+    public final static String VALID_EXPIRY_MONTH = String.valueOf(LocalDate.now().plusMonths(1).getMonthValue());
+    public final static String VALID_EXPIRY_YEAR_SHORT = String.valueOf(LocalDate.now().plusYears(1).getYear()).substring(2,4);
+    public final static String VALID_EXPIRY_YEAR_LONG = String.valueOf(LocalDate.now().plusYears(1).getYear());
+    public final static String INVALID_EXPIRY_YEAR_SHORT = String.valueOf(LocalDate.now().minusYears(1).getYear()).substring(2,4);
+    public final static String INVALID_CHARACTER_EXPIRY_YEAR = "/9";
 
     @Nullable
     public static DummyCard getDummyCard(String paymentMethodId) {

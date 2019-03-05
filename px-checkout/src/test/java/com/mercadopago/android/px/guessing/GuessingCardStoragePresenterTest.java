@@ -186,7 +186,7 @@ public class GuessingCardStoragePresenterTest {
 
         assertTrue(presenter.isIdentificationNumberRequired());
         verify(view).resolvePaymentMethodSet(mockedGuessedPaymentMethods.get(0));
-        verify(view).initializeIdentificationTypes(identificationTypes);
+        verify(view).initializeIdentificationTypes(identificationTypes, identificationTypes.get(0));
     }
 
     @Test
@@ -206,7 +206,7 @@ public class GuessingCardStoragePresenterTest {
         verify(view).resolvePaymentMethodSet(idNotRequiredPaymentMethods.get(0));
 
         assertFalse(presenter.isIdentificationNumberRequired());
-        verify(view, times(0)).initializeIdentificationTypes(any(List.class));
+        verify(view, times(0)).initializeIdentificationTypes(any(List.class), any(IdentificationType.class));
         verify(view).hideIdentificationInput();
     }
 

@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.mercadopago.android.px.R;
+import com.mercadopago.android.px.internal.features.TermsAndConditionsActivity;
 import com.mercadopago.android.px.internal.util.ViewUtils;
 import com.mercadopago.android.px.internal.util.textformatter.TextFormatter;
 import com.mercadopago.android.px.model.DiscountConfigurationModel;
@@ -30,9 +31,10 @@ public class DiscountDetail extends CompactComponent<DiscountDetail.Props, Void>
 
     @Override
     public View render(@Nonnull final ViewGroup parent) {
-        final View mainContainer = inflate(parent, R.layout.px_view_discount_detail);
+        final View mainContainer = ViewUtils.inflate(parent, R.layout.px_view_discount_detail);
         configureSubtitleMessage(mainContainer);
         configureDetailMessage(mainContainer);
+        configureTermsAndConditions(mainContainer);
         configureSubDetailsMessage(mainContainer);
         return mainContainer;
     }
@@ -71,6 +73,17 @@ public class DiscountDetail extends CompactComponent<DiscountDetail.Props, Void>
         } else {
             detailTextView.setVisibility(View.GONE);
         }
+    }
+
+    private void configureTermsAndConditions(final View mainContainer) {
+        final TextView linkText = mainContainer.findViewById(R.id.linkText);
+        linkText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(final View v) {
+                TermsAndConditionsActivity
+                    .start(mainContainer.getContext(), props.discountModel.getCampaign().getLegalTermsUrl());
+            }
+        });
     }
 
     private void configureNotAvailableDiscountDetail(final TextView detailTextView, final View mainContainer) {

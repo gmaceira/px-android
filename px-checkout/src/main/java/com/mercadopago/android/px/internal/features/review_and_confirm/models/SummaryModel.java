@@ -13,17 +13,44 @@ import com.mercadopago.android.px.model.Site;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * Created by mromar on 3/2/18.
- */
-
 public class SummaryModel implements Parcelable {
 
-    private final String amount;
-    public final String currencyId;
-    public final String siteId;
-    private final String paymentTypeId;
-    private final String payerCostTotalAmount;
+    public static final Creator<SummaryModel> CREATOR = new Creator<SummaryModel>() {
+        @Override
+        public SummaryModel createFromParcel(final Parcel in) {
+            return new SummaryModel(in);
+        }
+
+        @Override
+        public SummaryModel[] newArray(final int size) {
+            return new SummaryModel[size];
+        }
+    };
+
+    public static String resolveTitle(final List<Item> items, final String singularTitle, final String pluralTitle) {
+        final String title;
+
+        if (items.size() == 1) {
+            if (TextUtil.isEmpty(items.get(0).getTitle())) {
+                if (items.get(0).getQuantity() > 1) {
+                    title = pluralTitle;
+                } else {
+                    title = singularTitle;
+                }
+            } else {
+                title = items.get(0).getTitle();
+            }
+        } else {
+            title = pluralTitle;
+        }
+
+        return title;
+    }
+
+    @NonNull private final String amount;
+    @NonNull private final Site site;
+    @NonNull private final String paymentTypeId;
+    @Nullable private final String payerCostTotalAmount;
     private final int installments;
     private final String cftPercent;
     private final String couponAmount;
@@ -36,7 +63,7 @@ public class SummaryModel implements Parcelable {
 
     public SummaryModel(final BigDecimal amount,
         final PaymentMethod paymentMethod,
-        final Site site,
+        @NonNull final Site site,
         final PayerCost payerCost,
         final Discount discount,
         final String title,
@@ -44,8 +71,7 @@ public class SummaryModel implements Parcelable {
         final BigDecimal charges) {
 
         this.amount = amount.toString();
-        currencyId = site.getCurrencyId();
-        siteId = site.getId();
+        this.site = site;
         paymentTypeId = paymentMethod.getPaymentTypeId();
         payerCostTotalAmount =
             payerCost != null && payerCost.getTotalAmount() != null ? payerCost.getTotalAmount().toString() : null;
@@ -66,8 +92,7 @@ public class SummaryModel implements Parcelable {
 
     protected SummaryModel(final Parcel in) {
         amount = in.readString();
-        currencyId = in.readString();
-        siteId = in.readString();
+        site = in.readParcelable(Site.class.getClassLoader());
         paymentTypeId = in.readString();
         payerCostTotalAmount = in.readString();
         installments = in.readInt();
@@ -81,18 +106,6 @@ public class SummaryModel implements Parcelable {
         charges = in.readString();
     }
 
-    public static final Creator<SummaryModel> CREATOR = new Creator<SummaryModel>() {
-        @Override
-        public SummaryModel createFromParcel(final Parcel in) {
-            return new SummaryModel(in);
-        }
-
-        @Override
-        public SummaryModel[] newArray(final int size) {
-            return new SummaryModel[size];
-        }
-    };
-
     @Override
     public int describeContents() {
         return 0;
@@ -101,8 +114,7 @@ public class SummaryModel implements Parcelable {
     @Override
     public void writeToParcel(final Parcel dest, final int flags) {
         dest.writeString(amount);
-        dest.writeString(currencyId);
-        dest.writeString(siteId);
+        dest.writeParcelable(site, flags);
         dest.writeString(paymentTypeId);
         dest.writeString(payerCostTotalAmount);
         dest.writeInt(installments);
@@ -116,6 +128,7 @@ public class SummaryModel implements Parcelable {
         dest.writeString(charges);
     }
 
+    @NonNull
     public String getPaymentTypeId() {
         return paymentTypeId;
     }
@@ -153,6 +166,11 @@ public class SummaryModel implements Parcelable {
     }
 
     @NonNull
+    public Site getSite() {
+        return site;
+    }
+
+    @NonNull
     public BigDecimal getCharges() {
         return new BigDecimal(charges);
     }
@@ -167,26 +185,6 @@ public class SummaryModel implements Parcelable {
 
     public boolean hasCoupon() {
         return getCouponAmount() != null;
-    }
-
-    public static String resolveTitle(final List<Item> items, final String singularTitle, final String pluralTitle) {
-        final String title;
-
-        if (items.size() == 1) {
-            if (TextUtil.isEmpty(items.get(0).getTitle())) {
-                if (items.get(0).getQuantity() > 1) {
-                    title = pluralTitle;
-                } else {
-                    title = singularTitle;
-                }
-            } else {
-                title = items.get(0).getTitle();
-            }
-        } else {
-            title = pluralTitle;
-        }
-
-        return title;
     }
 
     public boolean hasCharges() {

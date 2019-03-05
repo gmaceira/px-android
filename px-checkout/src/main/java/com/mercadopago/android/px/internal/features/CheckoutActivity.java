@@ -30,7 +30,7 @@ import com.mercadopago.android.px.internal.viewmodel.CheckoutStateModel;
 import com.mercadopago.android.px.internal.viewmodel.PostPaymentAction;
 import com.mercadopago.android.px.model.BusinessPayment;
 import com.mercadopago.android.px.model.Card;
-import com.mercadopago.android.px.model.GenericPayment;
+import com.mercadopago.android.px.model.IPaymentDescriptor;
 import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.PaymentResult;
@@ -335,11 +335,8 @@ public class CheckoutActivity extends PXActivity implements CheckoutView, Expres
         if (PaymentProcessorActivity.isBusiness(data)) {
             final BusinessPayment businessPayment = PaymentProcessorActivity.getBusinessPayment(data);
             presenter.onPaymentFinished(businessPayment);
-        } else if (PaymentProcessorActivity.isGeneric(data)) {
-            final GenericPayment genericPayment = PaymentProcessorActivity.getGenericPayment(data);
-            presenter.onPaymentFinished(genericPayment);
         } else {
-            final Payment payment = PaymentProcessorActivity.getPayment(data);
+            final IPaymentDescriptor payment = PaymentProcessorActivity.getPayment(data);
             presenter.onPaymentFinished(payment);
         }
     }
@@ -425,7 +422,7 @@ public class CheckoutActivity extends PXActivity implements CheckoutView, Expres
 
     @Override
     public void showPaymentResult(final PaymentResult paymentResult) {
-        overrideTransitionFadeInFadeOut();
+        overrideTransitionIn();
         final Intent intent = PaymentResultActivity.getIntent(this, paymentResult,
             PostPaymentAction.OriginAction.ONE_TAP);
         startActivityForResult(intent, REQ_CONGRATS);
