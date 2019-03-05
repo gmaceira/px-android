@@ -381,7 +381,7 @@ public class FrontCardView {
 
     private void resizeCard(ViewGroup cardViewContainer, int cardHeight, int cardWidth,
         int cardHolderNameFontSize, int cardExpiryDateSize, int cardSecurityCodeSize) {
-        ViewUtils.resizeViewGroupLayoutParams(cardViewContainer, cardHeight, cardWidth, mContext);
+        ViewUtils.resizeViewGroupLayoutParams(cardViewContainer, cardHeight, cardWidth);
 
         mCardholderNameTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, cardHolderNameFontSize);
         mCardExpiryMonthTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, cardExpiryDateSize);

@@ -15,8 +15,8 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:layout_alignParentStart="true"
             android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
             android:elevation="0dp"
             android:theme="@style/ToolbarTheme"
@@ -37,9 +37,9 @@
                 android:orientation="horizontal"
                 app:px_element_icon_height="@dimen/px_s_height"
                 app:px_element_icon_width="@dimen/px_s_height"
+                app:px_element_label_max_lines="1"
                 app:px_element_label_size="@dimen/px_l_text"
                 app:px_element_label_text_color="@color/px_expressCheckoutTextColor"
-                app:px_element_label_max_lines="1"
                 tools:visibility="visible"/>
 
         </android.support.v7.widget.Toolbar>
@@ -48,14 +48,22 @@
             android:id="@+id/summary_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_above="@+id/installments_header"
+            android:layout_above="@+id/labeledSwitch"
             android:layout_below="@+id/toolbar"
             android:background="@color/px_background"
-            android:orientation="vertical"
             android:clipChildren="false"
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/px_xs_margin"
             android:paddingLeft="@dimen/px_m_margin"
-            android:paddingRight="@dimen/px_m_margin"
-            android:paddingBottom="@dimen/px_xs_margin"/>
+            android:paddingRight="@dimen/px_m_margin"/>
+
+        <com.mercadopago.android.px.internal.view.LabeledSwitch
+            android:id="@+id/labeledSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/installments_header"
+            android:paddingLeft="@dimen/px_m_margin"
+            android:paddingRight="@dimen/px_m_margin"/>
 
         <com.mercadopago.android.px.internal.view.PaymentMethodHeaderView
             android:id="@+id/installments_header"
@@ -69,6 +77,12 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true">
 
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/installments_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:visibility="gone"/>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -80,7 +94,7 @@
                     android:layout_height="wrap_content"
                     app:px_aspectRatioHeight="460"
                     app:px_aspectRatioWidth="850"
-                    tools:background="@color/coral">
+                    tools:background="@color/px_expressCheckoutSeparatorLine">
 
                     <android.support.v4.view.ViewPager
                         android:id="@+id/payment_method_pager"
@@ -102,43 +116,19 @@
                     android:id="@+id/confirm_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="@dimen/px_m_margin"
-                    android:layout_marginTop="@dimen/px_s_margin"
-                    android:layout_marginRight="@dimen/px_m_margin"
                     android:layout_marginBottom="@dimen/px_m_margin"
+                    android:layout_marginLeft="@dimen/px_m_margin"
+                    android:layout_marginRight="@dimen/px_m_margin"
+                    android:layout_marginTop="@dimen/px_s_margin"
                     android:text="@string/px_pay"/>
-
             </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/installments_recycler_container"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
-
-                <View
-                    android:id="@+id/installments_selector_separator"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/px_xxxs_height"
-                    android:background="@color/px_expressCheckoutSeparatorLine"
-                    android:visibility="invisible"/>
-
-                <android.support.v7.widget.RecyclerView
-                    android:id="@+id/installments_recycler_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    tools:visibility="invisible"/>
-
-            </LinearLayout>
-
         </FrameLayout>
-
     </RelativeLayout>
 
     <FrameLayout
         android:id="@+id/exploding_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
-
 </FrameLayout>
+
 

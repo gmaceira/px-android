@@ -6,8 +6,10 @@ import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PaymentMethodSearch implements Serializable {
 
@@ -26,7 +28,6 @@ public class PaymentMethodSearch implements Serializable {
      **/
     private String defaultAmountConfiguration;
     private Map<String, DiscountConfigurationModel> discountsConfigurations;
-
     //region deprecated
 
     /**
@@ -90,7 +91,7 @@ public class PaymentMethodSearch implements Serializable {
      * @deprecated we will delete this method on px v5
      */
     @Deprecated
-    public void setCards(List<Card> cards, String lastFourDigitsText) {
+    public void setCards(final List<Card> cards, final String lastFourDigitsText) {
         if (cards != null) {
             customSearchItems = new ArrayList<>();
             this.cards = new ArrayList<>();
@@ -187,7 +188,7 @@ public class PaymentMethodSearch implements Serializable {
 
             //Case like "pagofacil", without the payment type in the item id.
             if (itemMatchesPaymentMethod(currentItem, paymentMethod) &&
-                currentItem.getId().equals(paymentMethod.getId())) {
+                    currentItem.getId().equals(paymentMethod.getId())) {
                 requiredItem = currentItem;
                 break;
             }
@@ -211,16 +212,12 @@ public class PaymentMethodSearch implements Serializable {
 
     @Nullable
     public PaymentMethod getPaymentMethodById(@Nullable final String paymentMethodId) {
-        PaymentMethod foundPaymentMethod = null;
-        if (paymentMethods != null) {
-            for (final PaymentMethod paymentMethod : paymentMethods) {
-                if (paymentMethod.getId().equals(paymentMethodId)) {
-                    foundPaymentMethod = paymentMethod;
-                    break;
-                }
+        for (final PaymentMethod paymentMethod : getPaymentMethods()) {
+            if (paymentMethod.getId().equals(paymentMethodId)) {
+                return paymentMethod;
             }
         }
-        return foundPaymentMethod;
+        return null;
     }
 
     @Nullable
@@ -239,7 +236,7 @@ public class PaymentMethodSearch implements Serializable {
 
     @NonNull
     public List<CustomSearchItem> getCustomSearchItems() {
-        return customSearchItems == null ? new ArrayList<CustomSearchItem>() : customSearchItems;
+        return customSearchItems == null ? new ArrayList<>() : customSearchItems;
     }
 
     @Nullable
@@ -301,5 +298,25 @@ public class PaymentMethodSearch implements Serializable {
     public Map<String, DiscountConfigurationModel> getDiscountsConfigurations() {
         return discountsConfigurations == null ? new HashMap<String, DiscountConfigurationModel>()
             : discountsConfigurations;
+    }
+
+    /**
+     * Return all the ids of custom options that by default supports split payment.
+     *
+     * @return set of ids
+     */
+    @NonNull
+    public Set<String> getIdsWithSplitAllowed() {
+        final Set<String> cardsWithSplit = new HashSet<>();
+        for (final CustomSearchItem customSearchItem : getCustomSearchItems()) {
+            // TODO remove validation when we add account money discount config.
+            AmountConfiguration amountConfiguration = customSearchItem
+                    .getAmountConfiguration(customSearchItem.getDefaultAmountConfiguration());
+
+            if (amountConfiguration != null && amountConfiguration.allowSplit()) {
+                cardsWithSplit.add(customSearchItem.getId());
+            }
+        }
+        return cardsWithSplit;
     }
 }

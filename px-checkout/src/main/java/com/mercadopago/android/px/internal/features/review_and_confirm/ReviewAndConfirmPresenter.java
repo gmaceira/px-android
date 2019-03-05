@@ -15,14 +15,13 @@ import com.mercadopago.android.px.internal.viewmodel.PostPaymentAction;
 import com.mercadopago.android.px.internal.viewmodel.mappers.BusinessModelMapper;
 import com.mercadopago.android.px.model.BusinessPayment;
 import com.mercadopago.android.px.model.Card;
-import com.mercadopago.android.px.model.GenericPayment;
-import com.mercadopago.android.px.model.IPayment;
+import com.mercadopago.android.px.model.IPaymentDescriptor;
 import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.PaymentResult;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
-import com.mercadopago.android.px.tracking.internal.events.ChangePaymentMethodEventTracker;
+import com.mercadopago.android.px.tracking.internal.events.ChangePaymentMethodEvent;
 import com.mercadopago.android.px.tracking.internal.events.ConfirmEvent;
 import com.mercadopago.android.px.tracking.internal.views.ReviewAndConfirmViewTracker;
 import java.util.Set;
@@ -73,17 +72,17 @@ import java.util.Set;
 
     @Override
     public void hasFinishPaymentAnimation() {
-        final IPayment payment = paymentRepository.getPayment();
-        if (payment instanceof Payment || payment instanceof GenericPayment) {
-            getView().showResult(paymentRepository.createPaymentResult(payment));
-        } else if (payment instanceof BusinessPayment) {
+        final IPaymentDescriptor payment = paymentRepository.getPayment();
+        if (payment instanceof BusinessPayment) {
             getView().showResult(businessModelMapper.map((BusinessPayment) payment));
+        } else {
+            getView().showResult(paymentRepository.createPaymentResult(payment));
         }
     }
 
     @Override
     public void changePaymentMethod() {
-        new ChangePaymentMethodEventTracker().track();
+        ChangePaymentMethodEvent.create().track();
         getView().finishAndChangePaymentMethod();
     }
 
@@ -92,7 +91,7 @@ import java.util.Set;
         final DynamicDialogConfiguration dynamicDialogConfiguration =
             paymentSettings.getAdvancedConfiguration().getDynamicDialogConfiguration();
         final DynamicDialogCreator.CheckoutData checkoutData =
-            new DynamicDialogCreator.CheckoutData(checkoutPreference, paymentRepository.getPaymentData());
+            new DynamicDialogCreator.CheckoutData(checkoutPreference, paymentRepository.getPaymentDataList());
         if (dynamicDialogConfiguration.hasCreatorFor(location)) {
             getView().showDynamicDialog(dynamicDialogConfiguration.getCreatorFor(location), checkoutData);
         }
@@ -163,21 +162,9 @@ import java.util.Set;
     }
 
     @Override
-    public void onPaymentFinished(@NonNull final Payment payment) {
+    public void onPaymentFinished(@NonNull final IPaymentDescriptor payment) {
         getView().hideConfirmButton();
         getView().finishLoading(explodeDecoratorMapper.map(payment));
-    }
-
-    @Override
-    public void onPaymentFinished(@NonNull final GenericPayment genericPayment) {
-        getView().hideConfirmButton();
-        getView().finishLoading(explodeDecoratorMapper.map(genericPayment));
-    }
-
-    @Override
-    public void onPaymentFinished(@NonNull final BusinessPayment businessPayment) {
-        getView().hideConfirmButton();
-        getView().finishLoading(explodeDecoratorMapper.map(businessPayment));
     }
 
     @Override
@@ -195,7 +182,7 @@ import java.util.Set;
         if (error.isPaymentProcessing()) {
             final PaymentResult paymentResult =
                 new PaymentResult.Builder()
-                    .setPaymentData(paymentRepository.getPaymentData())
+                    .setPaymentData(paymentRepository.getPaymentDataList())
                     .setPaymentStatus(Payment.StatusCodes.STATUS_IN_PROCESS)
                     .setPaymentStatusDetail(Payment.StatusDetail.STATUS_DETAIL_PENDING_CONTINGENCY)
                     .build();

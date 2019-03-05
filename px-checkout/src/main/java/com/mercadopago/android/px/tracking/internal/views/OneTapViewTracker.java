@@ -6,6 +6,7 @@ import com.mercadopago.android.px.model.ExpressMetadata;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.tracking.internal.model.OneTapData;
 import java.util.Map;
+import java.util.Set;
 
 public class OneTapViewTracker extends ViewTracker {
 
@@ -15,8 +16,12 @@ public class OneTapViewTracker extends ViewTracker {
 
     public OneTapViewTracker(final Iterable<ExpressMetadata> expressMetadataList,
         @NonNull final CheckoutPreference checkoutPreference,
-        @NonNull final DiscountConfigurationModel discountModel) {
-        data = OneTapData.createFrom(expressMetadataList, checkoutPreference, discountModel).toMap();
+        @NonNull final DiscountConfigurationModel discountModel,
+        @NonNull final Set<String> cardsWithEsc,
+        @NonNull final Set<String> cardsWithSplit) {
+        data =
+            OneTapData.createFrom(expressMetadataList, checkoutPreference, discountModel, cardsWithEsc, cardsWithSplit)
+                .toMap();
     }
 
     @NonNull

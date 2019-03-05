@@ -6,8 +6,9 @@ import android.support.annotation.StringRes;
 import android.text.TextUtils;
 
 import com.mercadopago.android.px.R;
+import java.io.Serializable;
 
-public class CustomStringConfiguration {
+public final class CustomStringConfiguration implements Serializable {
 
     @StringRes private final int mainVerbStringResourceId;
     @Nullable private final String customPaymentVaultTitle;

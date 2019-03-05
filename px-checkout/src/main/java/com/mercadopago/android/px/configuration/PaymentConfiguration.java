@@ -4,20 +4,19 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
 import com.mercadopago.android.px.core.PaymentProcessor;
-import com.mercadopago.android.px.model.commission.ChargeRule;
+import com.mercadopago.android.px.core.SplitPaymentProcessor;
+import com.mercadopago.android.px.core.internal.CheckoutDataMapper;
+import com.mercadopago.android.px.core.internal.PaymentListenerMapper;
+import com.mercadopago.android.px.core.internal.PaymentProcessorMapper;
+import com.mercadopago.android.px.model.commission.PaymentTypeChargeRule;
 import java.util.ArrayList;
 import java.util.Collection;
 
 @SuppressWarnings("unused")
 public class PaymentConfiguration {
 
-    @NonNull private final PaymentProcessor paymentProcessor;
-    @NonNull private final ArrayList<ChargeRule> charges;
-
-    protected PaymentConfiguration(@NonNull final PaymentProcessor paymentProcessor) {
-        this.paymentProcessor = paymentProcessor;
-        charges = new ArrayList<>();
-    }
+    @NonNull private final ArrayList<PaymentTypeChargeRule> charges;
+    @NonNull private final SplitPaymentProcessor paymentProcessor;
 
     /* default */ PaymentConfiguration(@NonNull final Builder builder) {
         paymentProcessor = builder.paymentProcessor;
@@ -25,12 +24,12 @@ public class PaymentConfiguration {
     }
 
     @NonNull
-    public PaymentProcessor getPaymentProcessor() {
+    public SplitPaymentProcessor getPaymentProcessor() {
         return paymentProcessor;
     }
 
     @NonNull
-    public ArrayList<ChargeRule> getCharges() {
+    public ArrayList<PaymentTypeChargeRule> getCharges() {
         return charges;
     }
 
@@ -48,18 +47,45 @@ public class PaymentConfiguration {
 
     public static final class Builder {
 
-        /* default */ @NonNull final PaymentProcessor paymentProcessor;
+        /* default */ @NonNull final SplitPaymentProcessor paymentProcessor;
         /* default */ @NonNull final ArrayList<PaymentMethodPlugin> paymentMethodPluginList;
-        /* default */ @NonNull ArrayList<ChargeRule> charges;
+        /* default */ @NonNull ArrayList<PaymentTypeChargeRule> charges;
 
         /**
          * @param paymentProcessor your custom payment processor.
+         * @param paymentProcessor custom payment processor.
          */
-        public Builder(@NonNull final PaymentProcessor paymentProcessor) {
+        public Builder(@NonNull final SplitPaymentProcessor paymentProcessor) {
             this.paymentProcessor = paymentProcessor;
             paymentMethodPluginList = new ArrayList<>();
             charges = new ArrayList<>();
         }
+
+        /**
+         * @param paymentProcessor your custom payment processor.
+         * @deprecated you should migrate to split payment processor
+         */
+        @Deprecated
+        public Builder(@NonNull final PaymentProcessor paymentProcessor) {
+            this.paymentProcessor =
+                new PaymentProcessorMapper(new PaymentListenerMapper(), new CheckoutDataMapper())
+                    .map(paymentProcessor);
+
+            paymentMethodPluginList = new ArrayList<>();
+            charges = new ArrayList<>();
+        }
+
+//        /**
+//         * Add extra charges that will apply to total amount.
+//         *
+//         * @param charges the list of charges that could apply.
+//         * @return builder to keep operating
+//         */
+//        @Deprecated
+//        public Builder addChargeRules(@NonNull final Collection<ChargeRule> charges) {
+//            this.charges.addAll(charges);
+//            return this;
+//        }
 
         /**
          * Add extra charges that will apply to total amount.
@@ -67,9 +93,14 @@ public class PaymentConfiguration {
          * @param charges the list of charges that could apply.
          * @return builder to keep operating
          */
-        public Builder addChargeRules(@NonNull final Collection<ChargeRule> charges) {
+        public Builder addChargeRules(@NonNull final Collection<PaymentTypeChargeRule> charges) {
             this.charges.addAll(charges);
             return this;
+        }
+
+        @NonNull
+        public PaymentConfiguration build() {
+            return new PaymentConfiguration(this);
         }
 
         /**
@@ -78,6 +109,7 @@ public class PaymentConfiguration {
          *
          * @param paymentMethodPlugin your payment method plugin.
          * @return builder
+         * @deprecated this configuration is not longuer valid - NOOP method.
          */
         @Deprecated
         public Builder addPaymentMethodPlugin(@NonNull final PaymentMethodPlugin paymentMethodPlugin) {
@@ -97,11 +129,6 @@ public class PaymentConfiguration {
         @Deprecated
         public Builder setDiscountConfiguration(@NonNull final DiscountConfiguration discountConfiguration) {
             return this;
-        }
-
-        @NonNull
-        public PaymentConfiguration build() {
-            return new PaymentConfiguration(this);
         }
     }
 }

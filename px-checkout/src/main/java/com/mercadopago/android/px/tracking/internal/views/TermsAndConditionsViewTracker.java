@@ -1,6 +1,7 @@
 package com.mercadopago.android.px.tracking.internal.views;
 
 import android.support.annotation.NonNull;
+import java.util.HashMap;
 import java.util.Map;
 
 public class TermsAndConditionsViewTracker extends ViewTracker {
@@ -15,7 +16,9 @@ public class TermsAndConditionsViewTracker extends ViewTracker {
     @NonNull
     @Override
     public Map<String, Object> getData() {
-        return super.getData();
+        final Map<String, Object> data = new HashMap<>();
+        data.put("url", url);
+        return data;
     }
 
     @NonNull

@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class Payment implements IPayment {
+public final class Payment implements IPayment, IPaymentDescriptor {
 
     private Boolean binaryMode;
     private String callForAuthorizeId;
@@ -246,18 +246,29 @@ public class Payment implements IPayment {
         this.payer = payer;
     }
 
-    public String getPaymentMethodId() {
-        return paymentMethodId;
-    }
-
-    public void setPaymentMethodId(String paymentMethodId) {
-        this.paymentMethodId = paymentMethodId;
-    }
-
+    @NonNull
+    @Override
     public String getPaymentTypeId() {
         return paymentTypeId;
     }
 
+    @NonNull
+    @Override
+    public String getPaymentMethodId() {
+        return paymentMethodId;
+    }
+
+    @Override
+    public void process(@NonNull final IPaymentDescriptorHandler handler) {
+        handler.visit(this);
+    }
+
+    @Deprecated
+    public void setPaymentMethodId(String paymentMethodId) {
+        this.paymentMethodId = paymentMethodId;
+    }
+
+    @Deprecated
     public void setPaymentTypeId(String paymentTypeId) {
         this.paymentTypeId = paymentTypeId;
     }
@@ -266,22 +277,27 @@ public class Payment implements IPayment {
         return refunds;
     }
 
+    @Deprecated
     public void setRefunds(List<Refund> refunds) {
         this.refunds = refunds;
     }
 
+    @Deprecated
     public String getStatementDescriptor() {
         return statementDescriptor;
     }
 
+    @Deprecated
     public void setStatementDescriptor(String statementDescriptor) {
         this.statementDescriptor = statementDescriptor;
     }
 
+    @Deprecated
     public void setStatus(String status) {
         this.status = status;
     }
 
+    @Deprecated
     public void setStatusDetail(String statusDetail) {
         this.statusDetail = statusDetail;
     }
@@ -290,6 +306,7 @@ public class Payment implements IPayment {
         return transactionAmount;
     }
 
+    @Deprecated
     public void setTransactionAmount(BigDecimal transactionAmount) {
         this.transactionAmount = transactionAmount;
     }
@@ -298,6 +315,7 @@ public class Payment implements IPayment {
         return transactionAmountRefunded;
     }
 
+    @Deprecated
     public void setTransactionAmountRefunded(BigDecimal transactionAmountRefunded) {
         this.transactionAmountRefunded = transactionAmountRefunded;
     }
@@ -306,6 +324,7 @@ public class Payment implements IPayment {
         return transactionDetails;
     }
 
+    @Deprecated
     public void setTransactionDetails(TransactionDetails transactionDetails) {
         this.transactionDetails = transactionDetails;
     }
@@ -411,6 +430,7 @@ public class Payment implements IPayment {
         public static final String STATUS_DETAIL_CC_REJECTED_MAX_ATTEMPTS = "cc_rejected_max_attempts";
         public static final String STATUS_DETAIL_REJECTED_REJECTED_BY_BANK = "rejected_by_bank";
         public static final String STATUS_DETAIL_REJECTED_REJECTED_INSUFFICIENT_DATA = "rejected_insufficient_data";
+        public static final String STATUS_DETAIL_REJECTED_BY_REGULATIONS = "rejected_by_regulations";
 
         public static boolean isKnownErrorDetail(final String statusDetail) {
             return STATUS_DETAIL_CC_REJECTED_BAD_FILLED_OTHER.equals(statusDetail)
@@ -425,7 +445,8 @@ public class Payment implements IPayment {
                 || STATUS_DETAIL_INVALID_ESC.equals(statusDetail)
                 || STATUS_DETAIL_REJECTED_HIGH_RISK.equals(statusDetail)
                 || STATUS_DETAIL_REJECTED_REJECTED_BY_BANK.equals(statusDetail)
-                || STATUS_DETAIL_REJECTED_REJECTED_INSUFFICIENT_DATA.equals(statusDetail);
+                || STATUS_DETAIL_REJECTED_REJECTED_INSUFFICIENT_DATA.equals(statusDetail)
+                || STATUS_DETAIL_REJECTED_BY_REGULATIONS.equals(statusDetail);
         }
 
         public static boolean isPaymentStatusRecoverable(final String statusDetail) {
@@ -450,14 +471,10 @@ public class Payment implements IPayment {
         }
 
         public static boolean isBadFilled(final String statusDetail) {
-            return STATUS_DETAIL_CC_REJECTED_BAD_FILLED_DATE
-                .equals(statusDetail)
-                || STATUS_DETAIL_CC_REJECTED_BAD_FILLED_SECURITY_CODE
-                .equals(statusDetail)
-                || STATUS_DETAIL_CC_REJECTED_BAD_FILLED_OTHER
-                .equals(statusDetail)
-                || STATUS_DETAIL_CC_REJECTED_BAD_FILLED_CARD_NUMBER
-                .equals(statusDetail);
+            return STATUS_DETAIL_CC_REJECTED_BAD_FILLED_DATE.equals(statusDetail)
+                || STATUS_DETAIL_CC_REJECTED_BAD_FILLED_SECURITY_CODE.equals(statusDetail)
+                || STATUS_DETAIL_CC_REJECTED_BAD_FILLED_OTHER.equals(statusDetail)
+                || STATUS_DETAIL_CC_REJECTED_BAD_FILLED_CARD_NUMBER.equals(statusDetail);
         }
     }
 }

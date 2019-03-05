@@ -50,7 +50,7 @@ import com.mercadopago.android.px.core.MercadoPagoCheckout.Builder;
 
 2) Set your PublicKey and PreferenceId
 ```java
-final MercadoPagoCheckout checkout = new MercadoPagoCheckout.Builder("your_public_key", "your_checkout_preference_id")
+final MercadoPagoCheckout checkout = new MercadoPagoCheckout.Builder("public_key", "checkout_preference_id")
     .build();
 ```
 
@@ -61,10 +61,37 @@ checkout.startPayment(activityOrContext, requestCode);
 
 ### One line integration
 ```java
-new MercadoPagoCheckout.Builder("your_public_key", "your_checkout_preference_id")
+new MercadoPagoCheckout.Builder("public_key", "checkout_preference_id")
     .build()
     .startPayment(activityOrContext, requestCode);
 ```
+
+### Credentials
+Get your [Credentials](https://www.mercadopago.com.ar/developers/en/guides/faqs/credentials/)
+
+![Screenshot Credentials](https://i.imgur.com/Oroq90g.png)
+
+### Create your preference id
+```shell
+curl -X POST \
+     'https://api.mercadopago.com/checkout/preferences?access_token=ACCESS_TOKEN' \
+     -H 'Content-Type: application/json' \
+     -d '{
+           "items": [
+               {
+               "title": "Dummy Item",
+               "description": "Multicolor Item",
+               "quantity": 1,
+               "currency_id": "ARS",
+               "unit_price": 10.0
+               }
+           ],
+           "payer": {
+               "email": "payer@email.com"
+           }
+     }'
+```
+* payer email has to be different from the one of credentials.
 
 ### Advanced integration
 Check our official code [reference](http://mercadopago.github.io/px-android/), especially ```MercadoPagoCheckoutBuilder``` object to explore all available functionalities.

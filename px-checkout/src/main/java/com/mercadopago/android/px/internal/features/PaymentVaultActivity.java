@@ -22,6 +22,7 @@ import com.mercadopago.android.px.internal.controllers.CheckoutTimer;
 import com.mercadopago.android.px.internal.di.Session;
 import com.mercadopago.android.px.internal.features.hooks.Hook;
 import com.mercadopago.android.px.internal.features.hooks.HookActivity;
+import com.mercadopago.android.px.internal.features.payer_information.PayerInformationActivity;
 import com.mercadopago.android.px.internal.features.plugins.PaymentMethodPluginActivity;
 import com.mercadopago.android.px.internal.features.uicontrollers.FontCache;
 import com.mercadopago.android.px.internal.features.uicontrollers.paymentmethodsearch.PaymentMethodInfoController;
@@ -34,6 +35,7 @@ import com.mercadopago.android.px.internal.repository.PluginRepository;
 import com.mercadopago.android.px.internal.util.ErrorUtil;
 import com.mercadopago.android.px.internal.util.JsonUtil;
 import com.mercadopago.android.px.internal.util.ScaleUtil;
+import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.internal.view.AmountView;
 import com.mercadopago.android.px.internal.view.DiscountDetailDialog;
 import com.mercadopago.android.px.internal.view.GridSpacingItemDecoration;
@@ -87,6 +89,12 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     protected View mProgressLayout;
 
     private AmountView amountView;
+
+    public static void start(@NonNull final AppCompatActivity from) {
+        final Intent intent = new Intent(from, PaymentVaultActivity.class);
+        from.startActivityForResult(intent, Constants.Activities.PAYMENT_VAULT_REQUEST_CODE);
+        from.overridePendingTransition(R.anim.px_slide_right_to_left_in, R.anim.px_slide_right_to_left_out);
+    }
 
     public static void startWithPaymentMethodSelected(@NonNull final AppCompatActivity from,
         @NonNull final PaymentMethodSearchItem item) {
@@ -193,12 +201,7 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
             supportActionBar.setDisplayShowHomeEnabled(true);
         }
 
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(final View v) {
-                onBackPressed();
-            }
-        });
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         if (FontCache.hasTypeface(FontCache.CUSTOM_REGULAR_FONT)) {
             mAppBarLayout.setCollapsedTitleTypeface(FontCache.getTypeface(FontCache.CUSTOM_REGULAR_FONT));
@@ -216,7 +219,7 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
         mSearchItemsRecyclerView.setAdapter(groupsAdapter);
     }
 
-    protected void populateSearchList(final List<PaymentMethodSearchItem> items,
+    protected void populateSearchList(final Iterable<PaymentMethodSearchItem> items,
         final OnSelectedCallback<PaymentMethodSearchItem> onSelectedCallback) {
         final PaymentMethodSearchItemAdapter adapter =
             (PaymentMethodSearchItemAdapter) mSearchItemsRecyclerView.getAdapter();
@@ -227,7 +230,7 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     }
 
     @Deprecated
-    private void populateCustomOptionsList(final List<CustomSearchItem> customSearchItems,
+    private void populateCustomOptionsList(final Iterable<CustomSearchItem> customSearchItems,
         final OnSelectedCallback<CustomSearchItem> onSelectedCallback) {
         final PaymentMethodSearchItemAdapter adapter =
             (PaymentMethodSearchItemAdapter) mSearchItemsRecyclerView.getAdapter();
@@ -238,17 +241,12 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     }
 
     private List<PaymentMethodSearchViewController> createSearchItemsViewControllers(
-        final List<PaymentMethodSearchItem> items,
+        final Iterable<PaymentMethodSearchItem> items,
         final OnSelectedCallback<PaymentMethodSearchItem> onSelectedCallback) {
         final List<PaymentMethodSearchViewController> customViewControllers = new ArrayList<>();
         for (final PaymentMethodSearchItem item : items) {
             final PaymentMethodSearchViewController viewController = new PaymentMethodSearchOption(this, item);
-            viewController.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(final View v) {
-                    onSelectedCallback.onSelected(item);
-                }
-            });
+            viewController.setOnClickListener(v -> onSelectedCallback.onSelected(item));
             customViewControllers.add(viewController);
         }
         return customViewControllers;
@@ -256,16 +254,12 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
 
     @Deprecated
     private List<PaymentMethodSearchViewController> createCustomSearchItemsViewControllers(
-        final List<CustomSearchItem> customSearchItems, final OnSelectedCallback<CustomSearchItem> onSelectedCallback) {
+        final Iterable<CustomSearchItem> customSearchItems,
+        final OnSelectedCallback<CustomSearchItem> onSelectedCallback) {
         final List<PaymentMethodSearchViewController> customViewControllers = new ArrayList<>();
         for (final CustomSearchItem item : customSearchItems) {
             final PaymentMethodSearchCustomOption viewController = new PaymentMethodSearchCustomOption(this, item);
-            viewController.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(final View v) {
-                    onSelectedCallback.onSelected(item);
-                }
-            });
+            viewController.setOnClickListener(v -> onSelectedCallback.onSelected(item));
 
             customViewControllers.add(viewController);
         }
@@ -282,12 +276,9 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
                 final PluginPaymentMethodInfo pluginPaymentMethodInfo = new PluginPaymentMethodInfo(infoItem);
                 final PaymentMethodSearchViewController viewController =
                     new PaymentMethodInfoController(this, pluginPaymentMethodInfo);
-                viewController.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(final View v) {
-                        final String id = String.valueOf(v.getTag());
-                        presenter.selectPluginPaymentMethod(pluginRepository.getPlugin(id));
-                    }
+                viewController.setOnClickListener(v -> {
+                    final String id = String.valueOf(v.getTag());
+                    presenter.selectPluginPaymentMethod(pluginRepository.getPlugin(id));
                 });
                 controllers.add(viewController);
             }
@@ -369,6 +360,8 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
             if (shouldFinishOnBack(data)) {
                 setResult(Activity.RESULT_CANCELED, data);
                 finish();
+            } else {
+                overridePendingTransition(R.anim.px_slide_left_to_right_in, R.anim.px_slide_left_to_right_out);
             }
         }
     }
@@ -609,13 +602,14 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     @Override
     public void showEmptyPaymentMethodsError() {
         final String errorMessage = getString(R.string.px_no_payment_methods_found);
-        showError(MercadoPagoError.createNotRecoverable(errorMessage), "");
+        showError(MercadoPagoError.createNotRecoverable(errorMessage), TextUtil.EMPTY);
     }
 
     @Override
     public void showMismatchingPaymentMethodError() {
         final String errorMessage = getString(R.string.px_standard_error_message);
-        showError(MercadoPagoError.createNotRecoverable(errorMessage, MISMATCHING_PAYMENT_METHOD_ERROR), "");
+        showError(MercadoPagoError.createNotRecoverable(errorMessage, MISMATCHING_PAYMENT_METHOD_ERROR),
+            TextUtil.EMPTY);
     }
 
     @Override

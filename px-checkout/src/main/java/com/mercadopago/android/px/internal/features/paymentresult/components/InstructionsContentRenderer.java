@@ -1,6 +1,7 @@
 package com.mercadopago.android.px.internal.features.paymentresult.components;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.ViewGroup;
 import com.mercadopago.android.px.R;
@@ -14,7 +15,7 @@ import com.mercadopago.android.px.internal.view.RendererFactory;
 public class InstructionsContentRenderer extends Renderer<InstructionsContent> {
 
     @Override
-    public View render(final InstructionsContent component, final Context context, final ViewGroup parent) {
+    public View render(@NonNull final InstructionsContent component, @NonNull final Context context, final ViewGroup parent) {
         final View instructionsView = inflate(R.layout.px_payment_result_instructions_content, parent);
         final ViewGroup parentViewGroup = instructionsView.findViewById(R.id.mpsdkInstructionsContentContainer);
         final View bottomMarginView = instructionsView.findViewById(R.id.mpsdkContentBottomMargin);

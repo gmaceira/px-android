@@ -6,23 +6,21 @@ import com.mercadopago.android.px.internal.features.paymentresult.props.BodyErro
 import com.mercadopago.android.px.internal.features.paymentresult.props.InstructionsProps;
 import com.mercadopago.android.px.internal.features.paymentresult.props.PaymentResultBodyProps;
 import com.mercadopago.android.px.internal.view.ActionDispatcher;
+import com.mercadopago.android.px.internal.view.CompactComponent;
 import com.mercadopago.android.px.internal.view.Component;
 import com.mercadopago.android.px.internal.view.PaymentMethodComponent;
 import com.mercadopago.android.px.internal.view.Receipt;
-import com.mercadopago.android.px.internal.view.TotalAmount;
 import com.mercadopago.android.px.model.ExternalFragment;
 import com.mercadopago.android.px.model.Payment;
-import com.mercadopago.android.px.model.PaymentTypes;
+import com.mercadopago.android.px.model.PaymentData;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Body extends Component<PaymentResultBodyProps, Void> {
 
-    public PaymentResultProvider paymentResultProvider;
 
-    public Body(@NonNull final PaymentResultBodyProps props,
-        @NonNull final ActionDispatcher dispatcher,
-        @NonNull final PaymentResultProvider paymentResultProvider) {
+    public Body(@NonNull final PaymentResultBodyProps props, @NonNull final ActionDispatcher dispatcher) {
         super(props, dispatcher);
-        this.paymentResultProvider = paymentResultProvider;
     }
 
     public boolean hasInstructions() {
@@ -37,93 +35,62 @@ public class Body extends Component<PaymentResultBodyProps, Void> {
         return new Instructions(instructionsProps, getDispatcher());
     }
 
-    public boolean hasPaymentMethodDescription() {
-        return props.paymentData != null && isStatusApproved() &&
-            isPaymentTypeOn(props.paymentData.getPaymentMethod());
-    }
-
-    private boolean isPaymentTypeOn(final com.mercadopago.android.px.model.PaymentMethod paymentMethod) {
-        return isCardType(paymentMethod)
-            || isAccountMoney(paymentMethod)
-            || isPluginType(paymentMethod);
-    }
-
-    private boolean isCardType(final com.mercadopago.android.px.model.PaymentMethod paymentMethod) {
-        return paymentMethod != null && paymentMethod.getPaymentTypeId() != null &&
-            paymentMethod.getPaymentTypeId().equals(PaymentTypes.CREDIT_CARD) ||
-            paymentMethod.getPaymentTypeId().equals(PaymentTypes.DEBIT_CARD) ||
-            paymentMethod.getPaymentTypeId().equals(PaymentTypes.PREPAID_CARD);
-    }
-
-    private boolean isAccountMoney(final com.mercadopago.android.px.model.PaymentMethod paymentMethod) {
-        return paymentMethod != null && paymentMethod.getPaymentTypeId() != null
-            && paymentMethod.getPaymentTypeId().equals(PaymentTypes.ACCOUNT_MONEY);
-    }
-
-    private boolean isPluginType(final com.mercadopago.android.px.model.PaymentMethod paymentMethod) {
-        return PaymentTypes.PLUGIN.equalsIgnoreCase(paymentMethod.getPaymentTypeId());
-    }
-
-    public PaymentMethodComponent getPaymentMethodComponent() {
-        final TotalAmount.TotalAmountProps totalAmountProps = new TotalAmount.TotalAmountProps(props.currencyId,
-            props.amount, props.paymentData.getPayerCost(), props.paymentData.getDiscount());
-
-        final PaymentMethodComponent.PaymentMethodProps paymentMethodProps =
-            new PaymentMethodComponent.PaymentMethodProps(props.paymentData.getPaymentMethod(),
-                props.paymentData.getToken() != null ? props.paymentData.getToken().getLastFourDigits() : null,
-                props.disclaimer,
-                totalAmountProps);
-
-        return new PaymentMethodComponent(paymentMethodProps);
-    }
-
     public boolean hasBodyError() {
-        return props.status != null && props.statusDetail != null &&
-            (isPendingWithBody() || isRejectedWithBody());
+        return props.paymentResult.getPaymentStatus() != null
+            && props.paymentResult.getPaymentStatusDetail() != null
+            && (isPendingWithBody() || isRejectedWithBody());
     }
 
     private boolean isPendingWithBody() {
-        return (props.status.equals(Payment.StatusCodes.STATUS_PENDING) ||
-            props.status.equals(Payment.StatusCodes.STATUS_IN_PROCESS)) &&
-            (props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_PENDING_CONTINGENCY) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_PENDING_REVIEW_MANUAL));
+        return (Payment.StatusCodes.STATUS_PENDING.equals(props.paymentResult.getPaymentStatus())
+            || Payment.StatusCodes.STATUS_IN_PROCESS.equals(props.paymentResult.getPaymentStatus()))
+            &&
+            (Payment.StatusDetail.STATUS_DETAIL_PENDING_CONTINGENCY.equals(props.paymentResult.getPaymentStatusDetail())
+                || Payment.StatusDetail.STATUS_DETAIL_PENDING_REVIEW_MANUAL
+                .equals(props.paymentResult.getPaymentStatusDetail()));
     }
 
     private boolean isRejectedWithBody() {
-        return (props.status.equals(Payment.StatusCodes.STATUS_REJECTED) &&
-            (props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_OTHER_REASON) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_REJECTED_REJECTED_BY_BANK) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_REJECTED_REJECTED_INSUFFICIENT_DATA) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_DUPLICATED_PAYMENT) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_MAX_ATTEMPTS) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_REJECTED_HIGH_RISK) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CALL_FOR_AUTHORIZE) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CARD_DISABLED) ||
-                props.statusDetail.equals(Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_INSUFFICIENT_AMOUNT)));
+        boolean rightStatus = false;
+        switch (props.paymentResult.getPaymentStatusDetail()) {
+        case Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_INSUFFICIENT_AMOUNT:
+        case Payment.StatusDetail.STATUS_DETAIL_REJECTED_BY_REGULATIONS:
+        case Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CARD_DISABLED:
+        case Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_CALL_FOR_AUTHORIZE:
+        case Payment.StatusDetail.STATUS_DETAIL_REJECTED_HIGH_RISK:
+        case Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_MAX_ATTEMPTS:
+        case Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_DUPLICATED_PAYMENT:
+        case Payment.StatusDetail.STATUS_DETAIL_REJECTED_REJECTED_INSUFFICIENT_DATA:
+        case Payment.StatusDetail.STATUS_DETAIL_REJECTED_REJECTED_BY_BANK:
+        case Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_OTHER_REASON:
+            rightStatus = true;
+            break;
+        default:
+            break;
+        }
+        return Payment.StatusCodes.STATUS_REJECTED.equals(props.paymentResult.getPaymentStatus()) && rightStatus;
     }
 
-    private boolean isStatusApproved() {
-        return Payment.StatusCodes.STATUS_APPROVED.equals(props.status);
+    /* default */ boolean isStatusApproved() {
+        return Payment.StatusCodes.STATUS_APPROVED.equals(props.paymentResult.getPaymentStatus());
     }
 
     public BodyError getBodyErrorComponent() {
         final BodyErrorProps bodyErrorProps = new BodyErrorProps.Builder()
-            .setStatus(props.status)
-            .setStatusDetail(props.statusDetail)
-            .setPaymentMethodName(props.paymentData.getPaymentMethod().getName())
+            .setStatus(props.paymentResult.getPaymentStatus())
+            .setStatusDetail(props.paymentResult.getPaymentStatusDetail())
+            .setPaymentMethodName(props.paymentResult.getPaymentData().getPaymentMethod().getName())
             .build();
-        return new BodyError(bodyErrorProps, getDispatcher(), paymentResultProvider);
+        return new BodyError(bodyErrorProps, getDispatcher());
     }
 
     public boolean hasReceipt() {
-        final com.mercadopago.android.px.model.PaymentMethod paymentMethod = props.paymentData.getPaymentMethod();
-        return props.paymentId != null && props.paymentResultScreenConfiguration.isApprovedReceiptEnabled() &&
-            props.paymentData != null
-            && isStatusApproved() && isPaymentTypeOn(paymentMethod);
+        return props.paymentResult.getPaymentId() != null
+            && isStatusApproved();
     }
 
     public Receipt getReceiptComponent() {
-        return new Receipt(new Receipt.ReceiptProps(String.valueOf(props.paymentId)));
+        return new Receipt(new Receipt.ReceiptProps(String.valueOf(props.paymentResult.getPaymentId())));
     }
 
     public boolean hasTopCustomComponent() {
@@ -140,5 +107,18 @@ public class Body extends Component<PaymentResultBodyProps, Void> {
 
     public ExternalFragment bottomFragment() {
         return props.paymentResultScreenConfiguration.getBottomFragment();
+    }
+
+    /* default */
+    @NonNull
+    List<CompactComponent> getPaymentMethodComponents() {
+        final List<CompactComponent> components = new ArrayList<>();
+        for (final PaymentData paymentData : props.paymentResult.getPaymentDataList()) {
+            components.add(
+                new PaymentMethodComponent(PaymentMethodComponent.PaymentMethodProps.with(paymentData, props.currencyId,
+                    props.paymentResult.getPaymentStatus())));
+        }
+
+        return components;
     }
 }

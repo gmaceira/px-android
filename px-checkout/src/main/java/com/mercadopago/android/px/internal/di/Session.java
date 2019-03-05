@@ -7,8 +7,9 @@ import android.support.annotation.StringRes;
 import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 import com.mercadopago.android.px.configuration.PaymentConfiguration;
 import com.mercadopago.android.px.core.MercadoPagoCheckout;
-import com.mercadopago.android.px.core.PaymentProcessor;
+import com.mercadopago.android.px.core.SplitPaymentProcessor;
 import com.mercadopago.android.px.internal.configuration.InternalConfiguration;
+import com.mercadopago.android.px.internal.datasource.AmountConfigurationRepositoryImpl;
 import com.mercadopago.android.px.internal.datasource.AmountService;
 import com.mercadopago.android.px.internal.datasource.BankDealsService;
 import com.mercadopago.android.px.internal.datasource.CardTokenService;
@@ -20,7 +21,6 @@ import com.mercadopago.android.px.internal.datasource.IssuersService;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESCImpl;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoServicesAdapter;
-import com.mercadopago.android.px.internal.datasource.PayerCostRepositoryImpl;
 import com.mercadopago.android.px.internal.datasource.PaymentService;
 import com.mercadopago.android.px.internal.datasource.PluginService;
 import com.mercadopago.android.px.internal.datasource.SummaryAmountService;
@@ -30,6 +30,7 @@ import com.mercadopago.android.px.internal.datasource.cache.GroupsCacheCoordinat
 import com.mercadopago.android.px.internal.datasource.cache.GroupsDiskCache;
 import com.mercadopago.android.px.internal.datasource.cache.GroupsMemCache;
 import com.mercadopago.android.px.internal.features.installments.PayerCostSolver;
+import com.mercadopago.android.px.internal.repository.AmountConfigurationRepository;
 import com.mercadopago.android.px.internal.repository.AmountRepository;
 import com.mercadopago.android.px.internal.repository.BankDealsRepository;
 import com.mercadopago.android.px.internal.repository.CardTokenRepository;
@@ -38,7 +39,6 @@ import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.IdentificationRepository;
 import com.mercadopago.android.px.internal.repository.InstructionsRepository;
 import com.mercadopago.android.px.internal.repository.IssuersRepository;
-import com.mercadopago.android.px.internal.repository.PayerCostRepository;
 import com.mercadopago.android.px.internal.repository.PaymentRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.repository.PluginRepository;
@@ -72,7 +72,7 @@ public final class Session extends ApplicationModule
     private AmountRepository amountRepository;
     private GroupsRepository groupsRepository;
     private PaymentRepository paymentRepository;
-    private PayerCostRepository payerCostRepository;
+    private AmountConfigurationRepository amountConfigurationRepository;
     private GroupsCache groupsCache;
     private PluginService pluginRepository;
     private InternalConfiguration internalConfiguration;
@@ -141,7 +141,7 @@ public final class Session extends ApplicationModule
         internalConfiguration = null;
         instructionsRepository = null;
         summaryAmountRepository = null;
-        payerCostRepository = null;
+        amountConfigurationRepository = null;
         issuersRepository = null;
         cardTokenRepository = null;
     }
@@ -214,13 +214,13 @@ public final class Session extends ApplicationModule
     }
 
     @NonNull
-    public PayerCostRepository getPayerCostRepository() {
-        if (payerCostRepository == null) {
-            payerCostRepository =
-                new PayerCostRepositoryImpl(getGroupsRepository(),
+    public AmountConfigurationRepository getAmountConfigurationRepository() {
+        if (amountConfigurationRepository == null) {
+            amountConfigurationRepository =
+                new AmountConfigurationRepositoryImpl(getGroupsRepository(),
                     getConfigurationModule().getUserSelectionRepository());
         }
-        return payerCostRepository;
+        return amountConfigurationRepository;
     }
 
     @StringRes
@@ -259,18 +259,19 @@ public final class Session extends ApplicationModule
     public PaymentRepository getPaymentRepository() {
         if (paymentRepository == null) {
             final ConfigurationModule configurationModule = getConfigurationModule();
-            final PaymentProcessor paymentProcessor =
+            final SplitPaymentProcessor paymentProcessor =
                 getConfigurationModule().getPaymentSettings().getPaymentConfiguration().getPaymentProcessor();
             paymentRepository = new PaymentService(configurationModule.getUserSelectionRepository(),
                 configurationModule.getPaymentSettings(),
-                pluginRepository,
+                getPluginRepository(),
                 getDiscountRepository(), getAmountRepository(),
                 paymentProcessor,
                 getContext(),
                 new EscManagerImp(getMercadoPagoESC()),
                 getTokenRepository(),
                 getInstructionsRepository(),
-                getGroupsRepository());
+                getGroupsRepository(),
+                getAmountConfigurationRepository());
         }
 
         return paymentRepository;
@@ -301,9 +302,7 @@ public final class Session extends ApplicationModule
     //TODO move.
     @NonNull
     public BusinessModelMapper getBusinessModelMapper() {
-        return new BusinessModelMapper(getDiscountRepository(), getConfigurationModule().getPaymentSettings(),
-            getAmountRepository(),
-            getPaymentRepository());
+        return new BusinessModelMapper(getConfigurationModule().getPaymentSettings(), getPaymentRepository());
     }
 
     @NonNull

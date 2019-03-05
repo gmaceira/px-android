@@ -12,15 +12,15 @@ public class ReviewAndConfirmData extends AvailableMethod {
 
     @NonNull private final List<ItemInfo> items;
     @NonNull private final BigDecimal preferenceAmount;
-    @Nullable private final DiscountInfo discountInfo;
+    @Nullable private final DiscountInfo discount;
 
     public ReviewAndConfirmData(@NonNull final AvailableMethod method,
         @NonNull final List<ItemInfo> itemInfos,
         @NonNull final BigDecimal totalAmount,
-        @Nullable final DiscountInfo discountInfo) {
+        @Nullable final DiscountInfo discount) {
         super(method.paymentMethodId, method.paymentMethodType);
         items = itemInfos;
         preferenceAmount = totalAmount;
-        this.discountInfo = discountInfo;
+        this.discount = discount;
     }
 }

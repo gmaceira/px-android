@@ -117,8 +117,7 @@ public final class HttpClientUtil {
 
     @NonNull
     private static Interceptor getConnectionInterceptor(@NonNull final Context context) {
-        return new ConnectivityStateInterceptor(
-            (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
+        return new ConnectivityStateInterceptor(context);
     }
 
     /**

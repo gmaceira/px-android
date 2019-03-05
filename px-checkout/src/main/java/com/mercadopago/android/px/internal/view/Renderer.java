@@ -51,7 +51,7 @@ public abstract class Renderer<T extends Component> {
         @NonNull final Context context,
         @Nullable final ViewGroup parent);
 
-    protected View inflate(@LayoutRes int layout, @Nullable final ViewGroup parent) {
+    protected View inflate(@LayoutRes final int layout, @Nullable final ViewGroup parent) {
         return LayoutInflater.from(context).inflate(layout, parent);
     }
 
@@ -59,15 +59,6 @@ public abstract class Renderer<T extends Component> {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        viewGroup.setLayoutParams(params);
-    }
-
-    public void stretchHeight(@NonNull final ViewGroup viewGroup) {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            0,
-            1.0f
         );
         viewGroup.setLayoutParams(params);
     }

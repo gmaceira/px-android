@@ -6,8 +6,7 @@ import android.support.v4.util.Pair;
 import com.mercadopago.SampleTopFragment;
 import com.mercadopago.android.px.configuration.PaymentConfiguration;
 import com.mercadopago.android.px.core.MercadoPagoCheckout;
-import com.mercadopago.android.px.internal.features.plugins.SamplePaymentMethodPlugin;
-import com.mercadopago.android.px.internal.features.plugins.SamplePaymentProcessor;
+import com.mercadopago.SamplePaymentProcessor;
 import com.mercadopago.android.px.model.BusinessPayment;
 import com.mercadopago.android.px.model.ExitAction;
 import com.mercadopago.android.px.model.Payment;
@@ -72,6 +71,7 @@ final class BusinessSamples {
             .setTopFragment(SampleTopFragment.class, args)
             .setStatementDescription("PEDRO")
             .setPaymentMethodVisibility(true)
+            .setPrimaryButton(new ExitAction(BUTTON_PRIMARY_NAME, 35))
             .setSecondaryButton(new ExitAction(BUTTON_SECONDARY_NAME, 34))
             .build();
 
@@ -122,7 +122,6 @@ final class BusinessSamples {
         final SamplePaymentProcessor samplePaymentProcessor = new SamplePaymentProcessor(businessPayment);
         return new MercadoPagoCheckout.Builder(DUMMY_MERCHANT_PUBLIC_KEY, DUMMY_PREFERENCE_ID,
             new PaymentConfiguration.Builder(samplePaymentProcessor)
-                .addPaymentMethodPlugin(new SamplePaymentMethodPlugin())
                 .build());
     }
 }

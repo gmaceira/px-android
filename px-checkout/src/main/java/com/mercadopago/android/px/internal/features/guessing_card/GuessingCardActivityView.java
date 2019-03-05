@@ -1,7 +1,6 @@
 package com.mercadopago.android.px.internal.features.guessing_card;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import com.mercadopago.android.px.internal.base.MvpView;
 import com.mercadopago.android.px.internal.controllers.PaymentMethodGuessingController;
 import com.mercadopago.android.px.model.CardInfo;
@@ -34,7 +33,8 @@ public interface GuessingCardActivityView extends MvpView {
 
     void setSecurityCodeViewLocation(String location);
 
-    void initializeIdentificationTypes(List<IdentificationType> identificationTypes);
+    void initializeIdentificationTypes(List<IdentificationType> identificationTypes,
+        IdentificationType selectedIdentificationType);
 
     void setNextButtonListeners();
 

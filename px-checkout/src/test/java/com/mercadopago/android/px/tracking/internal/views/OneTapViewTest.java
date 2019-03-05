@@ -1,7 +1,6 @@
 package com.mercadopago.android.px.tracking.internal.views;
 
 import android.support.annotation.NonNull;
-import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.util.JsonUtil;
 import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.preferences.CheckoutPreference;
@@ -33,7 +32,8 @@ public class OneTapViewTest {
     @Test
     public void verifyPath() {
         assertEquals(EXPECTED_PATH,
-            new OneTapViewTracker(Collections.EMPTY_LIST, checkoutPreference, discountModel).getViewPath());
+            new OneTapViewTracker(Collections.EMPTY_LIST, checkoutPreference, discountModel, Collections.emptySet(),
+                Collections.emptySet()).getViewPath());
     }
 
     @Test
@@ -41,7 +41,8 @@ public class OneTapViewTest {
         final PXTrackingListener listener = mock(PXTrackingListener.class);
         PXTracker.setListener(listener);
         final Map<String, Object> data = emptyOneTapData();
-        new OneTapViewTracker(Collections.EMPTY_LIST, checkoutPreference, discountModel).track();
+        new OneTapViewTracker(Collections.EMPTY_LIST, checkoutPreference, discountModel, Collections.emptySet(),
+            Collections.emptySet()).track();
         verify(listener).onView(EXPECTED_PATH, data);
     }
 

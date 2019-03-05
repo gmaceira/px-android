@@ -75,9 +75,9 @@ public class TotalAmountTest {
         Assert.assertTrue(component.getAmountDetail().equals(""));
     }
 
-    private TotalAmount getTotalAmountComponent(PayerCost payerCost) {
-        final TotalAmount.TotalAmountProps props =
-            new TotalAmount.TotalAmountProps(CURRENCY_ID, new BigDecimal(1000), payerCost, null);
+    private TotalAmount getTotalAmountComponent(final PayerCost payerCost) {
+        final TotalAmount.Props props =
+            new TotalAmount.Props(CURRENCY_ID, new BigDecimal(1000), payerCost);
         return new TotalAmount(props);
     }
 }

@@ -12,12 +12,12 @@ import android.widget.LinearLayout;
 import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.internal.features.review_and_confirm.models.SummaryModel;
 import com.mercadopago.android.px.internal.features.uicontrollers.payercosts.PayerCostColumn;
+import com.mercadopago.android.px.internal.util.CurrenciesUtil;
 import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.internal.view.MPTextView;
 import com.mercadopago.android.px.internal.view.Renderer;
 import com.mercadopago.android.px.internal.view.RendererFactory;
 import com.mercadopago.android.px.model.PaymentTypes;
-import com.mercadopago.android.px.internal.util.CurrenciesUtil;
 import java.math.BigDecimal;
 
 /**
@@ -48,11 +48,11 @@ public class FullSummaryRenderer extends Renderer<FullSummary> {
         if (shouldShowPayerCost(component.props.summaryModel)) {
             //payer cost
             final PayerCostColumn payerCostColumn =
-                new PayerCostColumn(context, component.props.summaryModel.currencyId,
-                    component.props.summaryModel.siteId, component.props.summaryModel.getInstallmentsRate(),
-                    component.props.summaryModel.getInstallments(),
-                    component.props.summaryModel.getPayerCostTotalAmount(),
-                    component.props.summaryModel.getInstallmentAmount());
+                new PayerCostColumn(context,
+                    component.props.summaryModel.getSite(),
+                    component.props.summaryModel.getInstallmentsRate(),
+                    component.props.summaryModel.getInstallmentAmount(),
+                    component.props.summaryModel.getInstallments());
             payerCostColumn.inflateInParent(payerCostContainer, true);
             payerCostColumn.initializeControls();
             payerCostColumn.drawPayerCostWithoutTotal();
@@ -71,8 +71,8 @@ public class FullSummaryRenderer extends Renderer<FullSummary> {
         }
 
         //total
-        setText(totalAmountTextView,
-            getFormattedAmount(component.props.summaryModel.getAmountToPay(), component.props.summaryModel.currencyId));
+        setText(totalAmountTextView, getFormattedAmount(component.props.summaryModel.getAmountToPay(),
+            component.props.summaryModel.getSite().getCurrencyId()));
 
         //disclaimer
         setText(disclaimerTextView, component.getSummary(context).getDisclaimerText());

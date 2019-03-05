@@ -75,7 +75,7 @@ public class CardVaultActivityTest {
         pref.edit().clear().apply();
 
         final Item item = new Item.Builder("item title", 1, new BigDecimal(100)).setId("id").build();
-        paymentConfiguration.configure(new MercadoPagoPaymentConfiguration());
+        paymentConfiguration.configure(MercadoPagoPaymentConfiguration.create());
         paymentConfiguration =
             new ConfigurationModule(InstrumentationRegistry.getContext()).getPaymentSettings();
         paymentConfiguration.configure(new AdvancedConfiguration.Builder().build());
@@ -124,7 +124,6 @@ public class CardVaultActivityTest {
 
     @Test
     public void ifNoCardSetThenStartCardFlow() {
-
         mTestRule.launchActivity(validStartIntent);
 
         final PaymentMethod paymentMethod = StaticMock.getPaymentMethodOn();
@@ -136,7 +135,7 @@ public class CardVaultActivityTest {
         guessingResultIntent.putExtra("discount", JsonUtil.getInstance().toJson(mockedDiscount));
         guessingResultIntent.putExtra("issuers", issuers);
         guessingResultIntent.putExtra("payerCosts", payerCosts);
-        userSelectionRepository.select(paymentMethod);
+        userSelectionRepository.select(paymentMethod, null);
         paymentConfiguration.configure(StaticMock.getToken());
 
         final Instrumentation.ActivityResult result =
@@ -161,7 +160,7 @@ public class CardVaultActivityTest {
         guessingResultIntent.putExtra("issuers", issuers);
         guessingResultIntent.putExtra("payerCosts", payerCosts);
         paymentConfiguration.configure(StaticMock.getToken());
-        userSelectionRepository.select(StaticMock.getPaymentMethodOn());
+        userSelectionRepository.select(StaticMock.getPaymentMethodOn(), null);
 
         final Instrumentation.ActivityResult result =
             new Instrumentation.ActivityResult(Activity.RESULT_OK, guessingResultIntent);
@@ -184,7 +183,7 @@ public class CardVaultActivityTest {
         guessingResultIntent.putExtra("issuer", JsonUtil.getInstance().toJson(mockedIssuer));
         guessingResultIntent.putExtra("payerCosts", payerCosts);
         paymentConfiguration.configure(StaticMock.getToken());
-        userSelectionRepository.select(StaticMock.getPaymentMethodOn());
+        userSelectionRepository.select(StaticMock.getPaymentMethodOn(), null);
 
         final Instrumentation.ActivityResult result =
             new Instrumentation.ActivityResult(Activity.RESULT_OK, guessingResultIntent);
@@ -220,7 +219,7 @@ public class CardVaultActivityTest {
         guessingResultIntent.putExtra("discount", JsonUtil.getInstance().toJson(mockedDiscount));
         guessingResultIntent.putExtra("issuers", issuers);
         guessingResultIntent.putExtra("payerCosts", payerCosts);
-        userSelectionRepository.select(StaticMock.getPaymentMethodOn());
+        userSelectionRepository.select(StaticMock.getPaymentMethodOn(), null);
         paymentConfiguration.configure(StaticMock.getToken());
 
         Instrumentation.ActivityResult result =

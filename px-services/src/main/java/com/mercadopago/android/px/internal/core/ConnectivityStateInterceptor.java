@@ -1,9 +1,8 @@
 package com.mercadopago.android.px.internal.core;
 
-import android.annotation.SuppressLint;
+import android.content.Context;
 import android.net.ConnectivityManager;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import com.mercadopago.android.px.internal.util.NoConnectivityException;
 import java.io.IOException;
 import okhttp3.Interceptor;
@@ -11,16 +10,17 @@ import okhttp3.Response;
 
 public class ConnectivityStateInterceptor implements Interceptor {
 
-    @Nullable
-    private final ConnectivityManager connectivityManager;
+    @NonNull
+    private final Context context;
 
-    public ConnectivityStateInterceptor(@Nullable final ConnectivityManager connectivityManager) {
-        this.connectivityManager = connectivityManager;
+    public ConnectivityStateInterceptor(@NonNull final Context context) {
+        this.context = context.getApplicationContext();
     }
 
-    @SuppressLint("MissingPermission")
     @Override
-    public Response intercept(@NonNull Chain chain) throws IOException {
+    public Response intercept(@NonNull final Chain chain) throws IOException {
+        final ConnectivityManager connectivityManager =
+            (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager != null && (connectivityManager.getActiveNetworkInfo() == null
             || !connectivityManager.getActiveNetworkInfo().isAvailable()
             || !connectivityManager.getActiveNetworkInfo().isConnected())) {

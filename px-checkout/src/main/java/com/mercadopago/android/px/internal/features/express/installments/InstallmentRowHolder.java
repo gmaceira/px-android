@@ -9,7 +9,6 @@ import android.view.View;
 import android.widget.TextView;
 import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.internal.util.CurrenciesUtil;
-import com.mercadopago.android.px.internal.util.CountyInstallmentsUtils;
 import com.mercadopago.android.px.model.PayerCost;
 import com.mercadopago.android.px.model.Site;
 import java.math.BigDecimal;
@@ -36,7 +35,7 @@ import java.util.Locale;
         @NonNull final Site site, @NonNull final PayerCost payerCost) {
         setInstallmentsText(site, payerCost);
 
-        if (!CountyInstallmentsUtils.shouldWarnAboutBankInterests(site.getId())) {
+        if (!site.shouldWarnAboutBankInterests()) {
             if (BigDecimal.ZERO.compareTo(payerCost.getInstallmentRate()) == 0) {
                 totalText.setVisibility(View.GONE);
                 zeroRateText.setVisibility(payerCost.getInstallments() > 1 ? View.VISIBLE : View.GONE);

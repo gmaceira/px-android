@@ -198,7 +198,7 @@ public class IssuersActivity extends PXActivity<IssuersPresenter> implements Iss
             toolbar.setNavigationOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                   onBackPressed();
+                    onBackPressed();
                 }
             });
         }
@@ -349,7 +349,8 @@ public class IssuersActivity extends PXActivity<IssuersPresenter> implements Iss
 
     @Override
     public void onBackPressed() {
-        setResult(RESULT_CANCELED);
         super.onBackPressed();
+        setResult(RESULT_CANCELED);
+        finish();
     }
 }

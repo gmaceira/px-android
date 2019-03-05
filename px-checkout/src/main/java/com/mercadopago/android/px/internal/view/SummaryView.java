@@ -29,7 +29,7 @@ public class SummaryView extends LinearLayout implements ViewTreeObserver.OnGlob
     private final Animation listAppearAnimation;
     private final Animation logoAppearAnimation;
     private final Animation logoDisappearAnimation;
-    private boolean initialized = false;
+
     private boolean showingBigLogo = false;
     private boolean animating = false;
 
@@ -94,7 +94,7 @@ public class SummaryView extends LinearLayout implements ViewTreeObserver.OnGlob
             bigHeaderDescriptor.setVisibility(GONE);
         }
 
-        totalAmountDescriptor.setTextSize(R.dimen.px_m_text);
+        totalAmountDescriptor.setTextSize(R.dimen.px_l_text);
         totalAmountDescriptor.setBold(AmountDescriptorView.Position.RIGHT);
         totalAmountDescriptor.update(model.total);
 
@@ -110,28 +110,26 @@ public class SummaryView extends LinearLayout implements ViewTreeObserver.OnGlob
                 showingBigLogo = false;
                 bigHeaderDescriptor.startAnimation(logoDisappearAnimation);
                 if (listener != null) {
-                    listener.onBigHeaderOverlaps(initialized);
+                    listener.onBigHeaderOverlaps();
                 }
             }
         } else if (!showingBigLogo) {
             bigHeaderDescriptor.setVisibility(VISIBLE);
             showingBigLogo = true;
-            if (initialized) {
-                bigHeaderDescriptor.startAnimation(logoAppearAnimation);
-            }
+            bigHeaderDescriptor.startAnimation(logoAppearAnimation);
+
             if (listener != null) {
-                listener.onBigHeaderDoesNotOverlaps(initialized);
+                listener.onBigHeaderDoesNotOverlaps();
             }
         }
         getViewTreeObserver().removeOnGlobalLayoutListener(this);
-        initialized = true;
     }
 
     public interface OnFitListener {
 
-        void onBigHeaderOverlaps(boolean shouldAnimate);
+        void onBigHeaderOverlaps();
 
-        void onBigHeaderDoesNotOverlaps(boolean shouldAnimate);
+        void onBigHeaderDoesNotOverlaps();
     }
 
     public void setOnFitListener(final OnFitListener callback) {

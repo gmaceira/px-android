@@ -23,6 +23,7 @@ import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.Token;
 import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
+import com.mercadopago.android.px.tracking.internal.events.FrictionEventTracker;
 
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_SILENT_ERROR;
 
@@ -45,7 +46,7 @@ public class CardVaultActivity extends AppCompatActivity implements CardVaultVie
         paymentSettingRepository = session.getConfigurationModule().getPaymentSettings();
         presenter = new CardVaultPresenter(session.getConfigurationModule().getUserSelectionRepository(),
             paymentSettingRepository,
-            session.getMercadoPagoESC(), session.getPayerCostRepository(), session.providePayerCostSolver());
+            session.getMercadoPagoESC(), session.getAmountConfigurationRepository(), session.providePayerCostSolver());
         presenter.attachResourcesProvider(new CardVaultProviderImpl(getApplicationContext()));
         presenter.attachView(this);
         final Card card = session.getConfigurationModule().getUserSelectionRepository().getCard();
@@ -56,12 +57,20 @@ public class CardVaultActivity extends AppCompatActivity implements CardVaultVie
     protected void onCreate(@Nullable final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setScreenOrientation();
-        setContentView();
+        setContentView(R.layout.px_activity_card_vault);
         configure();
 
         if (savedInstanceState == null) {
             getActivityParameters();
-            presenter.initialize();
+            try {
+                presenter.initialize();
+            } catch (final Exception e) {
+                FrictionEventTracker.with("/px_checkout/card_vault",
+                    FrictionEventTracker.Id.SILENT, FrictionEventTracker.Style.SCREEN,
+                    ErrorUtil.getStacktraceMessage(e))
+                    .track();
+                cancelCardVault();
+            }
         } else {
             restoreInstanceState(savedInstanceState);
         }
@@ -105,10 +114,6 @@ public class CardVaultActivity extends AppCompatActivity implements CardVaultVie
         final PaymentRecovery paymentRecovery =
             JsonUtil.getInstance().fromJson(intent.getStringExtra(EXTRA_PAYMENT_RECOVERY), PaymentRecovery.class);
         presenter.setPaymentRecovery(paymentRecovery);
-    }
-
-    private void setContentView() {
-        setContentView(R.layout.px_activity_card_vault);
     }
 
     @Override

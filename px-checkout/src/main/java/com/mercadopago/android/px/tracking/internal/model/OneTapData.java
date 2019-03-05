@@ -9,8 +9,8 @@ import com.mercadopago.android.px.preferences.CheckoutPreference;
 import com.mercadopago.android.px.tracking.internal.mapper.FromExpressMetadataToAvailableMethods;
 import com.mercadopago.android.px.tracking.internal.mapper.FromItemToItemInfo;
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @SuppressWarnings("unused")
 @Keep
@@ -29,7 +29,9 @@ public class OneTapData extends SelectMethodData {
     @NonNull
     public static OneTapData createFrom(final Iterable<ExpressMetadata> expressMetadataList,
         final CheckoutPreference checkoutPreference,
-        final DiscountConfigurationModel discountModel) {
+        final DiscountConfigurationModel discountModel,
+        @NonNull final Set<String> cardsWithEsc,
+        @NonNull final Set<String> cardsWithSplit) {
 
         final List<ItemInfo> itemInfoList = new FromItemToItemInfo().map(checkoutPreference.getItems());
 
@@ -37,7 +39,7 @@ public class OneTapData extends SelectMethodData {
             DiscountInfo.with(discountModel.getDiscount(), discountModel.getCampaign(), discountModel.isAvailable());
 
         return new OneTapData(
-            new FromExpressMetadataToAvailableMethods(Collections.<String>emptySet()).map(expressMetadataList),
+            new FromExpressMetadataToAvailableMethods(cardsWithEsc, cardsWithSplit).map(expressMetadataList),
             checkoutPreference.getTotalAmount(), discountInfo, itemInfoList);
     }
 }

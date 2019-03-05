@@ -6,11 +6,10 @@ import java.lang.ref.WeakReference;
 /**
  * Base class for all <code>MvpPresenter</code> implementations.
  * <p>
- * All <code>MvpPresenter</code>'s implementations MUST NOT contain references to Android library
- * or api calls, that's what it is <code>ResourcesProvider</code> made for.
+ * All <code>MvpPresenter</code>'s implementations MUST NOT contain references to Android library or api calls, that's
+ * what it is <code>ResourcesProvider</code> made for.
  * <p>
- * See also {@link ResourcesProvider}
- * See also {@link MvpView}
+ * See also {@link ResourcesProvider} See also {@link MvpView}
  */
 
 @SuppressWarnings("AbstractClassWithoutAbstractMethods")

@@ -26,15 +26,14 @@ public class Footer extends CompactComponent<Footer.Props, ActionDispatcher> {
         }
     }
 
-    public Footer(@NonNull final Props props,
-        @NonNull final ActionDispatcher dispatcher) {
+    public Footer(@NonNull final Props props, @NonNull final ActionDispatcher dispatcher) {
         super(props, dispatcher);
     }
 
     @Override
     public View render(@Nonnull final ViewGroup parent) {
         final Context context = parent.getContext();
-        final LinearLayout linearContainer = CompactComponent.createLinearContainer(context);
+        final LinearLayout linearContainer = ViewUtils.createLinearContainer(context);
         linearContainer.setBackgroundColor(context.getResources().getColor(R.color.px_white_background));
         final int padding = context.getResources().getDimensionPixelSize(R.dimen.px_s_margin);
         linearContainer.setPadding(0, 0, 0, padding);
@@ -45,15 +44,7 @@ public class Footer extends CompactComponent<Footer.Props, ActionDispatcher> {
         if (props.buttonAction != null) {
             final ButtonPrimary buttonPrimary =
                 new ButtonPrimary(new Button.Props(props.buttonAction.label, props.buttonAction.action),
-                    new Button.Actions() {
-                        @Override
-                        public void onClick(final Action action) {
-                            if (getActions() != null) {
-                                getActions().dispatch(action);
-                            }
-                        }
-
-                    });
+                    this::dispatch);
             final View buttonView = buttonPrimary.render(linearContainer);
             ViewUtils.setMarginInView(buttonView, padding, padding, padding, 0);
             linearContainer.addView(buttonView);
@@ -61,20 +52,18 @@ public class Footer extends CompactComponent<Footer.Props, ActionDispatcher> {
 
         if (props.linkAction != null) {
             final ButtonLink buttonLink =
-                new ButtonLink(new Button.Props(props.linkAction.label, props.linkAction.action), new Button.Actions() {
-                    @Override
-                    public void onClick(final Action action) {
-                        if (getActions() != null) {
-                            getActions().dispatch(action);
-                        }
-                    }
-
-                });
+                new ButtonLink(new Button.Props(props.linkAction.label, props.linkAction.action), this::dispatch);
             final View buttonLinkView = buttonLink.render(linearContainer);
             ViewUtils.setMarginInView(buttonLinkView, padding, padding, padding, 0);
             linearContainer.addView(buttonLinkView);
         }
 
         return linearContainer;
+    }
+
+    private void dispatch(final Action action) {
+        if (getActions() != null) {
+            getActions().dispatch(action);
+        }
     }
 }

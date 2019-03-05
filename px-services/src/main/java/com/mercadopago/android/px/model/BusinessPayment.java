@@ -9,9 +9,11 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import com.mercadopago.android.px.internal.util.ParcelableUtil;
 import com.mercadopago.android.px.internal.util.TextUtil;
+import com.mercadopago.android.px.model.internal.PrimaryExitAction;
+import com.mercadopago.android.px.model.internal.SecondaryExitAction;
 
 @SuppressWarnings("unused")
-public class BusinessPayment implements IPayment, Parcelable {
+public class BusinessPayment implements IPaymentDescriptor, Parcelable {
 
     @NonNull private final String title;
     @NonNull private final Decorator decorator;
@@ -32,6 +34,9 @@ public class BusinessPayment implements IPayment, Parcelable {
     @Nullable
     private final String subtitle;
 
+    @Nullable private final String paymentTypeId;
+    @Nullable private final String paymentMethodId;
+
     /* default */ BusinessPayment(final Builder builder) {
         help = builder.help;
         title = builder.title;
@@ -48,6 +53,8 @@ public class BusinessPayment implements IPayment, Parcelable {
         paymentStatus = builder.paymentStatus;
         paymentStatusDetail = builder.paymentStatusDetail;
         subtitle = builder.subtitle;
+        paymentMethodId = builder.paymentMethodId;
+        paymentTypeId = builder.paymentTypeId;
     }
 
     protected BusinessPayment(final Parcel in) {
@@ -66,6 +73,8 @@ public class BusinessPayment implements IPayment, Parcelable {
         paymentStatus = in.readString();
         paymentStatusDetail = in.readString();
         subtitle = ParcelableUtil.getOptionalString(in);
+        paymentMethodId = ParcelableUtil.getOptionalString(in);
+        paymentTypeId = ParcelableUtil.getOptionalString(in);
     }
 
     public static final Creator<BusinessPayment> CREATOR = new Creator<BusinessPayment>() {
@@ -102,6 +111,8 @@ public class BusinessPayment implements IPayment, Parcelable {
         dest.writeString(paymentStatus);
         dest.writeString(paymentStatusDetail);
         ParcelableUtil.writeOptional(dest, subtitle);
+        ParcelableUtil.writeOptional(dest, paymentMethodId);
+        ParcelableUtil.writeOptional(dest, paymentTypeId);
     }
 
     public boolean hasReceipt() {
@@ -136,12 +147,12 @@ public class BusinessPayment implements IPayment, Parcelable {
 
     @Nullable
     public ExitAction getSecondaryAction() {
-        return exitActionSecondary;
+        return exitActionSecondary != null ? new SecondaryExitAction(exitActionSecondary) : null;
     }
 
     @Nullable
     public ExitAction getPrimaryAction() {
-        return exitActionPrimary;
+        return exitActionPrimary != null ? new PrimaryExitAction(exitActionPrimary) : null;
     }
 
     @Nullable
@@ -202,6 +213,23 @@ public class BusinessPayment implements IPayment, Parcelable {
         return subtitle;
     }
 
+    @Nullable
+    @Override
+    public String getPaymentTypeId() {
+        return paymentTypeId;
+    }
+
+    @Nullable
+    @Override
+    public String getPaymentMethodId() {
+        return paymentMethodId;
+    }
+
+    @Override
+    public void process(@NonNull final IPaymentDescriptorHandler handler) {
+        handler.visit(this);
+    }
+
     public enum Decorator {
         APPROVED("APPROVED"),
         REJECTED("REJECTED"),
@@ -231,6 +259,8 @@ public class BusinessPayment implements IPayment, Parcelable {
         /* default */ @NonNull final String title;
         /* default */ @NonNull final String paymentStatus;
         /* default */ @NonNull final String paymentStatusDetail;
+        /* default */ @Nullable final String paymentMethodId;
+        /* default */ @Nullable final String paymentTypeId;
 
         // Optional values
         /* default */ @Nullable String imageUrl;
@@ -245,30 +275,48 @@ public class BusinessPayment implements IPayment, Parcelable {
         ExternalFragment topFragment;
         ExternalFragment bottomFragment;
 
+        @Deprecated
         public Builder(@NonNull final Decorator decorator,
             @NonNull final String paymentStatus,
             @NonNull final String paymentStatusDetail,
             @DrawableRes final int iconId,
             @NonNull final String title) {
-            this.title = title;
+            this(decorator, paymentStatus, paymentStatusDetail, iconId, title, null, null);
+        }
+
+        @Deprecated
+        public Builder(@NonNull final Decorator decorator,
+            @NonNull final String paymentStatus,
+            @NonNull final String paymentStatusDetail,
+            @NonNull final String imageUrl,
+            @NonNull final String title) {
+            this(decorator, paymentStatus, paymentStatusDetail, imageUrl, title, null, null);
+        }
+
+        public Builder(@NonNull final Decorator decorator,
+            @NonNull final String paymentStatus,
+            @NonNull final String paymentStatusDetail,
+            @DrawableRes final int iconId,
+            @NonNull final String title,
+            @NonNull final String paymentMethodId,
+            @NonNull final String paymentTypeId) {
             this.decorator = decorator;
-            this.iconId = iconId;
             this.paymentStatus = paymentStatus;
             this.paymentStatusDetail = paymentStatusDetail;
-            shouldShowPaymentMethod = false;
-            buttonPrimary = null;
-            buttonSecondary = null;
-            help = null;
-            receiptId = null;
-            imageUrl = null;
+            this.iconId = iconId;
+            this.title = title;
+            this.paymentMethodId = paymentMethodId;
+            this.paymentTypeId = paymentTypeId;
         }
 
         public Builder(@NonNull final Decorator decorator,
             @NonNull final String paymentStatus,
             @NonNull final String paymentStatusDetail,
             @NonNull final String imageUrl,
-            @NonNull final String title) {
-            this(decorator, paymentStatus, paymentStatusDetail, 0, title);
+            @NonNull final String title,
+            @NonNull final String paymentMethodId,
+            @NonNull final String paymentTypeId) {
+            this(decorator, paymentStatus, paymentStatusDetail, 0, title, paymentMethodId, paymentTypeId);
             this.imageUrl = imageUrl;
         }
 
@@ -280,9 +328,8 @@ public class BusinessPayment implements IPayment, Parcelable {
         }
 
         /**
-         * if Exit action is set, then a big primary button
-         * will appear and the click action will trigger a resCode
-         * that will be the same of the Exit action added.
+         * if Exit action is set, then a big primary button will appear and the click action will trigger a resCode that
+         * will be the same of the Exit action added.
          *
          * @param exitAction a {@link ExitAction }
          * @return builder
@@ -293,8 +340,7 @@ public class BusinessPayment implements IPayment, Parcelable {
         }
 
         /**
-         * if Exit action is set, then a small secondary button
-         * will appear and the click action will trigger a resCode
+         * if Exit action is set, then a small secondary button will appear and the click action will trigger a resCode
          * that will be the same of the Exit action added.
          *
          * @param exitAction a {@link ExitAction }
@@ -317,9 +363,8 @@ public class BusinessPayment implements IPayment, Parcelable {
         }
 
         /**
-         * If value true is set, then payment method box
-         * will appear with the amount value and payment method
-         * options that were selected by the user.
+         * If value true is set, then payment method box will appear with the amount value and payment method options
+         * that were selected by the user.
          *
          * @param visible visibility mode
          * @return builder
@@ -330,9 +375,8 @@ public class BusinessPayment implements IPayment, Parcelable {
         }
 
         /**
-         * If value true is set on {@link #setPaymentMethodVisibility }
-         * and the payment method is credit card
-         * then the statementDescription will be shown on payment method view.
+         * If value true is set on {@link #setPaymentMethodVisibility } and the payment method is credit card then the
+         * statementDescription will be shown on payment method view.
          *
          * @param statementDescription disclaimer text
          * @return builder
@@ -354,8 +398,7 @@ public class BusinessPayment implements IPayment, Parcelable {
         }
 
         /**
-         * Custom fragment that will appear before payment method description
-         * inside Business result screen.
+         * Custom fragment that will appear before payment method description inside Business result screen.
          *
          * @param zClass fragment class
          * @return builder
@@ -366,8 +409,7 @@ public class BusinessPayment implements IPayment, Parcelable {
         }
 
         /**
-         * Custom fragment that will appear after payment method description
-         * inside Business result screen.
+         * Custom fragment that will appear after payment method description inside Business result screen.
          *
          * @param zClass fragment class
          * @return builder
@@ -378,8 +420,7 @@ public class BusinessPayment implements IPayment, Parcelable {
         }
 
         /**
-         * When subtitle is set, then default {@link Decorator} subtitle will be replaced
-         * on the screen with it.
+         * When subtitle is set, then default {@link Decorator} subtitle will be replaced on the screen with it.
          *
          * @param subtitle subtitle text
          * @return builder

@@ -4,12 +4,12 @@ import android.support.annotation.NonNull;
 import com.mercadopago.android.px.internal.base.MvpView;
 import com.mercadopago.android.px.internal.callbacks.PaymentServiceHandler;
 import com.mercadopago.android.px.internal.features.explode.ExplodeDecorator;
-import com.mercadopago.android.px.internal.features.express.slider.PaymentMethodAdapter;
+import com.mercadopago.android.px.internal.features.express.slider.HubAdapter;
 import com.mercadopago.android.px.internal.view.ElementDescriptorView;
 import com.mercadopago.android.px.internal.viewmodel.drawables.DrawableFragmentItem;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.DiscountConfigurationModel;
-import com.mercadopago.android.px.model.IPayment;
+import com.mercadopago.android.px.model.IPaymentDescriptor;
 import com.mercadopago.android.px.model.PayerCost;
 import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.Site;
@@ -20,8 +20,8 @@ public interface ExpressPayment {
 
     interface View extends MvpView {
 
-        void configureAdapters(@NonNull List<DrawableFragmentItem> items, @NonNull final Site site,
-            final int selectedPayerCost, @NonNull PaymentMethodAdapter.Model paymentMethodViewModel);
+        void configureAdapters(@NonNull List<DrawableFragmentItem> items, @NonNull final Site site, @NonNull HubAdapter
+            .Model paymentMethodViewModel);
 
         void cancel();
 
@@ -39,7 +39,7 @@ public interface ExpressPayment {
 
         void showErrorScreen(@NonNull final MercadoPagoError error);
 
-        void showPaymentResult(@NonNull final IPayment paymentResult);
+        void showPaymentResult(@NonNull final IPaymentDescriptor paymentResult);
 
         void onRecoverPaymentEscInvalid(final PaymentRecovery recovery);
 
@@ -51,11 +51,11 @@ public interface ExpressPayment {
 
         void showErrorSnackBar(@NonNull final MercadoPagoError error);
 
-        void showInstallmentsDescriptionRow(final int paymentMethodIndex, final int payerCostSelected);
+        void updateViewForPosition(final int paymentMethodIndex,
+            final int payerCostSelected,
+            final boolean isSplitUserPreference);
 
         void showInstallmentsList(List<PayerCost> payerCostList, final int payerCostSelected);
-
-        void hideInstallmentsSelection();
 
         void showToolbarElementDescriptor(@NonNull final ElementDescriptorView.Model elementDescriptorModel);
 
@@ -91,5 +91,7 @@ public interface ExpressPayment {
         void hasFinishPaymentAnimation();
 
         void manageNoConnection();
+
+        void onSplitChanged(boolean isChecked, int currentItem);
     }
 }

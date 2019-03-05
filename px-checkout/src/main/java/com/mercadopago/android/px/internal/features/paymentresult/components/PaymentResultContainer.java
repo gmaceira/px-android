@@ -7,15 +7,16 @@ import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.configuration.PaymentResultScreenConfiguration;
 import com.mercadopago.android.px.internal.features.paymentresult.PaymentResultDecorator;
 import com.mercadopago.android.px.internal.features.paymentresult.PaymentResultProvider;
-import com.mercadopago.android.px.internal.features.paymentresult.formatter.HeaderTitleFormatter;
 import com.mercadopago.android.px.internal.features.paymentresult.model.Badge;
 import com.mercadopago.android.px.internal.features.paymentresult.props.HeaderProps;
 import com.mercadopago.android.px.internal.features.paymentresult.props.PaymentResultBodyProps;
 import com.mercadopago.android.px.internal.features.paymentresult.props.PaymentResultProps;
+import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.internal.view.ActionDispatcher;
 import com.mercadopago.android.px.internal.view.Component;
 import com.mercadopago.android.px.internal.view.LoadingComponent;
 import com.mercadopago.android.px.internal.view.RendererFactory;
+import com.mercadopago.android.px.internal.viewmodel.HeaderTitleFormatter;
 import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentMethods;
 import com.mercadopago.android.px.model.PaymentResult;
@@ -45,7 +46,7 @@ public class PaymentResultContainer extends Component<PaymentResultProps, Void> 
     public static final int ERROR_BADGE_IMAGE = R.drawable.px_badge_error;
     public static final int WARNING_BADGE_IMAGE = R.drawable.px_badge_warning;
 
-    public PaymentResultProvider paymentResultProvider;
+    private final PaymentResultProvider paymentResultProvider;
 
     public PaymentResultContainer(@NonNull final ActionDispatcher dispatcher,
         @NonNull final PaymentResultProps props,
@@ -54,11 +55,11 @@ public class PaymentResultContainer extends Component<PaymentResultProps, Void> 
         this.paymentResultProvider = paymentResultProvider;
     }
 
-    public boolean isLoading() {
+    /* default */ boolean isLoading() {
         return props.loading;
     }
 
-    public LoadingComponent getLoadingComponent() {
+    /* default */ LoadingComponent getLoadingComponent() {
         return new LoadingComponent();
     }
 
@@ -81,8 +82,8 @@ public class PaymentResultContainer extends Component<PaymentResultProps, Void> 
     public boolean hasBodyComponent() {
         boolean hasBody = true;
         if (props.paymentResult != null) {
-            String status = props.paymentResult.getPaymentStatus();
-            String statusDetail = props.paymentResult.getPaymentStatusDetail();
+            final String status = props.paymentResult.getPaymentStatus();
+            final String statusDetail = props.paymentResult.getPaymentStatusDetail();
 
             if (Payment.StatusCodes.STATUS_REJECTED.equals(status)
                 && Payment.StatusDetail.STATUS_DETAIL_CC_REJECTED_PLUGIN_PM.equals(statusDetail)) {
@@ -102,30 +103,21 @@ public class PaymentResultContainer extends Component<PaymentResultProps, Void> 
     public Body getBodyComponent() {
         Body body = null;
         if (props.paymentResult != null) {
-            //TODO fix amount.
+
             final PaymentResultBodyProps bodyProps =
                 new PaymentResultBodyProps.Builder(props.getPaymentResultScreenPreference())
-                .setStatus(props.paymentResult.getPaymentStatus())
-                .setStatusDetail(props.paymentResult.getPaymentStatusDetail())
-                .setPaymentData(props.paymentResult.getPaymentData())
-                .setDisclaimer(props.paymentResult.getStatementDescription())
-                .setPaymentId(props.paymentResult.getPaymentId())
-                .setInstruction(props.instruction)
-                .setCurrencyId(props.currencyId)
-                .setAmount(props.paymentResult.getPaymentData().getTransactionAmount())
-                .setProcessingMode(props.processingMode)
-                .build();
-            body = new Body(bodyProps, getDispatcher(), paymentResultProvider);
+                    .setPaymentResult(props.paymentResult)
+                    .setInstruction(props.instruction)
+                    .setCurrencyId(props.currencyId)
+                    .setProcessingMode(props.processingMode)
+                    .build();
+            body = new Body(bodyProps, getDispatcher());
         }
         return body;
     }
 
-    /* default */ FooterContainer getFooterContainer() {
-        return new FooterContainer(new FooterContainer.Props(
-            props.paymentResult, props.getPaymentResultScreenPreference()),
-            getDispatcher(),
-            paymentResultProvider
-        );
+    /* default */ FooterPaymentResult getFooterContainer() {
+        return new FooterPaymentResult(props.paymentResult, getDispatcher());
     }
 
     private String getHeaderMode() {
@@ -269,18 +261,15 @@ public class PaymentResultContainer extends Component<PaymentResultProps, Void> 
         }
     }
 
-
     private CharSequence getTitle(@NonNull final PaymentResultProps props) {
-        if (props.hasCustomizedTitle()) {
-            return props.getPreferenceTitle();
-        } else if (props.hasInstructions()) {
+        if (props.hasInstructions()) { // Si el medio off tiene instrucciones, tomo las del titulo.
             return props.getInstructionsTitle();
-        } else if (props.paymentResult == null) { // TODO REMOVE THIS, is only used in mocks
-            return paymentResultProvider.getEmptyText();
-        } else if (isPaymentMethodOff(props.paymentResult)) {
-            return paymentResultProvider.getEmptyText();
+        } else if (isPaymentMethodOff(props.paymentResult)) { // Caso off, sin instrucciones.
+            return TextUtil.EMPTY;
         } else {
+
             final String paymentMethodName = props.paymentResult.getPaymentData().getPaymentMethod().getName();
+
             final String status = props.paymentResult.getPaymentStatus();
             final String statusDetail = props.paymentResult.getPaymentStatusDetail();
 
@@ -320,7 +309,7 @@ public class PaymentResultContainer extends Component<PaymentResultProps, Void> 
             }
         }
 
-        return paymentResultProvider.getEmptyText();
+        return TextUtil.EMPTY;
     }
 
     private CharSequence getCallForAuthFormattedTitle(@NonNull final PaymentResultProps props) {
@@ -335,17 +324,17 @@ public class PaymentResultContainer extends Component<PaymentResultProps, Void> 
         if (!props.isPluginPaymentResult(props.paymentResult) && props.hasCustomizedLabel()) {
             return props.getPreferenceLabel();
         } else if (props.paymentResult == null) {
-            return paymentResultProvider.getEmptyText();
+            return TextUtil.EMPTY;
         } else {
             if (isLabelEmpty(props.paymentResult)) {
-                return paymentResultProvider.getEmptyText();
+                return TextUtil.EMPTY;
             } else if (isLabelPending(props.paymentResult)) {
                 return paymentResultProvider.getPendingLabel();
             } else if (isLabelError(props.paymentResult)) {
                 return paymentResultProvider.getRejectionLabel();
             }
         }
-        return paymentResultProvider.getEmptyText();
+        return TextUtil.EMPTY;
     }
 
     private boolean isLabelEmpty(@NonNull final PaymentResult paymentResult) {

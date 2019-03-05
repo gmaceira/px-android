@@ -87,7 +87,7 @@ public class BackCardView {
     }
 
     private void resizeCard(ViewGroup cardViewContainer, int cardHeight, int cardWidth, int cardSecurityCodeFontSize) {
-        ViewUtils.resizeViewGroupLayoutParams(cardViewContainer, cardHeight, cardWidth, mContext);
+        ViewUtils.resizeViewGroupLayoutParams(cardViewContainer, cardHeight, cardWidth);
         mCardSecurityCodeTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, cardSecurityCodeFontSize);
     }
 

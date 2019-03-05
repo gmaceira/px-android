@@ -5,27 +5,36 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.di.Session;
-import com.mercadopago.android.px.internal.features.business_result.components.BusinessPaymentContainer;
+import com.mercadopago.android.px.internal.util.ViewUtils;
 import com.mercadopago.android.px.internal.view.ActionDispatcher;
-import com.mercadopago.android.px.internal.view.ComponentManager;
 import com.mercadopago.android.px.internal.viewmodel.BusinessPaymentModel;
 import com.mercadopago.android.px.model.Action;
 import com.mercadopago.android.px.model.ExitAction;
 import com.mercadopago.android.px.model.PaymentData;
 import com.mercadopago.android.px.model.PaymentMethod;
 import com.mercadopago.android.px.model.PaymentResult;
+import com.mercadopago.android.px.model.internal.PrimaryExitAction;
+import com.mercadopago.android.px.model.internal.SecondaryExitAction;
+import com.mercadopago.android.px.tracking.internal.events.AbortEvent;
+import com.mercadopago.android.px.tracking.internal.events.PrimaryActionEvent;
+import com.mercadopago.android.px.tracking.internal.events.SecondaryActionEvent;
 import com.mercadopago.android.px.tracking.internal.views.ResultViewTrack;
+import com.mercadopago.android.px.tracking.internal.views.ViewTracker;
 
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_CUSTOM_EXIT;
 
-public class BusinessPaymentResultActivity extends AppCompatActivity implements ActionDispatcher {
+public class BusinessPaymentResultActivity extends PXActivity implements ActionDispatcher {
 
     private static final String EXTRA_BUSINESS_PAYMENT_MODEL = "extra_business_payment_model";
 
-    public static Intent getIntent(@NonNull final Context context,
-        @NonNull final BusinessPaymentModel model) {
+    private ViewTracker viewTracker;
+
+    public static Intent getIntent(@NonNull final Context context, @NonNull final BusinessPaymentModel model) {
         final Intent intent = new Intent(context, BusinessPaymentResultActivity.class);
         intent.putExtra(EXTRA_BUSINESS_PAYMENT_MODEL, model);
         return intent;
@@ -37,28 +46,42 @@ public class BusinessPaymentResultActivity extends AppCompatActivity implements 
         final BusinessPaymentModel model = parseBusinessPaymentModel();
 
         if (model != null) {
-            initializeView(model);
+            viewTracker = createTracker(model);
+
+            final LinearLayout linearContainer = ViewUtils.createLinearContainer(this);
+            linearContainer.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+            setContentView(linearContainer);
+
+            final BusinessPaymentContainer businessPaymentContainer = new BusinessPaymentContainer(model, this);
+            final View render = businessPaymentContainer.render(linearContainer);
+            linearContainer.addView(render);
         } else {
             throw new IllegalStateException("BusinessPayment can't be loaded");
         }
-        trackScreen(model);
+
+        if (savedInstanceState == null) {
+            viewTracker.track();
+        }
     }
 
-    private void trackScreen(final BusinessPaymentModel model) {
+    private ViewTracker createTracker(final BusinessPaymentModel model) {
         //TODO refactor - added because tracking needed.
         final PaymentMethod paymentMethod =
             Session.getSession(this).getConfigurationModule()
                 .getUserSelectionRepository()
                 .getPaymentMethod();
-        final PaymentData paymentData = new PaymentData();
-        paymentData.setPaymentMethod(paymentMethod);
 
-        new ResultViewTrack(ResultViewTrack.Style.CUSTOM, new PaymentResult.Builder()
+        final PaymentData paymentData = new PaymentData.Builder()
+            .setPaymentMethod(paymentMethod)
+            .createPaymentData();
+
+        return new ResultViewTrack(ResultViewTrack.Style.CUSTOM, new PaymentResult.Builder()
             .setPaymentData(paymentData)
             .setPaymentStatus(model.payment.getPaymentStatus())
             .setPaymentStatusDetail(model.payment.getPaymentStatusDetail())
             .setPaymentId(model.payment.getId())
-            .build()).track();
+            .build());
     }
 
     @Nullable
@@ -68,16 +91,17 @@ public class BusinessPaymentResultActivity extends AppCompatActivity implements 
             .getParcelable(EXTRA_BUSINESS_PAYMENT_MODEL) : null;
     }
 
-    private void initializeView(final BusinessPaymentModel model) {
-        final BusinessPaymentContainer businessPaymentContainer = new BusinessPaymentContainer(
-            new BusinessPaymentContainer.Props(model.payment, model.getPaymentMethodProps()), this);
-        final ComponentManager componentManager = new ComponentManager(this);
-        componentManager.render(businessPaymentContainer);
-    }
-
     @Override
     public void dispatch(final Action action) {
         if (action instanceof ExitAction) {
+
+            // Hack for tracking
+            if (action instanceof PrimaryExitAction) {
+                new PrimaryActionEvent(viewTracker).track();
+            } else if (action instanceof SecondaryExitAction) {
+                new SecondaryActionEvent(viewTracker).track();
+            }
+
             processCustomExit((ExitAction) action);
         } else {
             throw new UnsupportedOperationException("this Action class can't be executed in this screen");
@@ -86,6 +110,7 @@ public class BusinessPaymentResultActivity extends AppCompatActivity implements 
 
     @Override
     public void onBackPressed() {
+        new AbortEvent(viewTracker).track();
         processCustomExit(new ExitAction("exit", RESULT_OK));
     }
 

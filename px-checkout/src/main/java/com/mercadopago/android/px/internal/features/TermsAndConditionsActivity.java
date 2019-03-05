@@ -2,86 +2,60 @@ package com.mercadopago.android.px.internal.features;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.TextView;
 import com.mercadopago.android.px.R;
-import com.mercadopago.android.px.internal.util.ErrorUtil;
-import com.mercadopago.android.px.internal.util.TextUtil;
+import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.tracking.internal.views.TermsAndConditionsViewTracker;
 
-public class TermsAndConditionsActivity extends MercadoPagoActivity {
+public class TermsAndConditionsActivity extends PXActivity {
 
     public static final String EXTRA_URL = "extra_url";
 
-    protected View mMPTermsAndConditionsView;
-    protected WebView mTermsAndConditionsWebView;
-    protected ViewGroup mProgressLayout;
-    protected Toolbar mToolbar;
-    protected TextView mTitle;
-
-    private String url;
-
-    public static void start(final Context context, final String url) {
-        Intent intent = new Intent(context, TermsAndConditionsActivity.class);
+    public static void start(@NonNull final Context context, @NonNull final String url) {
+        final Intent intent = new Intent(context, TermsAndConditionsActivity.class);
         intent.putExtra(EXTRA_URL, url);
         context.startActivity(intent);
     }
 
-    @Override
-    protected void getActivityParameters() {
-        url = getIntent().getStringExtra(EXTRA_URL);
-    }
+    private View mMPTermsAndConditionsView;
+    private WebView mTermsAndConditionsWebView;
+    private ViewGroup mProgressLayout;
+    private String url;
 
     @Override
-    protected void validateActivityParameters() throws IllegalStateException {
-        if (TextUtil.isEmpty(url)) {
-            throw new IllegalStateException("no site provided");
-        }
-    }
-
-    @Override
-    protected void setContentView() {
+    protected void onCreate(@Nullable final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.px_activity_terms_and_conditions);
-    }
 
-    @Override
-    protected void initializeControls() {
+        url = getIntent().getStringExtra(EXTRA_URL);
+
+        if (savedInstanceState == null) {
+            new TermsAndConditionsViewTracker(url).track();
+        }
+
         mProgressLayout = findViewById(R.id.mpsdkProgressLayout);
         mMPTermsAndConditionsView = findViewById(R.id.mpsdkMPTermsAndConditions);
         mTermsAndConditionsWebView = findViewById(R.id.mpsdkTermsAndConditionsWebView);
         mTermsAndConditionsWebView.setVerticalScrollBarEnabled(true);
         mTermsAndConditionsWebView.setHorizontalScrollBarEnabled(true);
         initializeToolbar();
-    }
-
-    private void initializeToolbar() {
-        mToolbar = findViewById(R.id.mpsdkToolbar);
-        setSupportActionBar(mToolbar);
-        mTitle = findViewById(R.id.mpsdkTitle);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBackPressed();
-            }
-        });
-    }
-
-    @Override
-    protected void onValidStart() {
-        new TermsAndConditionsViewTracker(url).track();
         showMPTermsAndConditions();
     }
 
-    @Override
-    protected void onInvalidStart(final String message) {
-        ErrorUtil.startErrorActivity(this, getString(R.string.px_standard_error_message), message, false);
+    private void initializeToolbar() {
+        final Toolbar mToolbar = findViewById(R.id.mpsdkToolbar);
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        mToolbar.setNavigationOnClickListener(v -> onBackPressed());
     }
 
     private void showMPTermsAndConditions() {

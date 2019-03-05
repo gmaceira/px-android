@@ -1,3 +1,39 @@
+## VERSION 4.7.2
+_27_02_2019_
+* FIX - payment processor bundle mapping fix for vending
+* FIX - animations split payment
+* FIX - invalid state cardvault
+
+## VERSION 4.7.1
+_27_02_2019_
+* FIX - signature card storage
+* FIX - identification only cpf for brazil
+* FIX - event data review and confirm
+
+## VERSION 4.7.0
+_22_02_2019_
+* FEATURE - Split Payment.
+* FEATURE - CPF Validation.
+* ENHANCEMENT - Added abort and action events for congrats / business.
+* FIX - Terms and conditions event data.
+* FIX - Animations in PaymentVaultActivity.
+* FIX - Loading identification types NPE.
+* FIX - Add new method drives to groups if cards isn't present.
+
+## VERSION 4.6.2
+_12_02_2019_
+* FIX - Added credit card date validation.  
+* ENHANCEMENT - Added tracks. 
+* ENHANCEMENT - Added discount terms and conditions.
+* FIX - Rollback public method.
+* FIX - Connectivity manager.
+* FIX - Activity new flag support - Android 9.
+
+## VERSION 4.6.1
+_04_02_2019_
+* FIX - Added correct discount id in PaymentData.
+* FIX - Attached view when exploding animation finished.
+
 ## VERSION 4.5.2
 _31_01_2019_
 * FIX - NPE tracking events.

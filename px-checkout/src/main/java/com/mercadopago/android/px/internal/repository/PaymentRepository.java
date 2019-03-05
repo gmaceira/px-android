@@ -2,28 +2,31 @@ package com.mercadopago.android.px.internal.repository;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.Size;
 import com.mercadopago.android.px.internal.callbacks.PaymentServiceHandler;
 import com.mercadopago.android.px.model.ExpressMetadata;
-import com.mercadopago.android.px.model.IPayment;
+import com.mercadopago.android.px.model.IPaymentDescriptor;
 import com.mercadopago.android.px.model.PayerCost;
 import com.mercadopago.android.px.model.PaymentData;
 import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.PaymentResult;
+import java.util.List;
 
 public interface PaymentRepository {
 
     void startPayment();
 
     void startExpressPayment(@NonNull final ExpressMetadata selectedPaymentMethod,
-        @Nullable final PayerCost payerCost);
+        @Nullable final PayerCost payerCost, final boolean splitPayment);
 
     boolean isExplodingAnimationCompatible();
 
     @NonNull
-    PaymentData getPaymentData();
+    @Size(min = 1)
+    List<PaymentData> getPaymentDataList();
 
     @NonNull
-    PaymentResult createPaymentResult(IPayment genericPayment);
+    PaymentResult createPaymentResult(@NonNull final IPaymentDescriptor genericPayment);
 
     int getPaymentTimeout();
 
@@ -31,10 +34,10 @@ public interface PaymentRepository {
 
     void detach(@NonNull final PaymentServiceHandler handler);
 
-    void storePayment(@NonNull final IPayment iPayment);
+    void storePayment(@NonNull final IPaymentDescriptor iPayment);
 
     @Nullable
-    IPayment getPayment();
+    IPaymentDescriptor getPayment();
 
     boolean hasPayment();
 

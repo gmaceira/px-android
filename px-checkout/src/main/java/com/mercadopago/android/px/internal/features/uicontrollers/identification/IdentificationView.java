@@ -13,14 +13,10 @@ import com.mercadopago.android.px.internal.util.ScaleUtil;
 import com.mercadopago.android.px.internal.view.MPTextView;
 import com.mercadopago.android.px.model.IdentificationType;
 
-/**
- * Created by mromar on 9/27/17.
- */
-
 public abstract class IdentificationView {
 
-    public static final int NORMAL_TEXT_VIEW_COLOR = R.color.px_base_text;
-    public static final int ALPHA_TEXT_VIEW_COLOR = R.color.px_base_text_alpha;
+    public static final int NORMAL_TEXT_VIEW_COLOR = R.color.px_form_text;
+    public static final int ALPHA_TEXT_VIEW_COLOR = R.color.px_gray;
 
     protected Context mContext;
     protected View mView;
