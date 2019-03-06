@@ -2,6 +2,8 @@ package com.mercadopago.android.px.internal.features;
 
 import android.support.annotation.NonNull;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
+import com.mercadopago.android.px.internal.datasource.PaymentVaultTitleSolver;
+import com.mercadopago.android.px.internal.datasource.PaymentVaultTitleSolverImpl;
 import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.callbacks.FailureRecovery;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
@@ -50,6 +52,8 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
 
     @NonNull private final MercadoPagoESC mercadoPagoESC;
 
+    @NonNull private final PaymentVaultTitleSolver titleSolver;
+
     private PaymentMethodSearchItem selectedSearchItem;
     private PaymentMethodSearchItem resumeItem;
     private boolean skipHook = false;
@@ -58,24 +62,26 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     private FailureRecovery failureRecovery;
 
     public PaymentVaultPresenter(@NonNull final PaymentSettingRepository paymentSettingRepository,
-        @NonNull final UserSelectionRepository userSelectionRepository,
-        @NonNull final PluginRepository pluginService,
-        @NonNull final DiscountRepository discountRepository,
-        @NonNull final GroupsRepository groupsRepository,
-        @NonNull final MercadoPagoESC mercadoPagoESC) {
+                                 @NonNull final UserSelectionRepository userSelectionRepository,
+                                 @NonNull final PluginRepository pluginService,
+                                 @NonNull final DiscountRepository discountRepository,
+                                 @NonNull final GroupsRepository groupsRepository,
+                                 @NonNull final MercadoPagoESC mercadoPagoESC,
+                                 @NonNull final PaymentVaultTitleSolverImpl titleSolver) {
         this.paymentSettingRepository = paymentSettingRepository;
         this.userSelectionRepository = userSelectionRepository;
         pluginRepository = pluginService;
         this.discountRepository = discountRepository;
         this.groupsRepository = groupsRepository;
         this.mercadoPagoESC = mercadoPagoESC;
+        this.titleSolver = titleSolver;
     }
 
     public void initialize() {
         try {
             validateParameters();
             initPaymentVaultFlow();
-            setMainTitle();
+            getView().setTitle(titleSolver.solveTitle());
         } catch (final IllegalStateException exception) {
             getView().showError(MercadoPagoError.createNotRecoverable(exception.getMessage()), TextUtil.EMPTY);
         }
@@ -467,13 +473,5 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
 
     private boolean isDiscountAvailable() {
         return discountRepository.getCurrentConfiguration().getDiscount() != null;
-    }
-
-    public void setMainTitle() {
-        if(paymentSettingRepository.getAdvancedConfiguration().getCustomStringConfiguration().hasCustomPaymentVaultTitle()){
-            getView().setTitle(paymentSettingRepository.getAdvancedConfiguration().getCustomStringConfiguration().getCustomPaymentVaultTitle());
-        } else {
-            getView().setTitleWithMainVerb();
-        }
     }
 }
