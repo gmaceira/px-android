@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 import com.mercadopago.android.px.configuration.CustomStringConfiguration;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
-import com.mercadopago.android.px.internal.datasource.PaymentVaultTitleSolverImpl;
+import com.mercadopago.android.px.internal.datasource.PaymentVaultTitleSolver;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
 import com.mercadopago.android.px.internal.features.PaymentVaultPresenter;
@@ -68,7 +68,7 @@ public class PaymentVaultPresenterTest {
     @Mock private AdvancedConfiguration advancedConfiguration;
     @Mock private CustomStringConfiguration customStringConfiguration;
     @Mock private PaymentVaultView view;
-    @Mock private PaymentVaultTitleSolverImpl paymentVaultTitleSolver;
+    @Mock private PaymentVaultTitleSolver paymentVaultTitleSolver;
 
     @Mock private Site mockSite;
 

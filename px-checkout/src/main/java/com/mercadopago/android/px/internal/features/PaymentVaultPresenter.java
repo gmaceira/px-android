@@ -67,7 +67,7 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
                                  @NonNull final DiscountRepository discountRepository,
                                  @NonNull final GroupsRepository groupsRepository,
                                  @NonNull final MercadoPagoESC mercadoPagoESC,
-                                 @NonNull final PaymentVaultTitleSolverImpl titleSolver) {
+                                 @NonNull final PaymentVaultTitleSolver titleSolver) {
         this.paymentSettingRepository = paymentSettingRepository;
         this.userSelectionRepository = userSelectionRepository;
         pluginRepository = pluginService;
