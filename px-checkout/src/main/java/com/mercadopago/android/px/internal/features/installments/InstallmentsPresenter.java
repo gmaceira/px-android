@@ -74,7 +74,7 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
     private void resolvePayerCosts() {
         if (userSelectionRepository.hasCardSelected()) {
             resolvePayerCostsForSavedCard();
-            setAmountRow();
+            initializeAmountRow();
         } else {
             resolvePayerCostsForGuessedCard();
         }
@@ -96,7 +96,7 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
                 payerCostSolver.solve(InstallmentsPresenter.this, amountConfiguration.getPayerCosts());
 
                 if (isViewAttached()) {
-                    setAmountRow();
+                    initializeAmountRow();
                     getView().hideLoadingView();
                 }
             }
@@ -112,7 +112,7 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
         });
     }
 
-    private void setAmountRow() {
+    private void initializeAmountRow() {
         if(configuration.getAdvancedConfiguration().isAmountRowEnabled()) {
             getView().showAmount(discountRepository.getCurrentConfiguration(),
                     amountRepository.getItemsPlusCharges(), configuration.getCheckoutPreference().getSite());
