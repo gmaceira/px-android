@@ -78,7 +78,6 @@ public class PaymentVaultPresenterTest {
         when(checkoutPreference.getPaymentPreference()).thenReturn(new PaymentPreference());
         when(checkoutPreference.getSite()).thenReturn(mockSite);
         when(paymentSettingRepository.getAdvancedConfiguration()).thenReturn(advancedConfiguration);
-        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
         presenter = getPresenter();
     }
 
@@ -149,6 +148,7 @@ public class PaymentVaultPresenterTest {
         final PaymentVaultPresenter presenter = getPresenter();
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
         when(discountRepository.getCurrentConfiguration()).thenReturn(WITHOUT_DISCOUNT);
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
 
         presenter.initialize();
 
@@ -165,6 +165,7 @@ public class PaymentVaultPresenterTest {
         final PaymentMethodSearch paymentMethodSearch =
                 PaymentMethodSearchs.getPaymentMethodSearchWithOnlyCreditCardAndOneCardMLA();
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
 
         presenter.initialize();
 
@@ -176,6 +177,7 @@ public class PaymentVaultPresenterTest {
         final PaymentMethodSearch paymentMethodSearch =
                 PaymentMethodSearchs.getPaymentMethodSearchWithOnlyCreditCardAndAccountMoneyMLA();
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
 
         presenter.initialize();
 
@@ -187,6 +189,7 @@ public class PaymentVaultPresenterTest {
         final PaymentMethodSearch paymentMethodSearch =
                 PaymentMethodSearchs.getPaymentMethodSearchWithOnlyOneOffTypeAndAccountMoneyMLA();
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
 
         presenter.initialize();
 
@@ -383,20 +386,6 @@ public class PaymentVaultPresenterTest {
         presenter.onPayerInformationReceived();
 
         verify(view).finishPaymentMethodSelection(userSelectionRepository.getPaymentMethod());
-    }
-
-    @Test
-    public void whenAmountRowIsNotEnabledItShouldBeHidden(){
-        final PaymentMethodSearch paymentMethodSearch = PaymentMethodSearchs.getCompletePaymentMethodSearchMLA();
-        when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
-
-        final PaymentVaultPresenter presenter = getPresenter();
-
-        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(false);
-
-        presenter.initialize();
-
-        verify(view).hideAmountRow();
     }
 
     // --------- Helper methods ----------- //

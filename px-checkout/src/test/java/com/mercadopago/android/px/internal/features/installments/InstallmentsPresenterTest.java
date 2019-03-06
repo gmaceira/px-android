@@ -178,7 +178,7 @@ public class InstallmentsPresenterTest {
     @Test
     public void whenAmountRowIsNotEnabledItShouldBeHidden(){
         when(userSelectionRepository.hasCardSelected()).thenReturn(true);
-        when(payerCostRepository.getCurrentConfiguration()).thenReturn(mock(AmountConfiguration.class));
+        when(amountConfigurationRepository.getCurrentConfiguration()).thenReturn(mock(AmountConfiguration.class));
 
         when(advancedConfiguration.isAmountRowEnabled()).thenReturn(false);
 
@@ -190,12 +190,11 @@ public class InstallmentsPresenterTest {
     @Test
     public void whenAmountRowIsEnabledItShouldBeSetted(){
         when(userSelectionRepository.hasCardSelected()).thenReturn(true);
-        when(payerCostRepository.getCurrentConfiguration()).thenReturn(mock(AmountConfiguration.class));
+        when(amountConfigurationRepository.getCurrentConfiguration()).thenReturn(mock(AmountConfiguration.class));
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
 
         BigDecimal itemPlusCharges = new BigDecimal(100);
         when(amountRepository.getItemsPlusCharges()).thenReturn(itemPlusCharges);
-
-        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
 
         presenter.initialize();
 
