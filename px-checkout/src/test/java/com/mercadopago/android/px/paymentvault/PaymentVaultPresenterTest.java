@@ -67,8 +67,6 @@ public class PaymentVaultPresenterTest {
     @Mock private DiscountRepository discountRepository;
     @Mock private GroupsRepository groupsRepository;
     @Mock private AdvancedConfiguration advancedConfiguration;
-    @Mock private CustomStringConfiguration customStringConfiguration;
-    @Mock private AdvancedConfiguration advancedConfiguration;
     @Mock private PaymentVaultView view;
     @Mock private PaymentVaultTitleSolver paymentVaultTitleSolver;
 
@@ -85,7 +83,7 @@ public class PaymentVaultPresenterTest {
         when(checkoutPreference.getPaymentPreference()).thenReturn(new PaymentPreference());
         when(checkoutPreference.getSite()).thenReturn(mockSite);
         when(paymentSettingRepository.getAdvancedConfiguration()).thenReturn(advancedConfiguration);
-        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
+
         presenter = getPresenter();
     }
 
