@@ -3,7 +3,11 @@ package com.mercadopago.android.px.paymentvault;
 import android.support.annotation.NonNull;
 
 import com.mercadopago.android.px.configuration.AdvancedConfiguration;
+
+import com.mercadopago.android.px.configuration.AdvancedConfiguration;
+import com.mercadopago.android.px.configuration.CustomStringConfiguration;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
+import com.mercadopago.android.px.internal.datasource.PaymentVaultTitleSolver;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
 import com.mercadopago.android.px.internal.features.PaymentVaultPresenter;
@@ -63,10 +67,14 @@ public class PaymentVaultPresenterTest {
     @Mock private DiscountRepository discountRepository;
     @Mock private GroupsRepository groupsRepository;
     @Mock private AdvancedConfiguration advancedConfiguration;
+    @Mock private CustomStringConfiguration customStringConfiguration;
+    @Mock private AdvancedConfiguration advancedConfiguration;
     @Mock private PaymentVaultView view;
+    @Mock private PaymentVaultTitleSolver paymentVaultTitleSolver;
 
     @Mock private Site mockSite;
 
+    private static final String CUSTOM_PAYMENT_VAULT_TITLE = "CUSTOM_PAYMENT_VAULT_TITLE";
     private static final DiscountConfigurationModel WITHOUT_DISCOUNT =
             new DiscountConfigurationModel(null, null, false);
 
@@ -77,6 +85,7 @@ public class PaymentVaultPresenterTest {
         when(checkoutPreference.getPaymentPreference()).thenReturn(new PaymentPreference());
         when(checkoutPreference.getSite()).thenReturn(mockSite);
         when(paymentSettingRepository.getAdvancedConfiguration()).thenReturn(advancedConfiguration);
+        when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
         presenter = getPresenter();
     }
 
@@ -85,8 +94,9 @@ public class PaymentVaultPresenterTest {
             final PaymentVaultView view) {
 
         final PaymentVaultPresenter presenter =
-                new PaymentVaultPresenter(paymentSettingRepository, userSelectionRepository,
-                        pluginRepository, discountRepository, groupsRepository, mock(MercadoPagoESC.class));
+            new PaymentVaultPresenter(paymentSettingRepository, userSelectionRepository,
+                pluginRepository, discountRepository, groupsRepository, mock(MercadoPagoESC.class),
+                    paymentVaultTitleSolver);
         presenter.attachView(view);
 
         return presenter;
@@ -148,6 +158,7 @@ public class PaymentVaultPresenterTest {
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
         when(discountRepository.getCurrentConfiguration()).thenReturn(WITHOUT_DISCOUNT);
         when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
+        when(paymentVaultTitleSolver.solveTitle()).thenReturn(CUSTOM_PAYMENT_VAULT_TITLE);
 
         presenter.initialize();
 
@@ -156,6 +167,7 @@ public class PaymentVaultPresenterTest {
         verify(view).startCardFlow(anyBoolean());
         verify(paymentSettingRepository, atLeastOnce()).getCheckoutPreference();
         verify(userSelectionRepository, times(1)).select(PaymentTypes.CREDIT_CARD);
+        verify(view).setTitle(paymentVaultTitleSolver.solveTitle());
         verifyNoMoreInteractions(view);
     }
 
@@ -402,6 +414,7 @@ public class PaymentVaultPresenterTest {
         verifyInitializeWithGroups();
         verify(view).showCustomOptions(eq(paymentMethodSearch.getCustomSearchItems()), any(OnSelectedCallback.class));
         verify(view).showSearchItems(eq(paymentMethodSearch.getGroups()), any(OnSelectedCallback.class));
+        verify(view).setTitle(paymentVaultTitleSolver.solveTitle());
         verifyNoMoreInteractions(view);
     }
 
@@ -465,11 +478,6 @@ public class PaymentVaultPresenterTest {
 
         @Override
         public void setTitle(final String title) {
-            //Not yet tested
-        }
-
-        @Override
-        public void setMainTitle() {
             //Not yet tested
         }
 

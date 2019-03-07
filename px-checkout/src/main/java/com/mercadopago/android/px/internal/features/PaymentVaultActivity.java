@@ -15,6 +15,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
+import com.mercadopago.android.px.internal.datasource.PaymentVaultTitleSolverImpl;
 import com.mercadopago.android.px.internal.adapters.PaymentMethodSearchItemAdapter;
 import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
@@ -110,7 +111,8 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter> impl
             session.getPluginRepository(),
             session.getDiscountRepository(),
             session.getGroupsRepository(),
-            session.getMercadoPagoESC());
+            session.getMercadoPagoESC(),
+            new PaymentVaultTitleSolverImpl(getApplicationContext(), configuration.getAdvancedConfiguration().getCustomStringConfiguration()));
 
         getActivityParameters();
         configurePresenter();
@@ -178,7 +180,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter> impl
     protected void initialize() {
         showTimer();
         presenter.initialize();
-        setMainTitle();
     }
 
     private void showTimer() {
@@ -432,13 +433,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter> impl
         if (mAppBarLayout != null) {
             mAppBarLayout.setTitle(title);
         }
-    }
-
-    @Override
-    public void setMainTitle() {
-        final String mainVerb = getString(Session.getSession(this).getMainVerb());
-        final String title = getString(R.string.px_title_activity_payment_vault, mainVerb);
-        setTitle(title);
     }
 
     @Override
