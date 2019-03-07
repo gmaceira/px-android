@@ -17,7 +17,7 @@ public class AmountRowControllerTest {
     AmountRowController amountRowController;
 
     @Mock private AdvancedConfiguration advancedConfiguration;
-    @Mock private AdvancedConfiguration.AmountRow amountRow;
+    @Mock private AmountRowController.AmountRowVisibilityBehaviour amountRow;
 
     @Before
     public void setUp() {

@@ -2,7 +2,6 @@ package com.mercadopago.android.px.internal.features;
 
 import android.support.annotation.NonNull;
 
-import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
 import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.callbacks.FailureRecovery;
@@ -34,7 +33,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView> implements AmountView.OnClick,
-    PaymentVault.Actions, AdvancedConfiguration.AmountRow {
+    PaymentVault.Actions, AmountRowController.AmountRowVisibilityBehaviour {
 
     @NonNull
     private final PaymentSettingRepository paymentSettingRepository;

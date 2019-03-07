@@ -3,7 +3,6 @@ package com.mercadopago.android.px.internal.features.installments;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.callbacks.FailureRecovery;
 import com.mercadopago.android.px.internal.controllers.PaymentMethodGuessingController;
@@ -30,7 +29,7 @@ import com.mercadopago.android.px.tracking.internal.views.InstallmentsViewTrack;
 import java.util.List;
 
 public class InstallmentsPresenter extends BasePresenter<InstallmentsView> implements
-    AmountView.OnClick, InstallmentsAdapter.ItemListener, PayerCostListener, AdvancedConfiguration.AmountRow {
+    AmountView.OnClick, InstallmentsAdapter.ItemListener, PayerCostListener, AmountRowController.AmountRowVisibilityBehaviour {
 
     @NonNull private final SummaryAmountRepository summaryAmountRepository;
     @NonNull private final AmountConfigurationRepository amountConfigurationRepository;

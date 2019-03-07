@@ -6,10 +6,10 @@ import com.mercadopago.android.px.configuration.AdvancedConfiguration;
 
 public class AmountRowController {
 
-    private final AdvancedConfiguration.AmountRow amountRow;
+    private final AmountRowVisibilityBehaviour amountRow;
     private final AdvancedConfiguration advancedConfiguration;
 
-    public AmountRowController(@NonNull final AdvancedConfiguration.AmountRow amountRow, @NonNull final AdvancedConfiguration advancedConfiguration) {
+    public AmountRowController(@NonNull final AmountRowVisibilityBehaviour amountRow, @NonNull final AdvancedConfiguration advancedConfiguration) {
         this.amountRow = amountRow;
         this.advancedConfiguration = advancedConfiguration;
     }
@@ -20,5 +20,10 @@ public class AmountRowController {
         } else {
             amountRow.hideAmountRow();
         }
+    }
+
+    public interface AmountRowVisibilityBehaviour {
+        void showAmountRow();
+        void hideAmountRow();
     }
 }

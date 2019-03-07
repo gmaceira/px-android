@@ -232,8 +232,4 @@ public final class AdvancedConfiguration implements Serializable {
         }
     }
 
-    public interface AmountRow {
-        void showAmountRow();
-        void hideAmountRow();
-    }
 }
