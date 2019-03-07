@@ -24,7 +24,6 @@ import com.mercadopago.android.px.model.PaymentRecovery;
 import com.mercadopago.android.px.model.SavedESCCardToken;
 import com.mercadopago.android.px.model.Token;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
-import com.mercadopago.android.px.tracking.internal.MPTracker;
 import java.util.List;
 
 public class CardVaultPresenter extends MvpPresenter<CardVaultView, CardVaultProvider> implements PayerCostListener {
@@ -272,9 +271,6 @@ public class CardVaultPresenter extends MvpPresenter<CardVaultView, CardVaultPro
                     CardVaultPresenter.this.token = token;
                     CardVaultPresenter.this.token.setLastFourDigits(card.getLastFourDigits());
                     paymentSettingRepository.configure(CardVaultPresenter.this.token);
-                    MPTracker.getInstance().trackTokenId(CardVaultPresenter.this.token.getId(),
-                        paymentSettingRepository.getPublicKey(),
-                        paymentSettingRepository.getCheckoutPreference().getSite());
                     mercadoPagoESC.saveESC(token.getCardId(), token.getEsc());
                     if (isViewAttached()) {
                         getView().finishWithResult();

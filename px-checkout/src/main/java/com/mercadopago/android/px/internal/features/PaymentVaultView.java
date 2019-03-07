@@ -4,7 +4,6 @@ import android.support.annotation.NonNull;
 import com.mercadopago.android.px.core.PaymentMethodPlugin;
 import com.mercadopago.android.px.internal.base.MvpView;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
-import com.mercadopago.android.px.internal.features.hooks.Hook;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.CustomSearchItem;
 import com.mercadopago.android.px.model.DiscountConfigurationModel;
@@ -20,8 +19,6 @@ import java.util.List;
 public interface PaymentVaultView extends MvpView {
 
     void startSavedCardFlow(Card card);
-
-    void showPaymentMethodPluginActivity();
 
     void showSelectedItem(PaymentMethodSearchItem item);
 
@@ -58,8 +55,6 @@ public interface PaymentVaultView extends MvpView {
     void collectPayerInformation();
 
     void cleanPaymentMethodOptions();
-
-    void showHook(final Hook hook, final int code);
 
     void showDetailDialog(@NonNull final DiscountConfigurationModel discountModel);
 

@@ -12,9 +12,7 @@ import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
 import com.mercadopago.android.px.internal.util.ApiUtil;
 import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentBody;
-import com.mercadopago.android.px.model.Site;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
-import com.mercadopago.android.px.tracking.internal.MPTracker;
 
 public class MercadoPagoPaymentProcessor implements PaymentProcessor {
 
@@ -43,13 +41,11 @@ public class MercadoPagoPaymentProcessor implements PaymentProcessor {
     }
 
     @Override
-    public void startPayment(@NonNull final CheckoutData data,
-        @NonNull final Context context,
+    public void startPayment(@NonNull final CheckoutData data, @NonNull final Context context,
         @NonNull final OnPaymentListener paymentListener) {
 
         final Session session = Session.getSession(context);
         final PaymentSettingRepository paymentSettings = session.getConfigurationModule().getPaymentSettings();
-        final Site site = paymentSettings.getCheckoutPreference().getSite();
         final String publicKey = paymentSettings.getPublicKey();
         final MercadoPagoServicesAdapter mercadoPagoServiceAdapter = session.getMercadoPagoServiceAdapter();
 
@@ -65,7 +61,6 @@ public class MercadoPagoPaymentProcessor implements PaymentProcessor {
             new TaggedCallback<Payment>(ApiUtil.RequestOrigin.CREATE_PAYMENT) {
                 @Override
                 public void onSuccess(final Payment payment) {
-                    trackOffPayment(payment, publicKey, site);
                     paymentListener.onPaymentFinished(payment);
                 }
 
@@ -74,13 +69,5 @@ public class MercadoPagoPaymentProcessor implements PaymentProcessor {
                     paymentListener.onPaymentError(error);
                 }
             });
-    }
-
-    private void trackOffPayment(@NonNull final Payment payment,
-        final String publicKey,
-        final Site site) {
-        if (!payment.isCardPaymentType(payment.getPaymentTypeId())) {
-            MPTracker.getInstance().trackPayment(payment.getId(), publicKey, site);
-        }
     }
 }

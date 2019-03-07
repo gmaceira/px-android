@@ -21,7 +21,6 @@ import com.mercadopago.android.px.model.Setting;
 import com.mercadopago.android.px.model.Token;
 import com.mercadopago.android.px.model.exceptions.CardTokenException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
-import com.mercadopago.android.px.tracking.internal.MPTracker;
 import com.mercadopago.android.px.tracking.internal.events.FrictionEventTracker;
 import com.mercadopago.android.px.tracking.internal.views.CvvAskViewTracker;
 
@@ -265,15 +264,12 @@ public class SecurityCodePresenter extends BasePresenter<SecurityCodeActivityVie
     private void cloneToken() {
         getView().showLoadingView();
 
-        cardTokenRepository
-            .cloneToken(token.getId()).enqueue(new TaggedCallback<Token>(ApiUtil.RequestOrigin.CREATE_TOKEN) {
+        cardTokenRepository.cloneToken(token.getId())
+            .enqueue(new TaggedCallback<Token>(ApiUtil.RequestOrigin.CREATE_TOKEN) {
             @Override
             public void onSuccess(final Token token) {
                 SecurityCodePresenter.this.token = token;
                 paymentSettingRepository.configure(SecurityCodePresenter.this.token);
-                MPTracker.getInstance()
-                    .trackTokenId(SecurityCodePresenter.this.token.getId(), paymentSettingRepository.getPublicKey(),
-                        paymentSettingRepository.getCheckoutPreference().getSite());
                 putSecurityCode();
             }
 

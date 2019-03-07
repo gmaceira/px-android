@@ -42,9 +42,7 @@ public class SecurityCodePresenterTest {
     public static final String DUMMY_CVV = "123";
     public static final String DUMMY_CARD_ID = "12356";
     @Mock private PaymentSettingRepository paymentSettingRepository;
-    @Mock private CheckoutPreference checkoutPreference;
     @Mock private CardTokenRepository cardTokenRepository;
-    @Mock private Site site;
     @Mock private SecurityCodeActivityView view;
     @Mock private MercadoPagoESC mercadoPagoESC;
     @Mock private Card card;
@@ -57,8 +55,6 @@ public class SecurityCodePresenterTest {
 
     @Before
     public void setUp() {
-        when(paymentSettingRepository.getCheckoutPreference()).thenReturn(checkoutPreference);
-        when(checkoutPreference.getSite()).thenReturn(site);
         stubToken = Tokens.getVisaToken();
         stubPaymentMethod = PaymentMethods.getPaymentMethodOnVisa();
         presenter = getPresenter();

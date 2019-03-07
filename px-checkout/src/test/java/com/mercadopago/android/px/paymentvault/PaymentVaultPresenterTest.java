@@ -8,7 +8,6 @@ import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
 import com.mercadopago.android.px.internal.features.PaymentVaultPresenter;
 import com.mercadopago.android.px.internal.features.PaymentVaultView;
-import com.mercadopago.android.px.internal.features.hooks.Hook;
 import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
 import com.mercadopago.android.px.internal.repository.PaymentSettingRepository;
@@ -425,11 +424,6 @@ public class PaymentVaultPresenterTest {
         }
 
         @Override
-        public void showPaymentMethodPluginActivity() {
-            //Not yet tested
-        }
-
-        @Override
         public void showSelectedItem(final PaymentMethodSearchItem item) {
             searchItemsShown = item.getChildren();
         }
@@ -513,11 +507,6 @@ public class PaymentVaultPresenterTest {
 
         @Override
         public void cleanPaymentMethodOptions() {
-            //Not yet tested
-        }
-
-        @Override
-        public void showHook(final Hook hook, final int code) {
             //Not yet tested
         }
 

@@ -1,23 +1,18 @@
 package com.mercadopago.android.px.internal.features.paymentresult.components;
 
 import android.support.annotation.NonNull;
-import com.mercadopago.android.px.internal.features.paymentresult.PaymentResultProvider;
 import com.mercadopago.android.px.internal.features.paymentresult.props.BodyErrorProps;
 import com.mercadopago.android.px.internal.features.paymentresult.props.InstructionsProps;
 import com.mercadopago.android.px.internal.features.paymentresult.props.PaymentResultBodyProps;
 import com.mercadopago.android.px.internal.view.ActionDispatcher;
 import com.mercadopago.android.px.internal.view.CompactComponent;
 import com.mercadopago.android.px.internal.view.Component;
-import com.mercadopago.android.px.internal.view.PaymentMethodComponent;
+import com.mercadopago.android.px.internal.view.PaymentMethodBodyComponent;
 import com.mercadopago.android.px.internal.view.Receipt;
 import com.mercadopago.android.px.model.ExternalFragment;
 import com.mercadopago.android.px.model.Payment;
-import com.mercadopago.android.px.model.PaymentData;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Body extends Component<PaymentResultBodyProps, Void> {
-
 
     public Body(@NonNull final PaymentResultBodyProps props, @NonNull final ActionDispatcher dispatcher) {
         super(props, dispatcher);
@@ -109,16 +104,8 @@ public class Body extends Component<PaymentResultBodyProps, Void> {
         return props.paymentResultScreenConfiguration.getBottomFragment();
     }
 
-    /* default */
-    @NonNull
-    List<CompactComponent> getPaymentMethodComponents() {
-        final List<CompactComponent> components = new ArrayList<>();
-        for (final PaymentData paymentData : props.paymentResult.getPaymentDataList()) {
-            components.add(
-                new PaymentMethodComponent(PaymentMethodComponent.PaymentMethodProps.with(paymentData, props.currencyId,
-                    props.paymentResult.getPaymentStatus())));
-        }
-
-        return components;
+    /* default */ CompactComponent getPaymentMethodBody() {
+        return new PaymentMethodBodyComponent(PaymentMethodBodyComponent.PaymentMethodBodyProp
+            .with(props.paymentResult.getPaymentDataList(), props.currencyId, props.paymentResult.getPaymentStatus()));
     }
 }

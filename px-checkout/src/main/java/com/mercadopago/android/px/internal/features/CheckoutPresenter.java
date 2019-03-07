@@ -179,10 +179,6 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
         }
     }
 
-    private void showReviewAndConfirm() {
-        getView().showReviewAndConfirm(isUniquePaymentMethod());
-    }
-
     public boolean isESCEnabled() {
         return paymentSettingRepository.getAdvancedConfiguration().isEscEnabled();
     }
@@ -235,12 +231,16 @@ public class CheckoutPresenter extends MvpPresenter<CheckoutView, CheckoutProvid
         return identificationInvalid;
     }
 
-    public void onPaymentMethodSelectionResponse() {
-        onPaymentMethodSelected();
+    /* default */ void onPaymentMethodSelected() {
+        if (shouldSkipUserConfirmation()) {
+            getView().showPaymentProcessorWithAnimation();
+        } else {
+            getView().showReviewAndConfirm(isUniquePaymentMethod());
+        }
     }
 
-    private void onPaymentMethodSelected() {
-        showReviewAndConfirm();
+    /* default */ boolean shouldSkipUserConfirmation(){
+        return paymentSettingRepository.getPaymentConfiguration().getPaymentProcessor().shouldSkipUserConfirmation();
     }
 
     private void resolvePaymentFailure(final MercadoPagoError mercadoPagoError) {

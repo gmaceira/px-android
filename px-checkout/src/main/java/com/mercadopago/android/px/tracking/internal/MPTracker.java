@@ -2,34 +2,19 @@ package com.mercadopago.android.px.tracking.internal;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.mercadopago.android.px.BuildConfig;
 import com.mercadopago.android.px.model.Event;
-import com.mercadopago.android.px.model.PaymentIntent;
 import com.mercadopago.android.px.model.ScreenViewEvent;
-import com.mercadopago.android.px.model.Site;
-import com.mercadopago.android.px.model.TrackingIntent;
 import com.mercadopago.android.px.tracking.PXEventListener;
 import com.mercadopago.android.px.tracking.PXTrackingListener;
 import com.mercadopago.android.px.tracking.internal.events.FrictionEventTracker;
-import com.mercadopago.android.px.tracking.internal.services.MPTrackingService;
-import com.mercadopago.android.px.tracking.internal.services.MPTrackingServiceImpl;
 import java.util.HashMap;
 import java.util.Map;
-
-import static android.text.TextUtils.isEmpty;
 
 public final class MPTracker {
 
     private static final String ATTR_EXTRA_INFO = "extra_info";
     private static final String ATTR_FLOW_DETAIL = "flow_detail";
     private static final String ATTR_FLOW_NAME = "flow";
-
-    @Deprecated
-    private static final String SDK_PLATFORM = "Android";
-    @Deprecated
-    private static final String SDK_TYPE = "native";
-    @Deprecated
-    private static final String DEFAULT_FLAVOUR = "3";
 
     private static MPTracker mMPTrackerInstance;
 
@@ -47,13 +32,8 @@ public final class MPTracker {
      */
     @Nullable private String flowName;
 
-    /**
-     * Service to track Off payments + card tokens
-     */
-    @NonNull private final MPTrackingService mMPTrackingService;
-
     private MPTracker() {
-        mMPTrackingService = new MPTrackingServiceImpl();
+        // do nothing
     }
 
     public static synchronized MPTracker getInstance() {
@@ -100,32 +80,6 @@ public final class MPTracker {
      */
     public void setFlowName(@Nullable final String flowName) {
         this.flowName = flowName;
-    }
-
-    /**
-     * @param paymentId The payment id of a payment method off. Cannot be {@code null}.
-     * @param publicKey payment public key
-     * @param site site
-     */
-    public void trackPayment(final Long paymentId, final String publicKey,
-        final Site site) {
-        final PaymentIntent paymentIntent =
-            new PaymentIntent(publicKey, paymentId.toString(), DEFAULT_FLAVOUR, SDK_PLATFORM, SDK_TYPE,
-                BuildConfig.VERSION_NAME, site.getId());
-        mMPTrackingService.trackPaymentId(paymentIntent);
-    }
-
-    /**
-     * @param tokenId The card token id of a payment. Cannot be {@code null}.
-     */
-    public void trackTokenId(@NonNull final String tokenId, @NonNull final String publicKey, @NonNull final Site site) {
-        if (!isEmpty(tokenId)) {
-            final TrackingIntent trackingIntent =
-                new TrackingIntent(publicKey, tokenId, DEFAULT_FLAVOUR, SDK_PLATFORM, SDK_TYPE,
-                    BuildConfig.VERSION_NAME,
-                    site.getId());
-            mMPTrackingService.trackToken(trackingIntent);
-        }
     }
 
     /**

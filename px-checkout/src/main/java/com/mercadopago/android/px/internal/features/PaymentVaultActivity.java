@@ -20,10 +20,7 @@ import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
 import com.mercadopago.android.px.internal.controllers.CheckoutTimer;
 import com.mercadopago.android.px.internal.di.Session;
-import com.mercadopago.android.px.internal.features.hooks.Hook;
-import com.mercadopago.android.px.internal.features.hooks.HookActivity;
 import com.mercadopago.android.px.internal.features.payer_information.PayerInformationActivity;
-import com.mercadopago.android.px.internal.features.plugins.PaymentMethodPluginActivity;
 import com.mercadopago.android.px.internal.features.uicontrollers.FontCache;
 import com.mercadopago.android.px.internal.features.uicontrollers.paymentmethodsearch.PaymentMethodInfoController;
 import com.mercadopago.android.px.internal.features.uicontrollers.paymentmethodsearch.PaymentMethodSearchCustomOption;
@@ -62,8 +59,7 @@ import java.util.List;
 import static com.mercadopago.android.px.core.MercadoPagoCheckout.EXTRA_ERROR;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_SILENT_ERROR;
 
-public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
-    implements PaymentVaultView {
+public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter> implements PaymentVaultView {
 
     public static final int COLUMN_SPACING_DP_VALUE = 20;
     public static final int COLUMNS = 2;
@@ -288,13 +284,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     }
 
     @Override
-    public void showPaymentMethodPluginActivity() {
-        startActivityForResult(PaymentMethodPluginActivity.getIntent(this),
-            Constants.Activities.PLUGIN_PAYMENT_METHOD_REQUEST_CODE);
-        overrideTransitionIn();
-    }
-
-    @Override
     public void showSelectedItem(final PaymentMethodSearchItem item) {
         startWithPaymentMethodSelected(this, item);
     }
@@ -310,16 +299,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
             resolvePaymentVaultRequest(resultCode, data);
         } else if (requestCode == PAYER_INFORMATION_REQUEST_CODE) {
             resolvePayerInformationRequest(resultCode);
-        } else if (requestCode == Constants.Activities.PLUGIN_PAYMENT_METHOD_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                presenter.onPluginAfterHookOne();
-            } else {
-                overrideTransitionOut();
-            }
-        } else if (requestCode == Constants.Activities.HOOK_1) {
-            resolveHook1Request(resultCode);
-        } else if (requestCode == Constants.Activities.HOOK_1_PLUGIN) {
-            presenter.onPluginHookOneResult();
         } else if (requestCode == ErrorUtil.ERROR_REQUEST_CODE) {
             resolveErrorRequest(resultCode, data);
             overrideTransitionOut();
@@ -327,7 +306,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     }
 
     private void resolveErrorRequest(final int resultCode, final Intent data) {
-        presenter.onHookReset();
         if (resultCode == RESULT_OK) {
             recoverFromFailure();
         } else if (presenter.isItemSelected()) {
@@ -343,8 +321,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     }
 
     private void resolvePaymentVaultRequest(final int resultCode, final Intent data) {
-        presenter.onHookReset();
-
         if (resultCode == RESULT_OK) {
             setResult(RESULT_OK, data);
             finish();
@@ -368,7 +344,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     }
 
     protected void resolveCardRequest(final int resultCode, final Intent data) {
-        presenter.onHookReset();
         if (resultCode == RESULT_OK) {
             showProgress();
             mToken = JsonUtil.getInstance().fromJson(data.getStringExtra("token"), Token.class);
@@ -391,7 +366,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     }
 
     private void resolvePayerInformationRequest(final int resultCode) {
-        presenter.onHookReset();
         if (resultCode == RESULT_OK) {
             presenter.onPayerInformationReceived();
         } else {
@@ -576,23 +550,6 @@ public class PaymentVaultActivity extends PXActivity<PaymentVaultPresenter>
     public void collectPayerInformation() {
         overrideTransitionIn();
         PayerInformationActivity.start(this, PAYER_INFORMATION_REQUEST_CODE);
-    }
-
-    //### HOOKS ######################
-
-    public void resolveHook1Request(final int resultCode) {
-        if (resultCode == RESULT_OK) {
-            presenter.onHookContinue();
-        } else {
-            overrideTransitionOut();
-            presenter.onHookReset();
-        }
-    }
-
-    @Override
-    public void showHook(final Hook hook, final int code) {
-        startActivityForResult(HookActivity.getIntent(this, hook), code);
-        overrideTransitionIn();
     }
 
     @Override

@@ -7,11 +7,7 @@ import com.mercadopago.android.px.core.PaymentMethodPlugin;
 import com.mercadopago.android.px.internal.base.BasePresenter;
 import com.mercadopago.android.px.internal.callbacks.FailureRecovery;
 import com.mercadopago.android.px.internal.callbacks.OnSelectedCallback;
-import com.mercadopago.android.px.internal.datasource.CheckoutStore;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
-import com.mercadopago.android.px.internal.features.hooks.Hook;
-import com.mercadopago.android.px.internal.features.hooks.HookHelper;
-import com.mercadopago.android.px.internal.features.uicontrollers.AmountRowController;
 import com.mercadopago.android.px.internal.navigation.DefaultPayerInformationDriver;
 import com.mercadopago.android.px.internal.repository.DiscountRepository;
 import com.mercadopago.android.px.internal.repository.GroupsRepository;
@@ -35,10 +31,9 @@ import com.mercadopago.android.px.tracking.internal.views.SelectMethodChildView;
 import com.mercadopago.android.px.tracking.internal.views.SelectMethodView;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
-public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
-    implements AmountView.OnClick, PaymentVault.Actions, AdvancedConfiguration.AmountRow {
+public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView> implements AmountView.OnClick,
+    PaymentVault.Actions {
 
     @NonNull
     private final PaymentSettingRepository paymentSettingRepository;
@@ -54,9 +49,7 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     @NonNull private final MercadoPagoESC mercadoPagoESC;
 
     private PaymentMethodSearchItem selectedSearchItem;
-    private PaymentMethodSearchItem resumeItem;
-    private boolean skipHook = false;
-    private boolean hook1Displayed = false;
+
     /* default */ PaymentMethodSearch paymentMethodSearch;
     private FailureRecovery failureRecovery;
     private AmountRowController amountRowController;
@@ -294,17 +287,13 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     private void startNextStepForPaymentType(final PaymentMethodSearchItem item, final boolean automaticSelection) {
 
         final String itemId = item.getId();
-        if (skipHook || (!hook1Displayed && !showHook1(itemId))) {
-            skipHook = false;
-            if (PaymentTypes.isCardPaymentType(itemId)) {
+
+        if (PaymentTypes.isCardPaymentType(itemId)) {
                 userSelectionRepository.select(itemId);
                 getView().startCardFlow(automaticSelection);
-            } else {
-                getView().startPaymentMethodsSelection(
-                    paymentSettingRepository.getCheckoutPreference().getPaymentPreference());
-            }
         } else {
-            resumeItem = item;
+            getView().startPaymentMethodsSelection(
+                paymentSettingRepository.getCheckoutPreference().getPaymentPreference());
         }
     }
 
@@ -313,15 +302,10 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
         final PaymentMethod selectedPaymentMethod = paymentMethodSearch.getPaymentMethodBySearchItem(item);
         userSelectionRepository.select(selectedPaymentMethod, null);
 
-        if (skipHook || (!hook1Displayed && !showHook1(selectedPaymentMethod.getPaymentTypeId()))) {
-            skipHook = false;
-            if (selectedPaymentMethod == null) {
-                getView().showMismatchingPaymentMethodError();
-            } else {
-                handleCollectPayerInformation(selectedPaymentMethod);
-            }
+        if (selectedPaymentMethod == null) {
+            getView().showMismatchingPaymentMethodError();
         } else {
-            resumeItem = item;
+            handleCollectPayerInformation(selectedPaymentMethod);
         }
     }
 
@@ -375,38 +359,6 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
         selectedSearchItem = mSelectedSearchItem;
     }
 
-    //###Hooks HACKS #######################################################
-
-    public void onHookContinue() {
-        if (resumeItem != null) {
-            skipHook = true;
-            selectItem(resumeItem, true);
-        }
-    }
-
-    public void onHookReset() {
-        hook1Displayed = false;
-        resumeItem = null;
-    }
-
-    private boolean showHook1(final String typeId) {
-        return showHook1(typeId, Constants.Activities.HOOK_1);
-    }
-
-    private boolean showHook1(final String typeId, final int requestCode) {
-
-        final Map<String, Object> data = CheckoutStore.getInstance().getData();
-        final Hook hook = HookHelper.activateBeforePaymentMethodConfig(
-            CheckoutStore.getInstance().getCheckoutHooks(), typeId, data);
-
-        if (resumeItem == null && hook != null && getView() != null) {
-            hook1Displayed = true;
-            getView().showHook(hook, requestCode);
-            return true;
-        }
-        return false;
-    }
-
     public void trackScreen() {
         // Do not remove check paymentMethodSearch, sometimes in recovery status is null.
         if(paymentMethodSearch != null) {
@@ -449,26 +401,7 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView>
     public void selectPluginPaymentMethod(final PaymentMethodPlugin plugin) {
         userSelectionRepository
             .select(pluginRepository.getPluginAsPaymentMethod(plugin.getId(), PaymentTypes.PLUGIN), null);
-        if (!showHook1(PaymentTypes.PLUGIN, Constants.Activities.HOOK_1_PLUGIN)) {
-
-            if (plugin.isEnabled() && plugin.shouldShowFragmentOnSelection()) {
-                getView().showPaymentMethodPluginActivity();
-            } else {
-                onPluginAfterHookOne();
-            }
-        }
-    }
-
-    public void onPluginHookOneResult() {
-        // we assume that the last selected payment method was this.
-        final String paymentMethodId = userSelectionRepository
-            .getPaymentMethod()
-            .getId();
-
-        final PaymentMethodPlugin plugin = pluginRepository
-            .getPlugin(paymentMethodId);
-
-        selectPluginPaymentMethod(plugin);
+        onPluginAfterHookOne();
     }
 
     public void onPluginAfterHookOne() {

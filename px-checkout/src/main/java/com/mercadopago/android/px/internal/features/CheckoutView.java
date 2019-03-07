@@ -2,7 +2,6 @@ package com.mercadopago.android.px.internal.features;
 
 import android.support.annotation.NonNull;
 import com.mercadopago.android.px.internal.base.MvpView;
-import com.mercadopago.android.px.internal.features.hooks.Hook;
 import com.mercadopago.android.px.internal.viewmodel.BusinessPaymentModel;
 import com.mercadopago.android.px.internal.viewmodel.PostPaymentAction;
 import com.mercadopago.android.px.model.Card;
@@ -41,9 +40,9 @@ public interface CheckoutView extends MvpView {
 
     void trackScreen();
 
-    void showHook(final Hook hook, final int requestCode);
-
     void showPaymentProcessor();
+
+    void showPaymentProcessorWithAnimation();
 
     boolean isActive();
 
@@ -65,4 +64,5 @@ public interface CheckoutView extends MvpView {
         @NonNull final PostPaymentAction postPaymentAction);
 
     void startPayment();
+
 }

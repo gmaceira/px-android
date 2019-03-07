@@ -13,8 +13,6 @@ import com.mercadopago.android.px.internal.di.ConfigurationModule;
 import com.mercadopago.android.px.internal.di.Session;
 import com.mercadopago.android.px.internal.features.business_result.BusinessPaymentResultActivity;
 import com.mercadopago.android.px.internal.features.express.ExpressPaymentFragment;
-import com.mercadopago.android.px.internal.features.hooks.Hook;
-import com.mercadopago.android.px.internal.features.hooks.HookActivity;
 import com.mercadopago.android.px.internal.features.paymentresult.PaymentResultActivity;
 import com.mercadopago.android.px.internal.features.plugins.PaymentProcessorActivity;
 import com.mercadopago.android.px.internal.features.providers.CheckoutProvider;
@@ -41,7 +39,6 @@ import com.mercadopago.android.px.tracking.internal.events.FrictionEventTracker;
 import static com.mercadopago.android.px.core.MercadoPagoCheckout.EXTRA_ERROR;
 import static com.mercadopago.android.px.core.MercadoPagoCheckout.EXTRA_PAYMENT_RESULT;
 import static com.mercadopago.android.px.core.MercadoPagoCheckout.PAYMENT_RESULT_CODE;
-import static com.mercadopago.android.px.internal.features.Constants.RESULT_SILENT_ERROR;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_ACTION;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_CANCELED_RYC;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_CANCEL_PAYMENT;
@@ -50,6 +47,7 @@ import static com.mercadopago.android.px.internal.features.Constants.RESULT_CUST
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_ERROR;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_FAIL_ESC;
 import static com.mercadopago.android.px.internal.features.Constants.RESULT_PAYMENT;
+import static com.mercadopago.android.px.internal.features.Constants.RESULT_SILENT_ERROR;
 import static com.mercadopago.android.px.internal.features.paymentresult.PaymentResultActivity.EXTRA_RESULT_CODE;
 import static com.mercadopago.android.px.model.ExitAction.EXTRA_CLIENT_RES_CODE;
 
@@ -137,7 +135,8 @@ public class CheckoutActivity extends PXActivity implements CheckoutView, Expres
                 }
             } catch (final Exception e) {
                 FrictionEventTracker.with(FinishCheckoutEventTracker.PATH,
-                    FrictionEventTracker.Id.SILENT, FrictionEventTracker.Style.NON_SCREEN, ErrorUtil.getStacktraceMessage(e))
+                    FrictionEventTracker.Id.SILENT, FrictionEventTracker.Style.NON_SCREEN,
+                    ErrorUtil.getStacktraceMessage(e))
                     .track();
                 exitCheckout(RESULT_CANCELED);
             }
@@ -383,7 +382,7 @@ public class CheckoutActivity extends PXActivity implements CheckoutView, Expres
 
     private void resolvePaymentVaultRequest(final int resultCode, final Intent data) {
         if (resultCode == RESULT_OK) {
-            presenter.onPaymentMethodSelectionResponse();
+            presenter.onPaymentMethodSelected();
         } else if (resultCode == RESULT_SILENT_ERROR) {
             cancelCheckout();
         } else if (isErrorResult(data)) {
@@ -470,14 +469,15 @@ public class CheckoutActivity extends PXActivity implements CheckoutView, Expres
     }
 
     @Override
-    public void showHook(@NonNull final Hook hook, final int requestCode) {
-        startActivityForResult(HookActivity.getIntent(this, hook), requestCode);
-        overrideTransitionIn();
+    public void showPaymentProcessor() {
+        overrideTransitionWithNoAnimation();
+        startActivityForResult(PaymentProcessorActivity.getIntent(this), REQ_PAYMENT_PROCESSOR);
     }
 
     @Override
-    public void showPaymentProcessor() {
-        overrideTransitionWithNoAnimation();
+    public void showPaymentProcessorWithAnimation() {
+        overrideTransitionOut();
+        overrideTransitionIn();
         startActivityForResult(PaymentProcessorActivity.getIntent(this), REQ_PAYMENT_PROCESSOR);
     }
 

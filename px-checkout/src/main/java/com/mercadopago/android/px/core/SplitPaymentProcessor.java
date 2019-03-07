@@ -81,4 +81,13 @@ public interface SplitPaymentProcessor extends Parcelable {
 
         void onPaymentError(@NonNull final MercadoPagoError error);
     }
+
+    /**
+     * If the boolean is true payment processor's fragment will be showed instead review and confirm screen
+     *
+     * @return if fragment should be showed
+     */
+    default boolean shouldSkipUserConfirmation() {
+        return false;
+    }
 }

@@ -54,13 +54,6 @@ public final class Constants {
         public static final int PAYMENT_TYPES_REQUEST_CODE = 17;
         public static final int SECURITY_CODE_REQUEST_CODE = 18;
 
-        public static final int HOOK_1 = 50;
-        public static final int HOOK_1_PLUGIN = 52;
-        public static final int HOOK_2 = 60;
-        public static final int HOOK_3 = 70;
-
-        public static final int PLUGIN_PAYMENT_METHOD_REQUEST_CODE = 100;
-
         private Activities() {
         }
 

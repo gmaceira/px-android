@@ -17,7 +17,7 @@ import com.mercadopago.android.px.internal.datasource.DiscountServiceImp;
 import com.mercadopago.android.px.internal.datasource.EscManagerImp;
 import com.mercadopago.android.px.internal.datasource.GroupsService;
 import com.mercadopago.android.px.internal.datasource.InstructionsService;
-import com.mercadopago.android.px.internal.datasource.IssuersService;
+import com.mercadopago.android.px.internal.datasource.IssuersServiceImp;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESC;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoESCImpl;
 import com.mercadopago.android.px.internal.datasource.MercadoPagoServicesAdapter;
@@ -330,7 +330,7 @@ public final class Session extends ApplicationModule
                 RetrofitUtil.getRetrofitClient(getContext()).create(
                     com.mercadopago.android.px.internal.services.IssuersService.class);
 
-            issuersRepository = new IssuersService(issuersService, getConfigurationModule().getPaymentSettings());
+            issuersRepository = new IssuersServiceImp(issuersService, getConfigurationModule().getPaymentSettings());
         }
         return issuersRepository;
     }

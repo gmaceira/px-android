@@ -19,7 +19,6 @@ import com.mercadopago.android.px.internal.util.ApiUtil;
 import com.mercadopago.android.px.internal.util.JsonUtil;
 import com.mercadopago.android.px.internal.util.TextUtil;
 import com.mercadopago.android.px.model.BankDeal;
-import com.mercadopago.android.px.model.CardToken;
 import com.mercadopago.android.px.model.IdentificationType;
 import com.mercadopago.android.px.model.Issuer;
 import com.mercadopago.android.px.model.PaymentMethod;
@@ -31,7 +30,6 @@ import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.preferences.PaymentPreference;
 import com.mercadopago.android.px.services.Callback;
-import com.mercadopago.android.px.tracking.internal.MPTracker;
 import java.lang.reflect.Type;
 import java.util.List;
 
@@ -265,8 +263,6 @@ public class GuessingCardPaymentPresenter extends GuessingCardPresenter {
     public void resolveTokenRequest(final Token token) {
         this.token = token;
         paymentSettingRepository.configure(token);
-        MPTracker.getInstance().trackTokenId(token.getId(), paymentSettingRepository.getPublicKey(),
-            paymentSettingRepository.getCheckoutPreference().getSite());
         getIssuers();
     }
 

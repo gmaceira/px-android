@@ -18,7 +18,7 @@ import com.mercadopago.android.px.internal.view.Button;
 import com.mercadopago.android.px.internal.view.CompactComponent;
 import com.mercadopago.android.px.internal.view.Footer;
 import com.mercadopago.android.px.internal.view.HelpComponent;
-import com.mercadopago.android.px.internal.view.PaymentMethodComponent;
+import com.mercadopago.android.px.internal.view.PaymentMethodBodyComponent;
 import com.mercadopago.android.px.internal.view.Receipt;
 import com.mercadopago.android.px.internal.view.RendererFactory;
 import com.mercadopago.android.px.internal.viewmodel.BusinessPaymentModel;
@@ -66,12 +66,12 @@ public class BusinessPaymentContainer
         }
 
         if (props.payment.shouldShowPaymentMethod()) {
-            final LinearLayout pmContainer = ViewUtils.createLinearContainer(context);
-            for (final PaymentMethodComponent.PaymentMethodProps prop : props.getPaymentMethodProps()) {
-                renderPaymentMethod(prop, pmContainer);
-            }
-            mainContentContainer.addView(pmContainer);
-            ViewUtils.stretchHeight(pmContainer);
+            final PaymentMethodBodyComponent paymentMethodBodyComponent =
+                new PaymentMethodBodyComponent(PaymentMethodBodyComponent.PaymentMethodBodyProp
+                    .with(props.getPaymentMethodProps()));
+            final View pmBody = paymentMethodBodyComponent.render(mainContentContainer);
+            mainContentContainer.addView(pmBody);
+            ViewUtils.stretchHeight(pmBody);
         }
 
         if (props.payment.hasBottomFragment()) {
@@ -90,13 +90,6 @@ public class BusinessPaymentContainer
         renderFooter(mainContentContainer);
 
         return scrollView;
-    }
-
-    private void renderPaymentMethod(@NonNull final PaymentMethodComponent.PaymentMethodProps props,
-        @NonNull final LinearLayout mainContentContainer) {
-        final PaymentMethodComponent paymentMethodComponent = new PaymentMethodComponent(props);
-        final View pmView = paymentMethodComponent.render(mainContentContainer);
-        mainContentContainer.addView(pmView);
     }
 
     private ViewTreeObserver.OnGlobalLayoutListener bodyCorrection(final LinearLayout mainContentContainer,

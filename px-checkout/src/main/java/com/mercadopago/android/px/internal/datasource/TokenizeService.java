@@ -12,7 +12,6 @@ import com.mercadopago.android.px.model.SavedESCCardToken;
 import com.mercadopago.android.px.model.Token;
 import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.services.Callback;
-import com.mercadopago.android.px.tracking.internal.MPTracker;
 
 public class TokenizeService implements TokenRepository {
 
@@ -54,8 +53,6 @@ public class TokenizeService implements TokenRepository {
                 token.setLastFourDigits(card.getLastFourDigits());
                 mercadoPagoESC.saveESC(card.getId(), token.getEsc());
                 paymentSettingRepository.configure(token);
-                MPTracker.getInstance().trackTokenId(token.getId(), paymentSettingRepository.getPublicKey(),
-                    paymentSettingRepository.getCheckoutPreference().getSite());
                 callback.success(token);
             }
 

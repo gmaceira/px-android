@@ -80,7 +80,6 @@ public class GuessingCardPaymentPresenterTest {
 
     @Mock private PaymentMethodSearch paymentMethodSearch;
     @Mock private AdvancedConfiguration advancedConfiguration;
-    @Mock private Site site;
     @Mock private List<IdentificationType> identificationTypes;
 
     @Mock private GuessingCardActivityView view;
@@ -89,7 +88,6 @@ public class GuessingCardPaymentPresenterTest {
     public void setUp() {
         // No charge initialization.
         when(paymentSettingRepository.getCheckoutPreference()).thenReturn(checkoutPreference);
-        when(checkoutPreference.getSite()).thenReturn(site);
         when(checkoutPreference.getPaymentPreference()).thenReturn(paymentPreference);
         final List<PaymentMethod> pm = PaymentMethods.getPaymentMethodListMLA();
         when(groupsRepository.getGroups()).thenReturn(new StubSuccessMpCall<>(paymentMethodSearch));
