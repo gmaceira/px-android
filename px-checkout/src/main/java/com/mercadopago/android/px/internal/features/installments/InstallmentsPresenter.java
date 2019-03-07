@@ -117,7 +117,7 @@ public class InstallmentsPresenter extends BasePresenter<InstallmentsView> imple
 
     private void initializeAmountRow() {
         amountRowController = new AmountRowController(this, configuration.getAdvancedConfiguration());
-        amountRowController.initialize();
+        amountRowController.configure();
     }
 
     @Override

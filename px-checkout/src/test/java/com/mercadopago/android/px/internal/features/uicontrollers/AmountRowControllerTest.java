@@ -27,14 +27,14 @@ public class AmountRowControllerTest {
     @Test
     public void ifAmountRowIsEnabledAmountRowShouldBeShowed(){
         when(advancedConfiguration.isAmountRowEnabled()).thenReturn(true);
-        amountRowController.initialize();
+        amountRowController.configure();
         verify(amountRow).showAmountRow();
     }
 
     @Test
     public void ifAmountRowIsNotEnabledAmountRowShouldBeHidden(){
         when(advancedConfiguration.isAmountRowEnabled()).thenReturn(false);
-        amountRowController.initialize();
+        amountRowController.configure();
         verify(amountRow).hideAmountRow();
     }
 

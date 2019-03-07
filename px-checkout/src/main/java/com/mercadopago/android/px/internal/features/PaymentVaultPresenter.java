@@ -117,7 +117,7 @@ public class PaymentVaultPresenter extends BasePresenter<PaymentVaultView> imple
     public void initializeAmountRow() {
         if (isViewAttached()) {
             amountRowController = new AmountRowController(this, paymentSettingRepository.getAdvancedConfiguration());
-            amountRowController.initialize();
+            amountRowController.configure();
         }
     }
 

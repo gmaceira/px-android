@@ -14,7 +14,7 @@ public class AmountRowController {
         this.advancedConfiguration = advancedConfiguration;
     }
 
-    public void initialize(){
+    public void configure(){
         if(advancedConfiguration.isAmountRowEnabled()){
             amountRow.showAmountRow();
         } else {
