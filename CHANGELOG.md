@@ -1,3 +1,6 @@
+## VERSION 4.65.0
+* FEATURE - Added Loyalty Broadcaster in Payment Congrats
+
 ## VERSION 4.64.0
 _26_11_2020_
 * FEATURE - Added support to cards without cvv.
