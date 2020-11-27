@@ -20,6 +20,8 @@ import com.mercadolibre.android.mlbusinesscomponents.components.crossselling.MLB
 import com.mercadolibre.android.mlbusinesscomponents.components.discount.MLBusinessDiscountBoxView;
 import com.mercadolibre.android.mlbusinesscomponents.components.loyalty.MLBusinessLoyaltyRingData;
 import com.mercadolibre.android.mlbusinesscomponents.components.loyalty.MLBusinessLoyaltyRingView;
+import com.mercadolibre.android.mlbusinesscomponents.components.loyalty.broadcaster.LoyaltyBroadcastData;
+import com.mercadolibre.android.mlbusinesscomponents.components.loyalty.broadcaster.LoyaltyBroadcaster;
 import com.mercadolibre.android.mlbusinesscomponents.components.touchpoint.callback.OnClickCallback;
 import com.mercadolibre.android.mlbusinesscomponents.components.touchpoint.view.MLBusinessTouchpointView;
 import com.mercadolibre.android.ui.widgets.MeliButton;
@@ -100,10 +102,21 @@ public final class PaymentResultBody extends LinearLayout {
 
         if (loyaltyData != null) {
             loyaltyView.init(loyaltyData, onClickLoyaltyRing);
+            sendLoyaltyInfoToBroadcaster(loyaltyData);
         } else {
             loyaltyView.setVisibility(GONE);
             dividingView.setVisibility(GONE);
         }
+    }
+
+    private void sendLoyaltyInfoToBroadcaster(MLBusinessLoyaltyRingData loyaltyData) {
+        LoyaltyBroadcastData loyaltyBroadcastData = new LoyaltyBroadcastData();
+
+        loyaltyBroadcastData.setLevel(loyaltyData.getRingNumber());
+        loyaltyBroadcastData.setPercentage(loyaltyData.getRingPercentage());
+        loyaltyBroadcastData.setPrimaryColor(loyaltyData.getRingHexaColor());
+
+        LoyaltyBroadcaster.getInstance().updateInfo(getContext(), loyaltyBroadcastData);
     }
 
     private void renderShowAllDiscounts(@Nullable final PaymentCongratsResponse.Action showAllDiscountAction,
