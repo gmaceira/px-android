@@ -10,7 +10,7 @@ import java.util.*
 open class FrictionEventTracker protected constructor(private val path: String, private val fId: Id,
     private val style: Style) : TrackWrapper() {
 
-    private val extraInfo: MutableMap<String, Any>
+    protected val extraInfo: MutableMap<String, Any>
 
     enum class Id(val value: String) {
         GENERIC("px_generic_error"),

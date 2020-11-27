@@ -53,7 +53,11 @@ public final class OneTapSamples {
         "APP_USR-1031243024729642-070215-4ce0d8f4d71d238fa10c33ac79428e85-332848643";
     private static final String ONE_TAP_PAYER_10_ACCESS_TOKEN =
         "TEST-7169122440478352-062213-d23fa9fb38e4b3e94feee29864f0fae2-443064294";
+    private static final String ONE_TAP_PAYER_WEB_PAY_ACCESS_TOKEN =
+        "TEST-1528604137606087-111019-cf995bea4ffa8aace44c402c4d13536c-635351073";
     private static final String ONE_TAP_MERCHANT_PUBLIC_KEY = "APP_USR-648a260d-6fd9-4ad7-9284-90f22262c18d";
+    private static final String ONE_TAP_MERCHANT_WEB_PAY_PUBLIC_KEY = "TEST-e0896def-b510-4ca7-a4bb-090cbbe4fbba";
+    private static final String ONE_TAP_WEB_PAY_PREFERENCE_ID = "589235406-850b749b-4dc3-4510-92ab-37e6e0b51a23";
     private static final String ONE_TAP_DIRECT_DISCOUNT_MERCHANT_PUBLIC_KEY =
         "APP_USR-ef65214d-59a2-4c82-be23-6cf6eb945d4c";
     private static final String PAYER_EMAIL_DUMMY = "prueba@test_user_84540917@testuser.com";
@@ -121,6 +125,8 @@ public final class OneTapSamples {
             startOneTapWithConsumerCreditsAndRejectedPayment()));
         options.add(new Pair<>(i++ + " - One tap - Should suggest one tap with offline methods",
             startOneTapWithOfflineMethods()));
+        options.add(new Pair<>(i++ + " - One tap - Should suggest one tap with debit card in chile",
+            startOneTapWithDebitCardInChile()));
     }
 
     // It should suggest one tap with credit card, call for authorize
@@ -578,5 +584,18 @@ public final class OneTapSamples {
             .setAdvancedConfiguration(
                 new AdvancedConfiguration.Builder().setProductId(PRODUCT_ID).setExpressPaymentEnable(true)
                     .build());
+    }
+
+    private static MercadoPagoCheckout.Builder startOneTapWithDebitCardInChile() {
+        final SplitPaymentProcessor samplePaymentProcessor = new SamplePaymentProcessor(
+            PaymentUtils.getGenericPaymentApproved());
+
+        return new MercadoPagoCheckout.Builder(ONE_TAP_MERCHANT_WEB_PAY_PUBLIC_KEY, ONE_TAP_WEB_PAY_PREFERENCE_ID,
+            PaymentConfigurationUtils.create(samplePaymentProcessor))
+            .setPrivateKey(ONE_TAP_PAYER_WEB_PAY_ACCESS_TOKEN)
+            .setAdvancedConfiguration(new AdvancedConfiguration
+                .Builder()
+                .setExpressPaymentEnable(true)
+                .build());
     }
 }

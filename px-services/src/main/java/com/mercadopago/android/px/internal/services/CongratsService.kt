@@ -9,6 +9,7 @@ interface CongratsService {
     @GET("{environment}/px_mobile/congrats")
     suspend fun getCongrats(
         @Path(value = "environment", encoded = true) environment: String,
+        @Header("X-Location-Enabled") locationEnabled: Boolean,
         @Query("access_token") accessToken: String,
         @Query("payment_ids") paymentIds: String,
         @Query("platform") platform: String,

@@ -27,6 +27,7 @@ import com.mercadopago.android.px.internal.util.TokenErrorWrapper;
 import com.mercadopago.android.px.internal.viewmodel.mappers.PaymentMethodMapper;
 import com.mercadopago.android.px.model.AmountConfiguration;
 import com.mercadopago.android.px.model.Card;
+import com.mercadopago.android.px.model.CardInformation;
 import com.mercadopago.android.px.model.Discount;
 import com.mercadopago.android.px.model.DiscountConfigurationModel;
 import com.mercadopago.android.px.model.IPaymentDescriptor;
@@ -222,12 +223,37 @@ public class PaymentService implements PaymentRepository {
         }
     }
 
+    private boolean shouldPayWithCvv(@NonNull final CardInformation card) {
+        final int securityCodeLength = card.getSecurityCodeLength() != null ? card.getSecurityCodeLength() : 0;
+        return securityCodeLength > 0;
+    }
+
+    private void payWithoutCvv(@NonNull final Card card) {
+        tokenRepository.createTokenWithoutCvv(card).enqueue(new Callback<Token>() {
+            @Override
+            public void success(final Token token) {
+                pay();
+            }
+
+            @Override
+            public void failure(final ApiException apiException) {
+                // No start CVV screen if fail
+                final String tokenError = new TokenErrorWrapper(apiException).getValue();
+                handlerWrapper.onPaymentError(MercadoPagoError.createRecoverable(tokenError));
+            }
+        });
+    }
+
     private void payWithCard() {
-        if (hasValidSavedCardInfo()) {
+        final Card card = userSelectionRepository.getCard();
+
+        if (card != null && hasPayerCost()) {
             if (paymentSettingRepository.hasToken()) { // Paying with saved card with token
                 pay();
-            } else { // Token does not exists - must generate one or ask for CVV.
-                checkEscAvailability();
+            } else if (shouldPayWithCvv(card)) { // Token does not exists - must generate one or ask for CVV.
+                checkEscAvailability(card);
+            } else {
+                payWithoutCvv(card); // Tokenize and pay with card without cvv (WebPay for example)
             }
         } else if (hasValidNewCardInfo()) { // New card payment
             pay();
@@ -240,9 +266,8 @@ public class PaymentService implements PaymentRepository {
         return EscStatus.REJECTED.equals(escStatus);
     }
 
-    private void checkEscAvailability() {
+    private void checkEscAvailability(@NonNull final Card card) {
         //Paying with saved card without token
-        final Card card = userSelectionRepository.getCard();
 
         final boolean shouldInvalidateEsc = shouldInvalidateEsc(card.getEscStatus());
         if (escManagerBehaviour.isESCEnabled() && escPaymentManager.hasEsc(card) && !shouldInvalidateEsc) {
@@ -267,9 +292,8 @@ public class PaymentService implements PaymentRepository {
         }
     }
 
-    private boolean hasValidSavedCardInfo() {
-        return userSelectionRepository.hasCardSelected()
-            && userSelectionRepository.getPayerCost() != null;
+    private boolean hasPayerCost() {
+        return userSelectionRepository.getPayerCost() != null;
     }
 
     private boolean hasValidNewCardInfo() {

@@ -36,6 +36,11 @@ public class MercadoPagoError implements Serializable {
     }
 
     @NonNull
+    public static MercadoPagoError createRecoverable(@NonNull final String message) {
+        return new MercadoPagoError(message, true);
+    }
+
+    @NonNull
     public static MercadoPagoError createNotRecoverable(@NonNull final String message) {
         return new MercadoPagoError(message, false);
     }

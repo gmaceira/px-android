@@ -1,6 +1,7 @@
 package com.mercadopago.android.px.internal.datasource
 
 import com.mercadopago.android.px.addons.ESCManagerBehaviour
+import com.mercadopago.android.px.internal.core.PermissionHelper
 import com.mercadopago.android.px.internal.features.payment_result.remedies.AlternativePayerPaymentMethodsMapper
 import com.mercadopago.android.px.internal.features.payment_result.remedies.RemediesBodyMapper
 import com.mercadopago.android.px.internal.repository.*
@@ -65,8 +66,8 @@ class CongratsRepositoryImpl(
             val joinedPaymentMethodsIds = paymentResult.paymentDataList
                 .joinToString(TextUtil.CSV_DELIMITER) { p -> (p.paymentMethod.id) }
             val campaignId = paymentResult.paymentData.campaign?.run { id } ?: ""
-            congratsService.getCongrats(BuildConfig.API_ENVIRONMENT, privateKey!!,
-                joinedPaymentIds, platform, campaignId, payerComplianceRepository.turnedIFPECompliant(),
+            congratsService.getCongrats(BuildConfig.API_ENVIRONMENT, PermissionHelper.instance.isLocationGranted(),
+                privateKey!!, joinedPaymentIds, platform, campaignId, payerComplianceRepository.turnedIFPECompliant(),
                 joinedPaymentMethodsIds, trackingRepository.flowId, paymentSetting.checkoutPreference?.id)
         } catch (e: Exception) {
             CongratsResponse.EMPTY

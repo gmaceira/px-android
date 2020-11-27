@@ -1,3 +1,8 @@
+## VERSION 4.64.0
+_26_11_2020_
+* FEATURE - Added support to cards without cvv.
+* ENHANCEMENT - Added location granted status in congrats endpoint.
+
 ## VERSION 4.63.0
 _12_11_2020_
 * FEATURE - Installments v2 experiment.

@@ -11,6 +11,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import com.mercadopago.android.px.internal.core.ConnectionHelper;
+import com.mercadopago.android.px.internal.core.PermissionHelper;
+import java.util.Objects;
 
 public class PxCheckoutInitProvider extends ContentProvider {
 
@@ -20,8 +22,10 @@ public class PxCheckoutInitProvider extends ContentProvider {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         }
-        Session.initialize(getContext());
-        ConnectionHelper.getInstance().initialize(getContext());
+        final Context context = Objects.requireNonNull(getContext());
+        Session.initialize(context);
+        ConnectionHelper.getInstance().initialize(context);
+        PermissionHelper.getInstance().initialize(context);
         return false;
     }
 

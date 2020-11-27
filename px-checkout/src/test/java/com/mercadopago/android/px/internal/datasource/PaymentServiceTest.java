@@ -283,7 +283,7 @@ public class PaymentServiceTest {
     @Test
     public void whenOneTapStartPaymentAndShouldShowVisualPayment() {
         final Observer<Unit> visualPaymentObserver = mock(Observer.class);
-        when(userSelectionRepository.hasCardSelected()).thenReturn(true);
+        when(userSelectionRepository.getCard()).thenReturn(mock(Card.class));
         when(userSelectionRepository.getPayerCost()).thenReturn(mock(PayerCost.class));
         when(paymentSettingRepository.hasToken()).thenReturn(true);
         when(paymentSettingRepository.getSecurityType()).thenReturn(SecurityType.SECOND_FACTOR);
@@ -323,7 +323,6 @@ public class PaymentServiceTest {
     @NonNull
     private Card savedCreditCardOneTapPresent(String cardId) {
         final Card card = creditCardPresetMock(cardId);
-        when(userSelectionRepository.hasCardSelected()).thenReturn(true);
         when(userSelectionRepository.getPayerCost()).thenReturn(mock(PayerCost.class));
         when(userSelectionRepository.getCard()).thenReturn(card);
         when(paymentMethod.getId()).thenReturn(PaymentMethods.ARGENTINA.AMEX);

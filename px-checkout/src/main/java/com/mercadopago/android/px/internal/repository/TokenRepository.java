@@ -8,4 +8,5 @@ import com.mercadopago.android.px.model.Token;
 public interface TokenRepository {
 
     MPCall<Token> createToken(@NonNull final Card card);
+    MPCall<Token> createTokenWithoutCvv(@NonNull final Card card);
 }
