@@ -1,47 +1,35 @@
 package com.mercadopago.android.px.internal.features.checkout
 
-import com.mercadopago.android.px.internal.features.dummy_result.RedirectHelper
-import com.mercadopago.android.px.internal.repository.PaymentRepository
-import com.mercadopago.android.px.internal.repository.PaymentSettingRepository
+import com.mercadopago.android.px.internal.extensions.isNotNullNorEmpty
+import com.mercadopago.android.px.model.IPaymentDescriptor
 import com.mercadopago.android.px.model.Payment
-import com.mercadopago.android.px.preferences.CheckoutPreference
 
-class PostCongratsDriver(builder: Builder) {
+internal class PostCongratsDriver(builder: Builder) {
 
-    private val paymentSettingRepository = builder.paymentSettingRepository
-    private val paymentRepository = builder.paymentRepository
-    private val action = builder.action!!
+    private val payment = builder.payment
+    private val postPaymentUrls = builder.postPaymentUrls
+    private val action = builder.action
     private val customResponseCode = builder.customResponseCode
 
     fun execute() {
-        val payment = paymentRepository.payment
-        paymentSettingRepository.checkoutPreference?.let { preference ->
-            payment?.let { resolveRedirectUrls(preference, it.paymentStatus) }
+        with(postPaymentUrls) {
+            when {
+                redirectUrl.isNotNullNorEmpty() -> action.openInWebView(redirectUrl)
+                backUrl.isNotNullNorEmpty() -> action.goToLink(backUrl)
+            }
         }
         //We only return the Payment object to respect our signature
         action.exitWith(customResponseCode, if (payment is Payment) payment else null)
     }
 
-    private fun resolveRedirectUrls(preference: CheckoutPreference, paymentStatus: String) {
-        RedirectHelper.resolveRedirect(paymentStatus,
-            Pair(preference.redirectUrls, action::openInWebView),
-            Pair(preference.backUrls, action::goToLink)
-        )
-    }
-
-    class Builder(internal val paymentSettingRepository: PaymentSettingRepository,
-        internal val paymentRepository: PaymentRepository) {
-        internal var action: Action? = null
-            private set
+    class Builder(internal val payment: IPaymentDescriptor?,
+        internal val postPaymentUrls: PostPaymentUrlsMapper.Response) {
+        internal lateinit var action: Action
         internal var customResponseCode: Int? = null
-            private set
 
         fun action(action: Action) = apply { this.action = action }
         fun customResponseCode(customResponseCode: Int?) = apply { this.customResponseCode = customResponseCode }
-        fun build(): PostCongratsDriver {
-            checkNotNull(action) { "Missing action listener" }
-            return PostCongratsDriver(this)
-        }
+        fun build() = PostCongratsDriver(this)
     }
 
     interface Action {

@@ -3,12 +3,12 @@ package com.mercadopago.android.px.internal.di
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.mercadopago.android.px.internal.base.FragmentCommunicationViewModel
+import com.mercadopago.android.px.internal.base.use_case.TokenizeUseCase
 import com.mercadopago.android.px.internal.core.ConnectionHelper
 import com.mercadopago.android.px.internal.features.express.offline_methods.OfflineMethodsViewModel
 import com.mercadopago.android.px.internal.features.pay_button.PayButtonViewModel
 import com.mercadopago.android.px.internal.features.security_code.SecurityCodeViewModel
 import com.mercadopago.android.px.internal.features.security_code.domain.use_case.DisplayDataUseCase
-import com.mercadopago.android.px.internal.base.use_case.TokenizeUseCase
 import com.mercadopago.android.px.internal.features.security_code.domain.use_case.SecurityTrackModelUseCase
 import com.mercadopago.android.px.internal.features.security_code.mapper.BusinessSecurityCodeDisplayDataMapper
 import com.mercadopago.android.px.internal.features.security_code.mapper.SecurityCodeDisplayModelMapper
@@ -31,7 +31,8 @@ internal class ViewModelFactory : ViewModelProvider.Factory {
                     paymentSetting,
                     configurationModule.customTextsRepository,
                     PayButtonViewModelMapper(),
-                    MapperProvider.getPaymentCongratsMapper())
+                    MapperProvider.getPaymentCongratsMapper(),
+                    MapperProvider.getPostPaymentUrlsMapper())
             }
             modelClass.isAssignableFrom(OfflineMethodsViewModel::class.java) -> {
                 OfflineMethodsViewModel(session.initRepository,

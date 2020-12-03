@@ -30,7 +30,7 @@ import com.mercadopago.android.px.tracking.internal.views.ResultViewTrack;
 /* default */ class BusinessPaymentResultPresenter extends BasePresenter<BusinessPaymentResult.View>
     implements BusinessPaymentResult.Presenter, PaymentResultBody.Listener {
 
-    @NonNull private final PaymentCongratsModel model;
+    @NonNull /* default */ final PaymentCongratsModel model;
     /* default */ final ResultViewTrack viewTracker;
     private final FlowBehaviour flowBehaviour;
     @Nullable /* default */ CongratsAutoReturn autoReturnTimer;
@@ -71,7 +71,8 @@ import com.mercadopago.android.px.tracking.internal.views.ResultViewTrack;
     @Override
     public void onAbort() {
         new AbortEvent(viewTracker).track();
-        getView().processCustomExit();
+        final PaymentCongratsResponse congratsResponse = model.getPaymentCongratsResponse();
+        getView().processCustomExit(congratsResponse.getBackUrl(), congratsResponse.getRedirectUrl());
     }
 
     private void configureView() {
@@ -84,7 +85,8 @@ import com.mercadopago.android.px.tracking.internal.views.ResultViewTrack;
                 } else if (action instanceof SecondaryExitAction) {
                     new SecondaryActionEvent(viewTracker).track();
                 }
-                getView().processCustomExit(action);
+                final PaymentCongratsResponse congratsResponse = model.getPaymentCongratsResponse();
+                getView().processCustomExit(action, congratsResponse.getBackUrl(), congratsResponse.getRedirectUrl());
             }
 
             @Override

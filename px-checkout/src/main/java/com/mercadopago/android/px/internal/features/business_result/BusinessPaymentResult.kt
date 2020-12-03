@@ -11,8 +11,8 @@ internal interface BusinessPaymentResult {
     interface View : MvpView {
         fun configureViews(model: BusinessPaymentResultViewModel, bodyListener: PaymentResultBody.Listener,
             footerListener: PaymentResultFooter.Listener)
-        fun processCustomExit()
-        fun processCustomExit(action: ExitAction)
+        fun processCustomExit(backUrl: String?, redirectUrl: String?)
+        fun processCustomExit(action: ExitAction, backUrl: String?, redirectUrl: String?)
         fun setStatusBarColor(@ColorRes color: Int)
         fun launchDeepLink(deepLink: String)
         fun processCrossSellingBusinessAction(deepLink: String)

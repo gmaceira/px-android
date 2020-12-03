@@ -16,7 +16,7 @@ internal interface PaymentResult {
         fun showApiExceptionError(exception: ApiException, requestOrigin: String)
         fun showInstructionsError()
         fun openLink(url: String)
-        fun finishWithResult(resultCode: Int)
+        fun finishWithResult(resultCode: Int, backUrl: String?, redirectUrl: String?)
         fun changePaymentMethod()
         fun recoverPayment()
         fun copyToClipboard(content: String)

@@ -83,6 +83,8 @@ public class CheckoutPreference implements Serializable {
 
     @Nullable private final String autoReturn;
 
+    @Nullable private final String externalReference;
+
     @SerializedName("binary_mode")
     private boolean isBinaryMode = false;
     //endregion support external integrations
@@ -109,6 +111,7 @@ public class CheckoutPreference implements Serializable {
         backUrls = null;
         redirectUrls = null;
         autoReturn = null;
+        externalReference = null;
 
         branchId = builder.branchId;
         paymentPreference = new PaymentPreference();
@@ -291,6 +294,11 @@ public class CheckoutPreference implements Serializable {
     @Nullable
     public String getAutoReturn() {
         return autoReturn;
+    }
+
+    @Nullable
+    public String getExternalReference() {
+        return externalReference;
     }
 
     @NonNull

@@ -12,6 +12,7 @@ import com.mercadopago.android.px.internal.core.ConnectionHelper
 import com.mercadopago.android.px.internal.core.ProductIdProvider
 import com.mercadopago.android.px.internal.extensions.isNotNullNorEmpty
 import com.mercadopago.android.px.internal.features.checkout.PostPaymentDriver
+import com.mercadopago.android.px.internal.features.checkout.PostPaymentUrlsMapper
 import com.mercadopago.android.px.internal.features.explode.ExplodeDecoratorMapper
 import com.mercadopago.android.px.internal.features.pay_button.PayButton.OnReadyForPaymentCallback
 import com.mercadopago.android.px.internal.features.pay_button.UIProgress.ButtonLoadingCanceled
@@ -57,7 +58,8 @@ internal class PayButtonViewModel(
     private val paymentSettingRepository: PaymentSettingRepository,
     customTextsRepository: CustomTextsRepository,
     payButtonViewModelMapper: PayButtonViewModelMapper,
-    private val paymentCongratsMapper: PaymentCongratsModelMapper) : BaseViewModel(), PayButton.ViewModel {
+    private val paymentCongratsMapper: PaymentCongratsModelMapper,
+    private val postPaymentUrlsMapper: PostPaymentUrlsMapper) : BaseViewModel(), PayButton.ViewModel {
 
     val buttonTextLiveData = MutableLiveData<ButtonConfig>()
     private var buttonConfig: ButtonConfig = payButtonViewModelMapper.map(customTextsRepository.customTexts)
@@ -255,22 +257,26 @@ internal class PayButtonViewModel(
     }
 
     override fun hasFinishPaymentAnimation() {
-        paymentModel?.let {
-            handler?.onPaymentFinished(it, object : PayButton.OnPaymentFinishedCallback {
+        paymentModel?.let { paymentModel ->
+            handler?.onPaymentFinished(paymentModel, object : PayButton.OnPaymentFinishedCallback {
                 override fun call() {
-                    PostPaymentDriver.Builder(paymentSettingRepository, it).action(object : PostPaymentDriver.Action {
-                        override fun showCongrats(model: PaymentModel) {
-                            stateUILiveData.value = UIResult.PaymentResult(model)
-                        }
+                    resolvePostPaymentUrls(paymentModel)?.let {
+                        PostPaymentDriver.Builder(paymentModel, it).action(
+                            object : PostPaymentDriver.Action {
+                                override fun showCongrats(model: PaymentModel) {
+                                    stateUILiveData.value = UIResult.PaymentResult(model)
+                                }
 
-                        override fun showCongrats(model: BusinessPaymentModel) {
-                            stateUILiveData.value = UIResult.CongratsPaymentModel(paymentCongratsMapper.map(model))
-                        }
+                                override fun showCongrats(model: BusinessPaymentModel) {
+                                    stateUILiveData.value = UIResult.CongratsPaymentModel(paymentCongratsMapper.map(model))
+                                }
 
-                        override fun skipCongrats(model: PaymentModel) {
-                            stateUILiveData.value = UIResult.NoCongratsResult(model)
-                        }
-                    }).build().execute()
+                                override fun skipCongrats(model: PaymentModel) {
+                                    stateUILiveData.value = UIResult.NoCongratsResult(model)
+                                }
+                            }
+                        ).build().execute()
+                    }
                 }
             })
         }
@@ -292,6 +298,19 @@ internal class PayButtonViewModel(
             paymentService.observableEvents?.let {
                 observeService(it)
             } ?: onPaymentProcessingError()
+        }
+    }
+
+    private fun resolvePostPaymentUrls(paymentModel: PaymentModel) : PostPaymentUrlsMapper.Response? {
+        return paymentSettingRepository.checkoutPreference?.let { preference ->
+            val congratsResponse = paymentModel.congratsResponse
+            postPaymentUrlsMapper.map(PostPaymentUrlsMapper.Model(
+                congratsResponse.redirectUrl,
+                congratsResponse.backUrl,
+                paymentModel.payment,
+                preference,
+                paymentSettingRepository.site.id
+            ))
         }
     }
 }

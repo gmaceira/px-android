@@ -111,7 +111,7 @@ import java.util.List;
     @Override
     public void onAbort() {
         new AbortEvent(resultViewTrack).track();
-        getView().finishWithResult(MercadoPagoCheckout.PAYMENT_RESULT_CODE);
+        finishWithResult(MercadoPagoCheckout.PAYMENT_RESULT_CODE);
     }
 
     /* default */ void getInstructions() {
@@ -216,7 +216,7 @@ import java.util.List;
 
         if (action instanceof NextAction) {
             new ContinueEvent(resultViewTrack).track();
-            getView().finishWithResult(MercadoPagoCheckout.PAYMENT_RESULT_CODE);
+            finishWithResult(MercadoPagoCheckout.PAYMENT_RESULT_CODE);
         } else if (action instanceof ChangePaymentMethodAction) {
             new ChangePaymentMethodEvent(resultViewTrack).track();
             getView().changePaymentMethod();
@@ -283,5 +283,10 @@ import java.util.List;
             new CongratsSuccessDeepLink(DeepLinkType.MONEY_SPLIT_TYPE, deepLink).track();
             getView().launchDeepLink(deepLink);
         }
+    }
+
+    private void finishWithResult(final int resultCode) {
+        final CongratsResponse congratsResponse = paymentModel.getCongratsResponse();
+        getView().finishWithResult(resultCode, congratsResponse.getBackUrl(), congratsResponse.getRedirectUrl());
     }
 }

@@ -4,8 +4,6 @@ import androidx.annotation.NonNull;
 import com.mercadopago.android.px.configuration.PaymentConfiguration;
 import com.mercadopago.android.px.core.SplitPaymentProcessor;
 import com.mercadopago.android.px.internal.configuration.InternalConfiguration;
-import com.mercadopago.android.px.internal.experiments.ScrolledVariant;
-import com.mercadopago.android.px.internal.experiments.Variant;
 import com.mercadopago.android.px.internal.features.Constants;
 import com.mercadopago.android.px.internal.repository.CongratsRepository;
 import com.mercadopago.android.px.internal.repository.ExperimentsRepository;
@@ -23,6 +21,8 @@ import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentMethod;
 import com.mercadopago.android.px.model.PaymentMethodSearch;
 import com.mercadopago.android.px.model.Setting;
+import com.mercadopago.android.px.model.Site;
+import com.mercadopago.android.px.model.Sites;
 import com.mercadopago.android.px.model.exceptions.ApiException;
 import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 import com.mercadopago.android.px.model.internal.InitResponse;
@@ -65,12 +65,19 @@ public class CheckoutPresenterTest {
     @Mock private CongratsRepository congratsRepository;
     @Mock private InternalConfiguration internalConfiguration;
     @Mock private ExperimentsRepository experimentsRepository;
+    @Mock private PostPaymentUrlsMapper postPaymentUrlsMapper;
 
     private CheckoutPresenter presenter;
     private CheckoutStateModel checkoutStateModel;
 
     @Before
     public void setUp() {
+        final Site site = mock(Site.class);
+        when(site.getId()).thenReturn(Sites.ARGENTINA.getId());
+        when(paymentSettingRepository.getSite()).thenReturn(site);
+        when(paymentSettingRepository.getCheckoutPreference()).thenReturn(mock(CheckoutPreference.class));
+        when(postPaymentUrlsMapper.map(any(PostPaymentUrlsMapper.Model.class)))
+            .thenReturn(mock(PostPaymentUrlsMapper.Response.class));
         checkoutStateModel = new CheckoutStateModel();
         presenter = getPresenter(checkoutStateModel);
     }
@@ -216,17 +223,16 @@ public class CheckoutPresenterTest {
     @Test
     public void whenPaymentResultWithCreatedPaymentThenFinishCheckoutWithPaymentResult() {
         final Payment payment = mock(Payment.class);
-
         when(paymentRepository.getPayment()).thenReturn(payment);
 
-        presenter.onPaymentResultResponse(null);
+        presenter.onPaymentResultResponse(null, null, null);
 
         verify(checkoutView).finishWithPaymentResult(null, payment);
     }
 
     @Test
     public void whenPaymentResultWithoutCreatedPaymentThenFinishCheckoutWithoutPaymentResult() {
-        presenter.onPaymentResultResponse(null);
+        presenter.onPaymentResultResponse(null, null, null);
         verify(checkoutView).finishWithPaymentResult(null, null);
     }
 
@@ -472,7 +478,7 @@ public class CheckoutPresenterTest {
         final Payment payment = mock(Payment.class);
         when(paymentRepository.getPayment()).thenReturn(payment);
 
-        presenter.onPaymentResultResponse(CUSTOM_RESULT_CODE);
+        presenter.onPaymentResultResponse(CUSTOM_RESULT_CODE, null, null);
 
         verify(checkoutView).finishWithPaymentResult(CUSTOM_RESULT_CODE, payment);
         verifyNoMoreInteractions(checkoutView);
@@ -480,7 +486,7 @@ public class CheckoutPresenterTest {
 
     @Test
     public void whenCustomPaymentResultResponseHasNotPaymentThenFinishWithPaymentResult() {
-        presenter.onPaymentResultResponse(CUSTOM_RESULT_CODE);
+        presenter.onPaymentResultResponse(CUSTOM_RESULT_CODE, null, null);
 
         verify(checkoutView).finishWithPaymentResult(CUSTOM_RESULT_CODE, null);
         verifyNoMoreInteractions(checkoutView);
@@ -491,7 +497,7 @@ public class CheckoutPresenterTest {
         final BusinessPayment payment = mock(BusinessPayment.class);
         when(paymentRepository.getPayment()).thenReturn(payment);
 
-        presenter.onPaymentResultResponse(CUSTOM_RESULT_CODE);
+        presenter.onPaymentResultResponse(CUSTOM_RESULT_CODE, null, null);
 
         verify(checkoutView).finishWithPaymentResult(CUSTOM_RESULT_CODE, null);
         verifyNoMoreInteractions(checkoutView);
@@ -505,7 +511,7 @@ public class CheckoutPresenterTest {
 
         presenter = new CheckoutPresenter(checkoutStateModel, paymentSettingRepository, userSelectionRepository,
             initRepository, pluginRepository, paymentRepository, congratsRepository, internalConfiguration,
-            experimentsRepository);
+            experimentsRepository, postPaymentUrlsMapper);
 
         presenter.attachView(view);
         return presenter;

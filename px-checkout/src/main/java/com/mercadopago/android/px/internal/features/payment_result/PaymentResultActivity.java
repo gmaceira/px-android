@@ -28,6 +28,7 @@ import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.di.MapperProvider;
 import com.mercadopago.android.px.internal.di.Session;
 import com.mercadopago.android.px.internal.extensions.BaseExtensionsKt;
+import com.mercadopago.android.px.internal.features.Constants;
 import com.mercadopago.android.px.internal.features.pay_button.PayButton;
 import com.mercadopago.android.px.internal.features.pay_button.PayButtonFragment;
 import com.mercadopago.android.px.internal.features.payment_result.components.PaymentResultLegacyRenderer;
@@ -203,9 +204,12 @@ public class PaymentResultActivity extends PXActivity<PaymentResultPresenter> im
     }
 
     @Override
-    public void finishWithResult(final int resultCode) {
+    public void finishWithResult(final int resultCode, @Nullable final String backUrl,
+        @Nullable final String redirectUrl) {
         final Intent intent = new Intent();
         intent.putExtra(EXTRA_RESULT_CODE, resultCode);
+        intent.putExtra(Constants.EXTRA_BACK_URL, backUrl);
+        intent.putExtra(Constants.EXTRA_REDIRECT_URL, redirectUrl);
         setResult(RESULT_CUSTOM_EXIT, intent);
         finish();
     }

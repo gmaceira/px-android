@@ -15,8 +15,10 @@ import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.core.BackHandler;
 import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.di.CheckoutConfigurationModule;
+import com.mercadopago.android.px.internal.di.MapperProvider;
 import com.mercadopago.android.px.internal.di.Session;
 import com.mercadopago.android.px.internal.experiments.Variant;
+import com.mercadopago.android.px.internal.features.Constants;
 import com.mercadopago.android.px.internal.features.cardvault.CardVaultActivity;
 import com.mercadopago.android.px.internal.features.express.ExpressPayment;
 import com.mercadopago.android.px.internal.features.express.ExpressPaymentFragment;
@@ -135,7 +137,8 @@ public class CheckoutActivity extends PXActivity<CheckoutPresenter>
                 session.getPaymentRepository(),
                 session.getCongratsRepository(),
                 session.getInternalConfiguration(),
-                session.getExperimentsRepository());
+                session.getExperimentsRepository(),
+                MapperProvider.INSTANCE.getPostPaymentUrlsMapper());
 
         privateKey = savedInstanceState.getString(EXTRA_PRIVATE_KEY);
         merchantPublicKey = savedInstanceState.getString(EXTRA_PUBLIC_KEY);
@@ -201,7 +204,8 @@ public class CheckoutActivity extends PXActivity<CheckoutPresenter>
             session.getPaymentRepository(),
             session.getCongratsRepository(),
             session.getInternalConfiguration(),
-            session.getExperimentsRepository());
+            session.getExperimentsRepository(),
+            MapperProvider.INSTANCE.getPostPaymentUrlsMapper());
     }
 
     @Override
@@ -273,18 +277,26 @@ public class CheckoutActivity extends PXActivity<CheckoutPresenter>
     }
 
     private void handleCustomExit(final Intent data) {
-        if (data != null && data.hasExtra(EXTRA_CLIENT_RES_CODE)) {
-            //Business custom exit
-            final int resCode = data.getIntExtra(EXTRA_CLIENT_RES_CODE, RESULT_OK);
-            presenter.onPaymentResultResponse(resCode);
-        } else if (data != null && data.hasExtra(EXTRA_RESULT_CODE)) {
-            //Custom exit  - Result screen.
-            final Integer finalResultCode = data.getIntExtra(EXTRA_RESULT_CODE, PAYMENT_RESULT_CODE);
-            customDataBundle = data;
-            presenter.onPaymentResultResponse(finalResultCode);
+        if (data != null) {
+            final String backUrl = data.getStringExtra(Constants.EXTRA_BACK_URL);
+            final String redirectUrl = data.getStringExtra(Constants.EXTRA_REDIRECT_URL);
+
+            if (data.hasExtra(EXTRA_CLIENT_RES_CODE)) {
+                //Business custom exit
+                final int resCode = data.getIntExtra(EXTRA_CLIENT_RES_CODE, RESULT_OK);
+                presenter.onPaymentResultResponse(resCode, backUrl, redirectUrl);
+            } else if (data != null && data.hasExtra(EXTRA_RESULT_CODE)) {
+                //Custom exit  - Result screen.
+                final Integer finalResultCode = data.getIntExtra(EXTRA_RESULT_CODE, PAYMENT_RESULT_CODE);
+                customDataBundle = data;
+                presenter.onPaymentResultResponse(finalResultCode, backUrl, redirectUrl);
+            } else {
+                //Normal exit - Result screen.
+                presenter.onPaymentResultResponse(null, backUrl, redirectUrl);
+            }
         } else {
             //Normal exit - Result screen.
-            presenter.onPaymentResultResponse(null);
+            presenter.onPaymentResultResponse(null, null, null);
         }
     }
 

@@ -12,6 +12,8 @@ data class PaymentCongratsResponse(
     private val crossSellings: List<CrossSelling>? = emptyList(),
     val viewReceipt: Action? = null,
     private val customOrder: Boolean = false,
+    val backUrl: String? = null,
+    val redirectUrl: String? = null,
     val autoReturn: AutoReturn? = null): Parcelable {
 
     fun getCrossSellings() = crossSellings ?: emptyList()

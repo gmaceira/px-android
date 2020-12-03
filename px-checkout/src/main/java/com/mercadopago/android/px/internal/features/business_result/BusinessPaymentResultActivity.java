@@ -14,6 +14,7 @@ import com.mercadopago.android.px.R;
 import com.mercadopago.android.px.addons.BehaviourProvider;
 import com.mercadopago.android.px.internal.base.PXActivity;
 import com.mercadopago.android.px.internal.di.Session;
+import com.mercadopago.android.px.internal.features.Constants;
 import com.mercadopago.android.px.internal.features.payment_congrats.model.PaymentCongratsModel;
 import com.mercadopago.android.px.internal.features.payment_result.presentation.PaymentResultFooter;
 import com.mercadopago.android.px.internal.util.Logger;
@@ -89,13 +90,16 @@ public class BusinessPaymentResultActivity extends PXActivity<BusinessPaymentRes
     }
 
     @Override
-    public void processCustomExit() {
-        processCustomExit(new ExitAction("exit", RESULT_OK));
+    public void processCustomExit(@Nullable final String backUrl, @Nullable final String redirectUrl) {
+        processCustomExit(new ExitAction("exit", RESULT_OK), backUrl, redirectUrl);
     }
 
     @Override
-    public void processCustomExit(@NonNull final ExitAction action) {
+    public void processCustomExit(@NonNull final ExitAction action, @Nullable final String backUrl,
+        @Nullable final String redirectUrl) {
         final Intent intent = action.toIntent();
+        intent.putExtra(Constants.EXTRA_BACK_URL, backUrl);
+        intent.putExtra(Constants.EXTRA_REDIRECT_URL, redirectUrl);
         setResult(RESULT_CUSTOM_EXIT, intent);
         finish();
     }

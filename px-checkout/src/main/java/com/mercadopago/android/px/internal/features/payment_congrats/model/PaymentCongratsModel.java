@@ -344,6 +344,8 @@ public class PaymentCongratsModel implements Parcelable {
 
         //Internal PX data
         /* default */ PaymentCongratsResponse.AutoReturn autoReturn;
+        /* default */ String backUrl;
+        /* default */ String redirectUrl;
         /* default */ boolean isStandAloneCongrats = true;
 
         //Internal PX Tracking data
@@ -374,7 +376,7 @@ public class PaymentCongratsModel implements Parcelable {
             }
             paymentCongratsResponse =
                 new PaymentCongratsResponse(loyalty, discount, expenseSplit, crossSelling, receiptAction,
-                    customSorting, autoReturn);
+                    customSorting, backUrl, redirectUrl, autoReturn);
 
             return new PaymentCongratsModel(this);
         }
@@ -664,6 +666,16 @@ public class PaymentCongratsModel implements Parcelable {
          */
         /* default */ Builder withAutoReturn(final PaymentCongratsResponse.AutoReturn autoReturn) {
             this.autoReturn = autoReturn;
+            return this;
+        }
+
+        /* default */ Builder withBackUrl(final String backUrl) {
+            this.backUrl = backUrl;
+            return this;
+        }
+
+        /* default */ Builder withRedirectUrl(final String redirectUrl) {
+            this.redirectUrl = redirectUrl;
             return this;
         }
 

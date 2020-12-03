@@ -1,5 +1,10 @@
-## VERSION 4.65.0
+## VERSION 4.66.0
+_10_12_2020_
 * FEATURE - Added Loyalty Broadcaster in Payment Congrats
+
+## VERSION 4.65.0
+_03_12_2020_
+* FEATURE - Appending params to back_url and redirect_url
 
 ## VERSION 4.64.0
 _26_11_2020_

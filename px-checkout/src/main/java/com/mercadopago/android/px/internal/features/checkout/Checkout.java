@@ -70,7 +70,8 @@ import com.mercadopago.android.px.model.exceptions.MercadoPagoError;
 
         void recoverFromFailure();
 
-        void onPaymentResultResponse(@Nullable final Integer customResultCode);
+        void onPaymentResultResponse(@Nullable final Integer customResultCode, @Nullable final String backUrl,
+            @Nullable final String redirectUrl);
 
         void cancelCheckout();
 

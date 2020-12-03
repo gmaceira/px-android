@@ -19,6 +19,8 @@ public class PaymentCongratsResponseMapper extends Mapper<CongratsResponse, Paym
             getCrossSelling(congratsResponse.getCrossSellings()),
             getAction(congratsResponse.getViewReceipt()),
             congratsResponse.getCustomOrder(),
+            congratsResponse.getBackUrl(),
+            congratsResponse.getRedirectUrl(),
             getAutoReturn(congratsResponse.getAutoReturn()));
     }
 

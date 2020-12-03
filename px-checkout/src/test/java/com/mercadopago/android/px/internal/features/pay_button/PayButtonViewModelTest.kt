@@ -3,8 +3,8 @@ package com.mercadopago.android.px.internal.features.pay_button
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.Observer
 import com.mercadopago.android.px.BasicRobolectricTest
-import com.mercadopago.android.px.argumentCaptor
 import com.mercadopago.android.px.any
+import com.mercadopago.android.px.argumentCaptor
 import com.mercadopago.android.px.internal.callbacks.PaymentServiceEventHandler
 import com.mercadopago.android.px.internal.core.ConnectionHelper
 import com.mercadopago.android.px.internal.core.ProductIdProvider
@@ -13,6 +13,7 @@ import com.mercadopago.android.px.internal.datasource.PaymentService
 import com.mercadopago.android.px.internal.datasource.PaymentSettingService
 import com.mercadopago.android.px.internal.di.Session
 import com.mercadopago.android.px.internal.features.PaymentResultViewModelFactory
+import com.mercadopago.android.px.internal.features.checkout.PostPaymentUrlsMapper
 import com.mercadopago.android.px.internal.features.explode.ExplodeDecorator
 import com.mercadopago.android.px.internal.features.express.RenderMode
 import com.mercadopago.android.px.internal.features.payment_congrats.model.PaymentCongratsModelMapper
@@ -31,9 +32,9 @@ import com.mercadopago.android.px.model.internal.CustomTexts
 import com.mercadopago.android.px.model.internal.PaymentConfiguration
 import com.mercadopago.android.px.model.internal.remedies.RemediesResponse
 import com.mercadopago.android.px.preferences.CheckoutPreference
-import com.mercadopago.android.px.tracking.internal.model.ConfirmData
 import com.mercadopago.android.px.tracking.internal.model.Reason
-import org.junit.Assert.*
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -109,7 +110,8 @@ internal class PayButtonViewModelTest: BasicRobolectricTest() {
             paymentSettingService,
             customTextsRepositoryImpl,
             payButtonViewModelMapper,
-            paymentCongratsMapper)
+            paymentCongratsMapper,
+            mock(PostPaymentUrlsMapper::class.java))
 
         payButtonViewModel.stateUILiveData.observeForever(uiStateObserver)
         payButtonViewModel.buttonTextLiveData.observeForever(buttonTextObserver)

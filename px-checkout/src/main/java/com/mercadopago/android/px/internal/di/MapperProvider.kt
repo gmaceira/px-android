@@ -1,6 +1,7 @@
 package com.mercadopago.android.px.internal.di
 
 import android.content.Context
+import com.mercadopago.android.px.internal.features.checkout.PostPaymentUrlsMapper
 import com.mercadopago.android.px.internal.features.payment_congrats.model.PaymentCongratsModelMapper
 import com.mercadopago.android.px.internal.viewmodel.drawables.PaymentMethodDrawableItemMapper
 import com.mercadopago.android.px.internal.viewmodel.mappers.AmountDescriptorMapper
@@ -39,4 +40,6 @@ internal object MapperProvider {
             Session.getInstance().experimentsRepository
         )
     }
+
+    fun getPostPaymentUrlsMapper() = PostPaymentUrlsMapper
 }

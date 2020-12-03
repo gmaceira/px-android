@@ -20,6 +20,7 @@ import com.mercadopago.android.px.internal.view.experiments.ExperimentHelper;
 import com.mercadopago.android.px.internal.viewmodel.CheckoutStateModel;
 import com.mercadopago.android.px.model.Card;
 import com.mercadopago.android.px.model.Cause;
+import com.mercadopago.android.px.model.IPaymentDescriptor;
 import com.mercadopago.android.px.model.Payment;
 import com.mercadopago.android.px.model.PaymentMethodSearch;
 import com.mercadopago.android.px.model.exceptions.ApiException;
@@ -38,6 +39,7 @@ public class CheckoutPresenter extends BasePresenter<Checkout.View> implements C
     @NonNull private final InitRepository initRepository;
     @NonNull private final CongratsRepository congratsRepository;
     @NonNull private final InternalConfiguration internalConfiguration;
+    @NonNull private final PostPaymentUrlsMapper postPaymentUrlsMapper;
     @NonNull private ExperimentsRepository experimentsRepository;
 
     /* default */ CheckoutPresenter(@NonNull final CheckoutStateModel persistentData,
@@ -48,7 +50,8 @@ public class CheckoutPresenter extends BasePresenter<Checkout.View> implements C
         @NonNull final PaymentRepository paymentRepository,
         @NonNull final CongratsRepository congratsRepository,
         @NonNull final InternalConfiguration internalConfiguration,
-        @NonNull final ExperimentsRepository experimentsRepository) {
+        @NonNull final ExperimentsRepository experimentsRepository,
+        @NonNull final PostPaymentUrlsMapper postPaymentUrlsMapper) {
 
         this.paymentSettingRepository = paymentSettingRepository;
         this.userSelectionRepository = userSelectionRepository;
@@ -58,6 +61,7 @@ public class CheckoutPresenter extends BasePresenter<Checkout.View> implements C
         this.congratsRepository = congratsRepository;
         this.internalConfiguration = internalConfiguration;
         this.experimentsRepository = experimentsRepository;
+        this.postPaymentUrlsMapper = postPaymentUrlsMapper;
         state = persistentData;
     }
 
@@ -264,8 +268,16 @@ public class CheckoutPresenter extends BasePresenter<Checkout.View> implements C
     }
 
     @Override
-    public void onPaymentResultResponse(@Nullable final Integer customResultCode) {
-        new PostCongratsDriver.Builder(paymentSettingRepository, paymentRepository)
+    public void onPaymentResultResponse(@Nullable final Integer customResultCode, @Nullable final String backUrl,
+        @Nullable final String redirectUrl) {
+        final IPaymentDescriptor payment = paymentRepository.getPayment();
+        final PostPaymentUrlsMapper.Response postPaymentUrls = postPaymentUrlsMapper.map(
+            new PostPaymentUrlsMapper.Model(
+                redirectUrl, backUrl, payment, paymentSettingRepository.getCheckoutPreference(),
+                paymentSettingRepository.getSite().getId()
+            )
+        );
+        new PostCongratsDriver.Builder(payment, postPaymentUrls)
             .customResponseCode(customResultCode)
             .action(new PostCongratsDriver.Action() {
                 @Override
